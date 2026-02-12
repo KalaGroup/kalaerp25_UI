@@ -1,0 +1,39 @@
+<div [perfectScrollbar]="{}" class="h-screen signup4-wrap flex flex-wrap justify-center items-center">
+  <div
+    class="signup4-container mat-elevation-z4 white flex flex-wrap flex-col md:!flex-row justify-start items-stretch w-5/6 md:w-3/5"
+    [@animate]="{value:'*',params:{y:'40px',opacity:'0',delay:'100ms', duration: '400ms'}}">
+
+    <!-- Left Side content -->
+    <div class="mat-bg-default flex flex-col justify-center items-center w-full md:w-2/5">
+
+      <img width="200px" src="assets/images/illustrations/lighthouse.svg" alt="">
+
+    </div>
+
+    <!-- Right side content -->
+    <div class="flex flex-wrap justify-center items-center w-full md:w-3/5">
+      <form [formGroup]="signupForm" class="signup4-form mat-bg-card" (ngSubmit)="onSubmit()">
+
+
+        <mat-form-field class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" name="email" placeholder="Email" />
+        </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" type="password" name="password" placeholder="********" />
+        </mat-form-field>
+
+        <mat-checkbox formControlName="agreed">I agree with terms and condtions</mat-checkbox>
+
+        <div class="flex flex-wrap justify-start items-center mt-6">
+          <button mat-flat-button color="primary">Sign In</button>
+          <span class="px-4">or</span>
+          <a class="font-bold mat-color-primary" routerLink="/sessions/signup4">Sign Up</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

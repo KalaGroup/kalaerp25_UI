@@ -1,0 +1,99 @@
+<div class="jobcard-container mat-elevation-z2">
+  <h3 class="section-title">JobCard (With CP Plan)</h3>
+
+  <form class="jobcard-form">
+    <mat-form-field appearance="fill">
+      <mat-label>JobCard Code (With CP Plan)</mat-label>
+      <input matInput placeholder="Enter JobCard Code">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>JobCard Date</mat-label>
+      <input matInput [value]="currentDate | date:'dd-MM-yyyy hh:mm:ss a'" disabled>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Profitcenter</mat-label>
+      <input matInput value="DG Assembly-->01.004" disabled>
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" (click)="search()">Search</button>
+  </form>
+   <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+       {{errorMessage}}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+   <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+    <p>{{ successMessage }}</p>
+    <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+    <p>{{ warningMessage }}</p>
+    <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <h4 class="section-subtitle">DG PartCode Details</h4>
+
+ <div class="scrollable-table-wrapper">
+  <table class="custom-data-table">
+ <thead>
+  <tr>
+    <th *ngFor="let col of displayedColumns">{{ col.label }}</th>
+  </tr>
+</thead>
+<tbody>
+  <tr *ngFor="let element of dataSource; let i = index">
+    <td *ngFor="let col of displayedColumns">
+      
+      <!-- Custom serial number -->
+      <ng-container *ngIf="col.key === 'SrNo'; else otherCol">
+        {{ i + 1 }}
+      </ng-container>
+
+      <ng-template #otherCol>
+        <ng-container *ngIf="col.key === 'jobcard2Qty'; else defaultCell">
+          <input [(ngModel)]="element[col.key]" class="qty-input" />
+        </ng-container>
+
+        <ng-template #defaultCell>
+          <ng-container *ngIf="col.key === 'PanelType'; else actualValue">
+            None
+          </ng-container>
+          <ng-template #actualValue>
+            {{ element[col.key] }}
+          </ng-template>
+        </ng-template>
+      </ng-template>
+      
+    </td>
+  </tr>
+  <!-- No Record Row -->
+      <tr *ngIf="dataSource.length === 0">
+        <td [attr.colspan]="displayedColumns.length" class="no-record">
+          No Record(s) Found
+        </td>
+      </tr>
+</tbody>
+  </table>
+ </div>
+ <div class="remark-section">
+  <mat-form-field appearance="fill" class="remark-field">
+    <mat-label>Remark</mat-label>
+    <textarea matInput [(ngModel)]="remarkText" placeholder="Enter your remark"></textarea>
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" (click)="submit()">Submit</button>
+</div>
+
+</div>
+

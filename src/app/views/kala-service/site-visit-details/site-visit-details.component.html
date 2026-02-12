@@ -1,0 +1,367 @@
+<div class="site-visit-details-container" [class.photo-edit-mode]="showPhotoEditView">
+
+  <!-- Photo Edit View (Full Screen) -->
+  <div class="photo-edit-view" *ngIf="showPhotoEditView">
+    <!-- Photo Edit Header -->
+    <mat-toolbar class="photo-edit-toolbar" color="primary">
+      <button mat-icon-button (click)="closePhotoEditView()" aria-label="Go back">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="toolbar-spacer"></span>
+      <button mat-icon-button (click)="rotatePhoto()" aria-label="Rotate">
+        <mat-icon>rotate_right</mat-icon>
+      </button>
+      <button mat-icon-button (click)="toggleCropGuide()" aria-label="Crop guide">
+        <mat-icon>crop_free</mat-icon>
+      </button>
+      <button mat-button class="crop-btn" (click)="cropPhoto()">
+        CROP
+      </button>
+    </mat-toolbar>
+
+    <!-- Photo Preview Area -->
+    <div class="photo-edit-preview" (mousemove)="onCropMouseMove($event)" (mouseup)="onCropMouseUp()"
+      (mouseleave)="onCropMouseUp()" (touchmove)="onCropMouseMove($event)" (touchend)="onCropMouseUp()">
+      <div class="preview-placeholder" *ngIf="!capturedPhotoUrl">
+        <!-- Empty gray area before photo is selected -->
+      </div>
+      <img *ngIf="capturedPhotoUrl" [src]="capturedPhotoUrl" class="preview-image"
+        [style.transform]="'rotate(' + photoRotation + 'deg)'" alt="Captured photo" />
+      <div class="crop-guide" *ngIf="showCropGuide && capturedPhotoUrl" [style.left.px]="cropBox.x"
+        [style.top.px]="cropBox.y" [style.width.px]="cropBox.width" [style.height.px]="cropBox.height"
+        (mousedown)="onCropMouseDown($event)" (touchstart)="onCropMouseDown($event)">
+        <div class="crop-border"></div>
+        <!-- Resize handles -->
+        <span class="resize-handle top-left" (mousedown)="onResizeMouseDown($event, 'top-left')"
+          (touchstart)="onResizeMouseDown($event, 'top-left')"></span>
+        <span class="resize-handle top-right" (mousedown)="onResizeMouseDown($event, 'top-right')"
+          (touchstart)="onResizeMouseDown($event, 'top-right')"></span>
+        <span class="resize-handle bottom-left" (mousedown)="onResizeMouseDown($event, 'bottom-left')"
+          (touchstart)="onResizeMouseDown($event, 'bottom-left')"></span>
+        <span class="resize-handle bottom-right" (mousedown)="onResizeMouseDown($event, 'bottom-right')"
+          (touchstart)="onResizeMouseDown($event, 'bottom-right')"></span>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet for Photo Source Selection -->
+    <div class="bottom-sheet" [class.open]="showPhotoSourceSheet">
+      <div class="bottom-sheet-content">
+        <h3 class="bottom-sheet-title">Select source</h3>
+        <div class="source-options">
+          <div class="source-option" (click)="selectPhotoSource('camera')">
+            <div class="source-icon camera-icon">
+              <mat-icon>photo_camera</mat-icon>
+            </div>
+            <span class="source-label">Camera</span>
+          </div>
+          <div class="source-option" (click)="selectPhotoSource('media')">
+            <div class="source-icon media-icon">
+              <mat-icon>perm_media</mat-icon>
+            </div>
+            <span class="source-label">Media<br>picker</span>
+          </div>
+          <div class="source-option" (click)="selectPhotoSource('gallery')">
+            <div class="source-icon gallery-icon">
+              <mat-icon>collections</mat-icon>
+            </div>
+            <span class="source-label">Gallery</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" (change)="onFileSelected($event)"
+      style="display: none;" />
+    <input type="file" id="galleryInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
+    <input type="file" id="mediaInput" accept="image/*,video/*" multiple (change)="onFileSelected($event)"
+      style="display: none;" />
+  </div>
+
+  <!-- Main Details View -->
+  <ng-container *ngIf="!showPhotoEditView">
+    <!-- Header Toolbar -->
+    <mat-toolbar class="header-toolbar" color="primary">
+      <button mat-icon-button (click)="goBack()" aria-label="Go back">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="toolbar-title">SiteVisit Details</span>
+      <span class="toolbar-spacer"></span>
+      <!-- <button mat-button class="save-btn" (click)="onSave()">
+        SAVE
+      </button> -->
+      <button mat-raised-button class="save-btn" (click)="onSave()">
+  <mat-icon>check_circle</mat-icon>
+  SAVE
+</button>
+    </mat-toolbar>
+
+    <!-- Tab Navigation -->
+    <mat-tab-group class="details-tabs" [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)"
+      mat-stretch-tabs="false" mat-align-tabs="start">
+      <!-- Add Photo Tab -->
+      <mat-tab label="Add Photo">
+        <div class="tab-content photo-tab">
+          <!-- Photo Preview Area - Shows last added photo -->
+          <div class="photo-preview-area">
+            <div class="last-photo-preview" *ngIf="getFilteredPhotos().length > 0; else emptyPhotoGrid">
+              <img [src]="getFilteredPhotos()[getFilteredPhotos().length - 1].url"
+                [alt]="getFilteredPhotos()[getFilteredPhotos().length - 1].name" />
+            </div>
+            <ng-template #emptyPhotoGrid>
+              <div class="empty-photo-grid"></div>
+            </ng-template>
+          </div>
+
+          <!-- Photo Type Selection & Add Button -->
+          <div class="photo-controls">
+            <mat-radio-group [(ngModel)]="selectedPhotoType" (change)="onPhotoTypeChange($event.value)"
+              class="photo-type-group">
+              <mat-radio-button value="photo">Photo</mat-radio-button>
+              <mat-radio-button value="fsr">FSR</mat-radio-button>
+            </mat-radio-group>
+
+            <button mat-raised-button class="add-photo-btn" (click)="openPhotoEditView()">
+              ADD PHOTO
+            </button>
+          </div>
+
+          <!-- All Photos List with Remove -->
+          <div class="photos-list" *ngIf="getFilteredPhotos().length > 0">
+            <div class="photo-thumbnail" *ngFor="let photo of getFilteredPhotos()">
+              <img [src]="photo.url" [alt]="photo.name" />
+              <button mat-icon-button class="remove-btn" (click)="removePhoto(photo.id)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Signature Tab -->
+      <mat-tab label="Signature">
+        <div class="tab-content signature-tab">
+          <button mat-raised-button class="get-signature-btn" (click)="openSignatureDialog()">
+            GET SIGNATURE
+          </button>
+
+          <div class="signature-form">
+            <div class="name-display-row">
+              <span class="name-label">Name</span>
+              <span class="name-value">{{ savedSignatureName || '' }}</span>
+            </div>
+
+            <span class="sign-label">Sign</span>
+
+            <div class="signature-canvas-container">
+              <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- VisitWork Tab -->
+      <mat-tab label="VisitWork">
+        <div class="tab-content visitwork-tab">
+          <!-- First Row: Serial No, DG Hour, No. Of Start -->
+          <div class="form-row three-col">
+            <div class="form-field">
+              <label class="field-label">Serial No</label>
+              <span class="field-value readonly">{{ currentVisit?.serialNo }}</span>
+            </div>
+            <div class="form-field">
+              <label class="field-label">DG Hour</label>
+              <input type="number" class="field-input" placeholder="Enter DG Hours" [(ngModel)]="dgHours" />
+            </div>
+            <div class="form-field">
+              <label class="field-label">No. Of Start</label>
+              <input type="number" class="field-input" placeholder="Enter No. Of Start" [(ngModel)]="noOfStart" />
+            </div>
+          </div>
+
+          <!-- Second Row: Work Date, Status -->
+          <div class="form-row two-col">
+            <div class="form-field">
+              <label class="field-label">Work Date</label>
+              <span class="field-value readonly">{{ getCurrentDate() }}</span>
+            </div>
+            <div class="form-field">
+              <label class="field-label">Status</label>
+              <mat-form-field appearance="outline" class="status-select">
+                <mat-select [(value)]="workStatus">
+                  <mat-option value="work-pending">Work Pending</mat-option>
+                  <mat-option value="work-done">Work Done</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Corrective Action -->
+          <div class="form-field full-width">
+            <label class="field-label">Corrective Action</label>
+            <textarea class="field-textarea" rows="2" placeholder="Enter corrective action..."
+              [(ngModel)]="correctiveAction"></textarea>
+          </div>
+
+          <!-- Preventive Action -->
+          <div class="form-field full-width">
+            <label class="field-label">Preventive Action</label>
+            <textarea class="field-textarea" rows="2" placeholder="Enter preventive action..."
+              [(ngModel)]="preventiveAction"></textarea>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Feedback Tab -->
+      <mat-tab label="Feedback">
+        <div class="tab-content feedback-tab">
+          <button mat-raised-button class="customer-feedback-btn" (click)="openCustomerFeedback()">
+            CUSTOMER FEEDBACK
+          </button>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </ng-container>
+</div>
+
+<!-- Signature Dialog -->
+<div class="signature-dialog-overlay" *ngIf="showSignatureDialog" (click)="closeSignatureDialog()"></div>
+<div class="signature-dialog" *ngIf="showSignatureDialog">
+  <div class="dialog-header">
+    <button mat-button class="dialog-btn cancel-btn" (click)="closeSignatureDialog()">
+      CANCEL
+    </button>
+    <button mat-button class="dialog-btn clear-btn" (click)="clearDialogSignature()">
+      CLEAR
+    </button>
+    <button mat-button class="dialog-btn ok-btn" [disabled]="!isSignatureValid()" (click)="saveSignature()">
+      OK
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <div class="name-input-row">
+      <span class="input-label">Name</span>
+      <input type="text" class="name-input" placeholder="Enter Name" [(ngModel)]="signatureName"
+        (input)="onSignatureNameChange()" />
+    </div>
+
+    <div class="sign-instruction">Please sign below...</div>
+
+    <div class="dialog-signature-area">
+      <canvas id="dialogSignatureCanvas" class="dialog-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Feedback View (Full Screen) -->
+<div class="customer-feedback-view" *ngIf="showCustomerFeedback">
+  <!-- Header -->
+  <mat-toolbar class="feedback-toolbar" color="primary">
+    <button mat-icon-button (click)="closeCustomerFeedback()" aria-label="Go back">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="toolbar-title">Kala Service :: Customer Feedback</span>
+  </mat-toolbar>
+
+  <!-- Content -->
+  <div class="feedback-content">
+    <!-- Feedback Categories -->
+    <div class="feedback-category" *ngFor="let category of feedbackCategories">
+      <div class="category-header" (click)="toggleCategory(category.id)">
+        <mat-icon class="expand-icon">
+          {{ expandedCategories[category.id] ? 'indeterminate_check_box' : 'add_box' }}
+        </mat-icon>
+        <span class="category-label">{{ category.label }}</span>
+      </div>
+
+      <!-- Category Points (if expanded and has points) -->
+      <div class="category-points" *ngIf="expandedCategories[category.id] && category.points.length > 0">
+        <p *ngFor="let point of category.points" class="point-text">{{ point }}</p>
+      </div>
+
+      <div class="rating-options">
+        <label class="rating-option" *ngFor="let rating of ratings">
+          <span class="emoji-indicator" *ngIf="feedbackRatings[category.id] === rating.value">
+            {{ rating.emoji }}
+          </span>
+          <input type="radio" [name]="'rating-' + category.id" [value]="rating.value"
+            [(ngModel)]="feedbackRatings[category.id]">
+          <span class="radio-circle"></span>
+          <span class="rating-label">{{ rating.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- File Upload -->
+    <div class="file-upload-section">
+      <label class="upload-label">Upload Photo/Video:</label>
+      <div class="file-input-group">
+        <button mat-stroked-button class="choose-file-btn" (click)="openFeedbackSourceSheet()">
+          Choose File
+        </button>
+        <span class="file-name">{{ feedbackFileName }}</span>
+
+        <!-- Hidden file inputs -->
+        <input id="feedbackGalleryInput" type="file" accept="image/*" (change)="onFeedbackFileSelected($event)"
+          style="display: none;" />
+        <input id="feedbackMediaInput" type="file" accept="image/*,video/*" multiple
+          (change)="onFeedbackFileSelected($event)" style="display: none;" />
+      </div>
+      <div class="file-size-info" *ngIf="feedbackFileSize">
+        Your file size: <strong>{{ feedbackFileSize }}</strong>
+      </div>
+
+      <!-- Source Selection Bottom Sheet -->
+      <div class="source-sheet-overlay" *ngIf="showFeedbackSourceSheet" (click)="closeFeedbackSourceSheet()"></div>
+      <div class="source-bottom-sheet" *ngIf="showFeedbackSourceSheet">
+        <div class="sheet-header">
+          <h3>Select source</h3>
+        </div>
+        <div class="source-options">
+          <div class="source-option" (click)="selectFeedbackSource('media')">
+            <div class="source-icon media-icon">
+              <mat-icon>perm_media</mat-icon>
+            </div>
+            <span class="source-label">Media picker</span>
+          </div>
+          <div class="source-option" (click)="selectFeedbackSource('gallery')">
+            <div class="source-icon gallery-icon">
+              <mat-icon>collections</mat-icon>
+            </div>
+            <span class="source-label">Gallery</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="save-section">
+      <button mat-raised-button class="save-feedback-btn" (click)="saveFeedback()">
+        Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="errorMessage" class="errorModal">
+  <div class="errorModal-content">
+    <h2>Alert</h2>
+    <p>{{ errorMessage }}</p>
+    <button class="error-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>
+
+<div *ngIf="successMessage" class="successModal">
+  <div class="successModal_content">
+    <p>{{ successMessage }}</p>
+    <button class="success-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>
+
+<div *ngIf="warningMessage" class="warningModal">
+  <div class="warningModal_content">
+    <p>{{ warningMessage }}</p>
+    <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+<div class="dropdown-section">
+    <mat-form-field appearance="fill">
+      <mat-label>Select Profit Center</mat-label>
+      <mat-select [(ngModel)]="selectedProfitCenter" (selectionChange)="onProfitCenterChange($event.value)">
+        <mat-option *ngFor="let pc of profitCenters" [value]="pc.value">
+          {{ pc.value }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  
+    <mat-form-field appearance="fill">
+        <mat-label>{{ selectedRoleId ? getRoleNameById(selectedRoleId) : 'Select Role' }}</mat-label>
+      <mat-select [(ngModel)]="selectedRoleId" (selectionChange)="onRoleChange($event.value)">
+        <mat-option *ngFor="let role of roles" [value]="role.value">
+          {{ role.value }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  
+  <div class="table-container">
+    <table mat-table [dataSource]="pagePermissions" class="mat-elevation-z8 custom-table">
+      <!-- Page Permission Column -->
+      <ng-container matColumnDef="pagePermission">
+        <th mat-header-cell *matHeaderCellDef> Page Permission </th>
+        <td mat-cell *matCellDef="let element">
+          <mat-checkbox [(ngModel)]="element.permission"></mat-checkbox>
+        </td>
+      </ng-container>
+  
+      <!-- Page Name Column -->
+      <ng-container matColumnDef="pageName">
+        <th mat-header-cell *matHeaderCellDef> Page Name </th>
+        <td mat-cell *matCellDef="let element"> {{ element.pageName }} </td>
+      </ng-container>
+  
+      <tr mat-header-row *matHeaderRowDef="['pagePermission', 'pageName'];sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['pagePermission', 'pageName'];"></tr>
+    </table>
+  </div> 
+  <div style="text-align: center;">
+  <span *ngIf="successMessage" class="success-message">{{ successMessage }}</span>
+  </div>
+ <button mat-raised-button color="primary" class="submit-button" (click)="onSubmit()">Submit</button>
+   

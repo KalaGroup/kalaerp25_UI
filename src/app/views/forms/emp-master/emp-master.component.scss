@@ -1,0 +1,163 @@
+/* Container for the form */
+.form-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  /* Card styling */
+  mat-card {
+    max-width: 800px;
+    width: 100%;
+    margin: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Card header styling */
+  mat-card-header {
+    background-color: #3f51b5; /* Primary color */
+    color: white;
+    padding: 16px;
+    border-radius: 4px 4px 0 0;
+  }
+  
+  mat-card-title {
+    font-size: 1.5em;
+    font-weight: 500;
+  }
+  
+  /* Form fields styling */
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  /* Employee Code and Active Checkbox Container */
+.emp-code-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  
+  /* Active Checkbox Styling */
+  .active-checkbox {
+    margin-bottom: 12px;
+  }
+  
+  /* Employee Code Input Field Styling */
+  .emp-code-input {
+    flex: 1; /* Takes remaining space */
+    max-width: 300px; /* Adjust width as needed */
+  }
+  
+  /* Name fields layout */
+  .name-fields {
+    display: flex;
+    gap: 16px;
+  }
+  
+  .name-fields mat-form-field {
+    flex: 1;
+  }
+  
+  /* File input styling */
+  .file-input-container {
+    margin-bottom: 16px;
+  }
+  
+  input[type="file"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  
+  input[type="file"]::-webkit-file-upload-button {
+    visibility: hidden;
+  }
+  
+  input[type="file"]::before {
+    content: 'Choose File';
+    display: inline-block;
+    background-color: #3f51b5; /* Primary color */
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  
+  input[type="file"]:hover::before {
+    background-color: #303f9f; /* Darker primary color */
+  }
+  
+  /* VA Section styling */
+  .overtime-section {
+    margin-bottom: 16px;
+  }
+  
+  
+  /* Employee Type Section styling */
+  .employee-type-section {
+    margin-bottom: 16px;
+  }
+  
+  .employee-type-section h4 {
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  /* Card actions (buttons) styling */
+  mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px;
+
+    .success-message {
+        color: green;
+        font-weight: bold;
+        margin-left: 12px;
+        align-self: center;
+      }
+      
+      .error-message {
+        color: red;
+        font-weight: bold;
+        margin-left: 12px;
+        align-self: center;
+      }
+      
+  }
+  
+  /* Button styling */
+  button[mat-raised-button] {
+    font-weight: 500;
+  }
+  
+  button[mat-raised-button][color="primary"] {
+    background-color: #3f51b5; /* Primary color */
+    color: white;
+  }
+  
+  button[mat-raised-button][color="warn"] {
+    background-color: #f44336; /* Warn color */
+    color: white;
+  }
+  
+  /* Responsive design for smaller screens */
+  @media (max-width: 600px) {
+    .name-fields {
+      flex-direction: column;
+      gap: 0;
+    }
+  
+    mat-card {
+      margin: 16px;
+    }
+  }

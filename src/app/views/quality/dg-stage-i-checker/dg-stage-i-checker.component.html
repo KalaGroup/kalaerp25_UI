@@ -1,0 +1,731 @@
+<div class="checker-container">
+  <div class="filters-wrapper">
+    <div class="field-group profit-center-field">
+      <label class="field-label">Profit Center</label>
+      <mat-form-field appearance="outline">
+        <input matInput [value]="profitcenterName" readonly [size]="profitcenterName?.length || 20" />
+      </mat-form-field>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Stage</label>
+      <mat-form-field appearance="outline">
+        <mat-select [(ngModel)]="selectedStage" (selectionChange)="onStageChange()" placeholder="Select Stage">
+          <mat-option *ngFor="let stage of stages" [value]="stage.value">
+            {{ stage.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Error Modal -->
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Error</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" (click)="onErrorOk()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <div class="success-icon">✓</div>
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="onSuccessOk()">OK</button>
+    </div>
+  </div>
+
+  <!-- Warning Modal -->
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <h2>Warning</h2>
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="onWarningOk()">OK</button>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-container">
+    <div class="table-wrapper">
+
+      <!-- STAGE 1 & STAGE 2 TABLE -->
+      <table mat-table [dataSource]="dataSource" *ngIf="!isStage3()">
+        <ng-container matColumnDef="srNo">
+          <th mat-header-cell *matHeaderCellDef>Sr No</th>
+          <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="jobCardNo">
+          <th mat-header-cell *matHeaderCellDef>Job Card No</th>
+          <td mat-cell *matCellDef="let element">
+            <span class="job-link" (click)="onJobCardClick(element)">{{ element.jobCardNo }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="kva">
+          <th mat-header-cell *matHeaderCellDef>KVA</th>
+          <td mat-cell *matCellDef="let element">{{ element.kva }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="phase">
+          <th mat-header-cell *matHeaderCellDef>Phase</th>
+          <td mat-cell *matCellDef="let element">{{ element.phase }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="model">
+          <th mat-header-cell *matHeaderCellDef>Model</th>
+          <td mat-cell *matCellDef="let element">{{ element.model }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="jPriority">
+          <th mat-header-cell *matHeaderCellDef>Priority</th>
+          <td mat-cell *matCellDef="let element">{{ element.jPriority }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="engSrNo">
+          <th mat-header-cell *matHeaderCellDef>Eng Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.engSrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="altSrNo">
+          <th mat-header-cell *matHeaderCellDef>Alt Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.altSrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="batSrNo">
+          <th mat-header-cell *matHeaderCellDef>Bat Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.batSrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bat2SrNo">
+          <th mat-header-cell *matHeaderCellDef>Bat2 Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.bat2SrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bat3SrNo">
+          <th mat-header-cell *matHeaderCellDef>Bat3 Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.bat3SrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bat4SrNo">
+          <th mat-header-cell *matHeaderCellDef>Bat4 Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.bat4SrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bat5SrNo">
+          <th mat-header-cell *matHeaderCellDef>Bat5 Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.bat5SrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bat6SrNo">
+          <th mat-header-cell *matHeaderCellDef>Bat6 Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.bat6SrNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cpySrNo">
+          <th mat-header-cell *matHeaderCellDef>Canopy Sr No</th>
+          <td mat-cell *matCellDef="let element">{{ element.cpySrNo }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- STAGE 3 TABLE -->
+      <table mat-table [dataSource]="stage3DataSource" *ngIf="isStage3()">
+        <ng-container matColumnDef="srNo">
+          <th mat-header-cell *matHeaderCellDef>Sr No</th>
+          <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pfbCode">
+          <th mat-header-cell *matHeaderCellDef>PFB Code</th>
+          <td mat-cell *matCellDef="let element">
+            <span class="job-link" (click)="onJobCardClick(element)">{{ element.pfbCode }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="kva">
+          <th mat-header-cell *matHeaderCellDef>KVA</th>
+          <td mat-cell *matCellDef="let element">{{ element.kva }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="engine">
+          <th mat-header-cell *matHeaderCellDef>Engine</th>
+          <td mat-cell *matCellDef="let element">{{ element.engine }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="alternator">
+          <th mat-header-cell *matHeaderCellDef>Alternator</th>
+          <td mat-cell *matCellDef="let element">{{ element.alternator }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="canopy">
+          <th mat-header-cell *matHeaderCellDef>Canopy</th>
+          <td mat-cell *matCellDef="let element">{{ element.canopy }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="controlPanel1">
+          <th mat-header-cell *matHeaderCellDef>Control Panel 1</th>
+          <td mat-cell *matCellDef="let element">{{ element.controlPanel1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="controlPanel2">
+          <th mat-header-cell *matHeaderCellDef>Control Panel 2</th>
+          <td mat-cell *matCellDef="let element">{{ element.controlPanel2 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="battery1">
+          <th mat-header-cell *matHeaderCellDef>Battery 1</th>
+          <td mat-cell *matCellDef="let element">{{ element.battery1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="battery2">
+          <th mat-header-cell *matHeaderCellDef>Battery 2</th>
+          <td mat-cell *matCellDef="let element">{{ element.battery2 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="battery3">
+          <th mat-header-cell *matHeaderCellDef>Battery 3</th>
+          <td mat-cell *matCellDef="let element">{{ element.battery3 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="battery4">
+          <th mat-header-cell *matHeaderCellDef>Battery 4</th>
+          <td mat-cell *matCellDef="let element">{{ element.battery4 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="battery5">
+          <th mat-header-cell *matHeaderCellDef>Battery 5</th>
+          <td mat-cell *matCellDef="let element">{{ element.battery5 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="battery6">
+          <th mat-header-cell *matHeaderCellDef>Battery 6</th>
+          <td mat-cell *matCellDef="let element">{{ element.battery6 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="krm">
+          <th mat-header-cell *matHeaderCellDef>KRM</th>
+          <td mat-cell *matCellDef="let element">{{ element.krm }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- Empty state message -->
+      <div *ngIf="(isStage3() ? stage3DataSource.length : dataSource.length) === 0" class="empty-state">
+        <p *ngIf="!selectedStage">Please select a stage to view data</p>
+        <p *ngIf="selectedStage">No records found</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- QUALITY CHECKPOINT MODAL -->
+<!-- ============================================ -->
+<div class="modal-overlay" *ngIf="isQualityModalOpen">
+  <div class="modal-container quality-modal">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <span class="modal-title">Quality Process Check</span>
+      <div class="modal-header-actions">
+        <!-- Rework Button -->
+        <button class="btn-rework" (click)="onRework()" [class.active]="defectActionType === 'Rework'">
+          Rework
+          <span *ngIf="defectActionType === 'Rework' && hasDefectData" class="badge">✓</span>
+        </button>
+
+        <!-- Reject Button -->
+        <button class="btn-reject" (click)="onReject()" [class.active]="defectActionType === 'Reject'">
+          Reject
+          <span *ngIf="defectActionType === 'Reject' && hasDefectData" class="badge">✓</span>
+        </button>
+
+        <!-- Accept Button -->
+        <button class="btn-accept" (click)="onAccept()">Accept</button>
+
+        <!-- Save Button - Only shows when defects are added for Rework/Reject -->
+        <button class="btn-save-final" *ngIf="hasDefectData" (click)="onSaveReworkReject()">
+          Save {{ defectActionType }}
+        </button>
+
+        <button class="modal-close" (click)="closeQualityModal()">×</button>
+      </div>
+    </div>
+
+    <!-- Defect Status Indicator -->
+    <div class="defect-status-bar" *ngIf="hasDefectData">
+      <span class="status-icon">📋</span>
+      <span class="status-text">
+        {{ defectActionType }} - {{ getDefectsCountFromTemp() }} defect(s) added
+      </span>
+      <button class="btn-edit-defects" (click)="openDefectModal()">Edit Defects</button>
+    </div>
+
+    <!-- Job Card Details Section - Stage 1 & 2 -->
+    <div class="job-details-section" *ngIf="selectedJobCardForQuality">
+      <div class="detail-row">
+        <div class="detail-item">
+          <span class="detail-label">Stage:</span>
+          <span class="detail-value">{{ getStageLabel(modalSelectedStage) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Job Card No:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.jobCardNo }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Priority:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.jPriority }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">KVA:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.kva }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Phase:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.phase }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Model:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.model }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Eng Sr No:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.engSrNo }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Alt Sr No:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.altSrNo }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.partDesc)">
+          <span class="detail-label">Part Desc:</span>
+          <span class="detail-value">{{ selectedJobCardForQuality.partDesc }}</span>
+        </div>
+        <!-- Stage 2 Additional Details -->
+        <ng-container *ngIf="modalSelectedStage === 'Stage2'">
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.batSrNo)">
+            <span class="detail-label">Bat Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.batSrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.bat2SrNo)">
+            <span class="detail-label">Bat2 Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.bat2SrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.bat3SrNo)">
+            <span class="detail-label">Bat3 Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.bat3SrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.bat4SrNo)">
+            <span class="detail-label">Bat4 Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.bat4SrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.bat5SrNo)">
+            <span class="detail-label">Bat5 Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.bat5SrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.bat6SrNo)">
+            <span class="detail-label">Bat6 Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.bat6SrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCardForQuality.cpySrNo)">
+            <span class="detail-label">Canopy Sr No:</span>
+            <span class="detail-value">{{ selectedJobCardForQuality.cpySrNo }}</span>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Job Card Details Section - Stage 3 -->
+    <div class="job-details-section" *ngIf="selectedStage3JobCardForQuality">
+      <div class="detail-row">
+        <div class="detail-item">
+          <span class="detail-label">Stage:</span>
+          <span class="detail-value">{{ getStageLabel(modalSelectedStage) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">PFB Code:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.pfbCode }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">KVA:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.kva }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.engine)">
+          <span class="detail-label">Engine:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.engine }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.alternator)">
+          <span class="detail-label">Alternator:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.alternator }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.canopy)">
+          <span class="detail-label">Canopy:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.canopy }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.controlPanel1)">
+          <span class="detail-label">Control Panel 1:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.controlPanel1 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.controlPanel2)">
+          <span class="detail-label">Control Panel 2:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.controlPanel2 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.krm)">
+          <span class="detail-label">KRM:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.krm }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.battery1)">
+          <span class="detail-label">Battery 1:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.battery1 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.battery2)">
+          <span class="detail-label">Battery 2:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.battery2 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.battery3)">
+          <span class="detail-label">Battery 3:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.battery3 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.battery4)">
+          <span class="detail-label">Battery 4:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.battery4 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.battery5)">
+          <span class="detail-label">Battery 5:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.battery5 }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCardForQuality.battery6)">
+          <span class="detail-label">Battery 6:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.battery6 }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Part Desc:</span>
+          <span class="detail-value">{{ selectedStage3JobCardForQuality.partDesc }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quality Checkpoint Table -->
+    <div class="modal-table-container">
+      <div class="modal-table-wrapper">
+        <div *ngIf="isLoadingCheckpoints" class="loading-state">
+          <p>Loading quality checkpoints...</p>
+        </div>
+
+        <table mat-table [dataSource]="qualityCheckpointDataSource"
+          *ngIf="!isLoadingCheckpoints && qualityCheckpointDataSource.length > 0">
+
+          <ng-container matColumnDef="srNo">
+            <th mat-header-cell *matHeaderCellDef>Sr.No.</th>
+            <td mat-cell *matCellDef="let element">{{ element.srNo }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="subAssemblyPart">
+            <th mat-header-cell *matHeaderCellDef>Sub-Assembly Part</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">{{ element.subAssemblyPart }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="qualityProcessCheckpoint">
+            <th mat-header-cell *matHeaderCellDef>Quality/Process Checkpoint</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">{{ element.qualityProcessCheckpoint }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="specification">
+            <th mat-header-cell *matHeaderCellDef>Specification</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">{{ element.specification }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="remark">
+            <th mat-header-cell *matHeaderCellDef>Remark</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <input type="text" class="table-input" [(ngModel)]="element.remark" placeholder="Enter remark" />
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="ok">
+            <th mat-header-cell *matHeaderCellDef>OK</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content checkbox-cell">
+                <mat-checkbox [checked]="element.ok" (change)="onToggleOk(element)" color="primary">
+                </mat-checkbox>
+              </div>
+            </td>
+          </ng-container>
+          <!-- 6M Column -->
+          <ng-container matColumnDef="sixM">
+            <th mat-header-cell *matHeaderCellDef>6M</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <mat-form-field appearance="outline" class="sixm-dropdown">
+                  <mat-select [(ngModel)]="element.sixM" placeholder="Select" (selectionChange)="on6MChange(element)">
+                    <mat-option *ngFor="let option of sixMOptions" [value]="option.value">
+                      {{ option.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="raiseEsp">
+            <th mat-header-cell *matHeaderCellDef>Raise ESP</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content esp-cell">
+                <div class="esp-input-wrapper" [class.disabled]="!is6MSelected(element)">
+                  <input type="text" [matAutocomplete]="auto" [(ngModel)]="element.raiseEsp"
+                    [value]="getEmployeeLabel(element.raiseEsp)" (input)="filterEmployees($event)"
+                    (focus)="onEspFocus()"
+                    [placeholder]="is6MSelected(element) ? 'Search employee...' : 'Select 6M first'"
+                    class="esp-search-input" [disabled]="!is6MSelected(element)" />
+                  <button *ngIf="element.raiseEsp && is6MSelected(element)" type="button" class="esp-clear-btn"
+                    (click)="clearEspSelection(element, $event)" title="Clear">×</button>
+                  <mat-autocomplete #auto="matAutocomplete"
+                    (optionSelected)="onEmployeeSelected(element, $event.option.value)"
+                    [displayWith]="displayEmployeeFn">
+                    <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.value">
+                      {{ emp.label }}
+                    </mat-option>
+                    <mat-option *ngIf="filteredEmployees.length === 0" disabled>
+                      No employees found
+                    </mat-option>
+                  </mat-autocomplete>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+
+          <tr mat-header-row *matHeaderRowDef="qualityCheckpointColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: qualityCheckpointColumns;" [class.ok-row]="row.ok"></tr>
+        </table>
+
+        <div *ngIf="!isLoadingCheckpoints && qualityCheckpointDataSource.length === 0" class="empty-state">
+          <p>No quality checkpoints found</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DEFECT MODAL -->
+<!-- ============================================ -->
+<div class="modal-overlay defect-modal-overlay" *ngIf="isModalOpen">
+  <div class="modal-container defect-modal">
+    <div class="modal-header">
+      <span class="modal-title">
+        <span class="action-badge"
+          [ngClass]="{'rework': defectActionType === 'Rework', 'reject': defectActionType === 'Reject'}">
+          {{ defectActionType }}
+        </span>
+        Select Defect Type
+      </span>
+      <div class="modal-header-actions">
+        <span class="defect-count">
+          {{ getCompleteDefectsCount() }}/{{ getDefectsCount() }} complete
+        </span>
+        <button class="btn-save" (click)="onSaveDefectsTemp()">
+          OK
+        </button>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+    </div>
+
+    <!-- Job Card Details Section - Stage 1 & 2 -->
+    <div class="job-details-section" *ngIf="!isStage3ForDefect()">
+      <div class="detail-row">
+        <div class="detail-item">
+          <span class="detail-label">Stage:</span>
+          <span class="detail-value">{{ getStageLabel(defectModalStage) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Job Card No:</span>
+          <span class="detail-value">{{ selectedJobCard?.jobCardNo }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Model:</span>
+          <span class="detail-value">{{ selectedJobCard?.model }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Eng Sr No:</span>
+          <span class="detail-value">{{ selectedJobCard?.engSrNo }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Alt Sr No:</span>
+          <span class="detail-value">{{ selectedJobCard?.altSrNo }}</span>
+        </div>
+        <ng-container *ngIf="defectModalStage === 'Stage2'">
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCard?.batSrNo)">
+            <span class="detail-label">Bat Sr No:</span>
+            <span class="detail-value">{{ selectedJobCard?.batSrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCard?.bat2SrNo)">
+            <span class="detail-label">Bat2 Sr No:</span>
+            <span class="detail-value">{{ selectedJobCard?.bat2SrNo }}</span>
+          </div>
+          <div class="detail-item" *ngIf="isValidValue(selectedJobCard?.cpySrNo)">
+            <span class="detail-label">Canopy Sr No:</span>
+            <span class="detail-value">{{ selectedJobCard?.cpySrNo }}</span>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Job Card Details Section - Stage 3 -->
+    <div class="job-details-section" *ngIf="isStage3ForDefect()">
+      <div class="detail-row">
+        <div class="detail-item">
+          <span class="detail-label">Stage:</span>
+          <span class="detail-value">{{ getStageLabel(defectModalStage) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">PFB Code:</span>
+          <span class="detail-value">{{ selectedStage3JobCard?.pfbCode }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCard?.kva)">
+          <span class="detail-label">KVA:</span>
+          <span class="detail-value">{{ selectedStage3JobCard?.kva }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCard?.engine)">
+          <span class="detail-label">Engine:</span>
+          <span class="detail-value">{{ selectedStage3JobCard?.engine }}</span>
+        </div>
+        <div class="detail-item" *ngIf="isValidValue(selectedStage3JobCard?.alternator)">
+          <span class="detail-label">Alternator:</span>
+          <span class="detail-value">{{ selectedStage3JobCard?.alternator }}</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Defect Table -->
+    <div class="modal-table-container">
+      <div class="modal-table-wrapper">
+        <table mat-table [dataSource]="defectDataSource">
+
+          <!-- REMOVED: Select Column -->
+
+          <ng-container matColumnDef="srNo">
+            <th mat-header-cell *matHeaderCellDef>SrNo</th>
+            <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="defectName">
+            <th mat-header-cell *matHeaderCellDef>Defect Name</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">{{ element.defectName }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actualValue">
+            <th mat-header-cell *matHeaderCellDef>Actual Value</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <span *ngIf="!element.isEditing">{{ element.actualValue }}</span>
+                <input *ngIf="element.isEditing" [(ngModel)]="element.actualValue" class="edit-input"
+                  (keypress)="onNumericKeyPress($event)" (paste)="onNumericPaste($event)"
+                  (input)="onNumericInput($event, element, 'actualValue')"
+                  (blur)="onNumericBlur($event, element, 'actualValue')" />
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="tolerance">
+            <th mat-header-cell *matHeaderCellDef>Tolerance</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <span *ngIf="!element.isEditing">{{ element.tolerance }}</span>
+                <input *ngIf="element.isEditing" [(ngModel)]="element.tolerance" class="edit-input"
+                  (keypress)="onNumericKeyPress($event)" (paste)="onNumericPaste($event)"
+                  (input)="onNumericInput($event, element, 'tolerance')"
+                  (blur)="onNumericBlur($event, element, 'tolerance')" />
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="instrument">
+            <th mat-header-cell *matHeaderCellDef>Instrument</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <span *ngIf="!element.isEditing">{{ element.instrument }}</span>
+                <input *ngIf="element.isEditing" [(ngModel)]="element.instrument" class="edit-input" />
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="rate">
+            <th mat-header-cell *matHeaderCellDef>Rate</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">{{ element.rate }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="fromRange">
+            <th mat-header-cell *matHeaderCellDef>From Range</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <span *ngIf="!element.isEditing">{{ element.fromRange }}</span>
+                <input *ngIf="element.isEditing" [(ngModel)]="element.fromRange" class="edit-input"
+                  (keypress)="onNumericKeyPress($event)" (paste)="onNumericPaste($event)"
+                  (input)="onNumericInput($event, element, 'fromRange')"
+                  (blur)="onNumericBlur($event, element, 'fromRange')" />
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="toRange">
+            <th mat-header-cell *matHeaderCellDef>To Range</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content">
+                <span *ngIf="!element.isEditing">{{ element.toRange }}</span>
+                <input *ngIf="element.isEditing" [(ngModel)]="element.toRange" class="edit-input"
+                  (keypress)="onNumericKeyPress($event)" (paste)="onNumericPaste($event)"
+                  (input)="onNumericInput($event, element, 'toRange')"
+                  (blur)="onNumericBlur($event, element, 'toRange')" />
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="cell-content action-cell">
+                <ng-container *ngIf="!element.isEditing">
+                  <span class="edit-link" (click)="onEditDefect(element)">Edit</span>
+                  <span *ngIf="isDefectComplete(element)" class="status-icon complete" title="Complete">✓</span>
+                  <span *ngIf="!isDefectComplete(element)" class="status-icon incomplete" title="Incomplete">!</span>
+                </ng-container>
+                <div *ngIf="element.isEditing" class="action-buttons">
+                  <button class="btn-update" (click)="onUpdateDefect(element)">Update</button>
+                  <button class="btn-cancel" (click)="onCancelEdit(element)">Cancel</button>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="defectDisplayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: defectDisplayedColumns;" [class.editing-row]="row.isEditing"
+            [class.complete-row]="isDefectComplete(row)"
+            [class.incomplete-row]="!isDefectComplete(row) && !row.isEditing"></tr>
+        </table>
+
+        <div *ngIf="defectDataSource.length === 0" class="empty-state">
+          <p>No defects found</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

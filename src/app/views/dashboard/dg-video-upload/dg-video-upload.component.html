@@ -1,0 +1,156 @@
+<!-- upload-video-pdf.component.html -->
+
+<div class="upload-container">
+  <!-- Header -->
+  <div class="header">
+    <!-- <button class="back-btn" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i>
+    </button> -->
+    <h1 class="header-title">DG Assembly :: Upload Video/PDF</h1>
+  </div>
+
+  <!-- Form Card -->
+  <div class="form-card">
+    <h2 class="form-title">Upload Video/PDF</h2>
+
+    <!-- Upload For Section -->
+    <div class="form-group">
+      <label class="form-label">Upload For:</label>
+      <div class="radio-group">
+        <label class="radio-option" [class.selected]="uploadFor === 'TestReport'">
+          <input type="radio" name="uploadFor" value="TestReport" [(ngModel)]="uploadFor">
+          <span class="radio-custom"></span>
+          <span class="radio-text">Test Report</span>
+        </label>
+        <label class="radio-option" [class.selected]="uploadFor === 'PDIR'">
+          <input type="radio" name="uploadFor" value="PDIR" [(ngModel)]="uploadFor">
+          <span class="radio-custom"></span>
+          <span class="radio-text">PDIR</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Engine Sr No Section -->
+    <!-- <div class="form-group">
+      <label class="form-label">Engine Sr No:</label>
+      <input type="text" class="form-input" placeholder="Enter Engine Serial Number" [(ngModel)]="engineSrNo">
+    </div> -->
+
+    <div class="form-group">
+      <label class="form-label">Engine Sr No:</label>
+      <input isFormValid type="text" class="form-input" [class.input-error]="engineSrNo && engineSrNo.length < 10"
+        placeholder="Enter Engine Serial Number (e.g., 3H.8407/1724185)" [(ngModel)]="engineSrNo">
+      <span class="error-text" *ngIf="engineSrNo && engineSrNo.length > 0 && engineSrNo.length < 10">
+        Engine Sr No must be at least 10 characters
+      </span>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="form-group">
+      <label class="form-label">Upload Video/PDF:</label>
+      <div class="file-upload-wrapper">
+        <button class="file-upload-btn" (click)="openFileChooser()">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Choose File</span>
+        </button>
+        <span class="file-name">{{ selectedFileName || 'No file chosen' }}</span>
+      </div>
+
+      <!-- File Preview -->
+      <div class="file-preview" *ngIf="selectedFile">
+        <div class="preview-item">
+          <i [class]="getFileIcon()"></i>
+          <span class="preview-name">{{ selectedFileName }}</span>
+          <span class="preview-size">{{ getFileSize() }}</span>
+          <button class="remove-btn" (click)="removeFile()">
+            <!-- <i class="fas fa-times"></i> -->
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <p class="file-hint">
+        Supported formats: JPG, JPEG, PNG, MP3, MP4, MOV, PDF, WMV, FLV, AVI, MPG, WAV, MPEG, DAT (Max 500MB)
+      </p>
+
+    </div>
+
+    <!-- Submit Button -->
+    <button class="upload-btn" (click)="uploadFile()" [disabled]="!isFormValid()">
+      <i class="fas fa-upload"></i>
+      Upload
+    </button>
+  </div>
+</div>
+
+<!-- File Chooser Bottom Sheet -->
+<div class="overlay" *ngIf="showFileChooser" (click)="closeFileChooser()"></div>
+<div class="file-chooser-sheet" [class.open]="showFileChooser">
+  <div class="sheet-header">
+    <span class="sheet-title">File Chooser</span>
+    <button class="close-btn" (click)="closeFileChooser()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <div class="sheet-content">
+    <div class="chooser-option" (click)="openCamera()">
+      <div class="option-icon camera">
+        <mat-icon>photo_camera</mat-icon>
+      </div>
+      <span class="option-label">Camera</span>
+      <!-- <span class="option-sublabel">Camcorder</span> -->
+    </div>
+
+    <div class="chooser-option" (click)="openGallery()">
+      <div class="option-icon gallery">
+        <mat-icon>collections</mat-icon>
+      </div>
+      <span class="option-label">Photos/videos</span>
+      <!-- <span class="option-sublabel">videos</span> -->
+    </div>
+
+    <div class="chooser-option" (click)="openFileBrowser()">
+      <div class="option-icon files">
+        <mat-icon>perm_media</mat-icon>
+      </div>
+      <span class="option-label">Browse</span>
+      <!-- <span class="option-sublabel">Files</span> -->
+    </div>
+  </div>
+</div>
+
+
+<!-- Hidden File Inputs -->
+<input type="file" #cameraInput accept="image/*" capture="environment" (change)="onFileSelected($event)"
+  style="display: none;">
+
+<input type="file" #galleryInput accept="image/jpg,image/jpeg,image/png,video/mp4,video/quicktime"
+  (change)="onFileSelected($event)" style="display: none;">
+
+<input type="file" #fileInput [accept]="acceptedFileTypes" (change)="onFileSelected($event)" style="display: none;">
+
+
+<div *ngIf="errorMessage" class="errorModal">
+  <div class="errorModal-content">
+    <h2>Alert</h2>
+    <p>
+      {{ errorMessage }}
+    </p>
+    <button class="error-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>
+
+<div *ngIf="successMessage" class="successModal">
+  <div class="successModal_content">
+    <p>{{ successMessage }}</p>
+    <button class="success-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>
+
+<div *ngIf="warningMessage" class="warningModal">
+  <div class="warningModal_content">
+    <p>{{ warningMessage }}</p>
+    <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>

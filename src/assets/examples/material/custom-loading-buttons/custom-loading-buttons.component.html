@@ -1,0 +1,11 @@
+<h3>ngModule</h3>
+<p class="text-muted mb-6"><span>SharedComponentsModule</span></p>
+
+<button-loading
+  *ngFor="let btn of buttons"
+  [loading]="btn.loading"
+  class="mr-4 rtl:ml-4"
+  [color]="btn.name"
+  (click)="showLoading(btn)"
+  >Click Me</button-loading
+>

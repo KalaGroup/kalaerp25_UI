@@ -1,0 +1,60 @@
+<div class="seciton-left">
+  <div class="section-left-content">
+    <h1 class="text-36 font-light">Don't have an account?</h1>
+    <p class="mb-6 text-small">Contact Admin&#64;kalabiz.com</p>
+  </div>
+</div>
+
+
+<div class="form-holder h-screen mat-bg-card mat-elevation-z4" [perfectScrollbar]="{}">
+  <form
+    [formGroup]="signinForm"
+    class="signup-form flex flex-col"
+    (ngSubmit)="signin()"
+  >
+    <!-- headline -->
+    <div class="form-headline text-center mb-8">
+      <h2 class="font-bold">Sign in to your KalaGenset Account</h2>
+    </div>
+    <div class="mb-8 flex flex-wrap justify-center items-center">
+      <img
+        width="200px"
+        src="assets/images/illustrations/kalagroup.jpg"
+        alt=""
+      />
+    </div>
+
+    <mat-form-field class="full-width">
+      <mat-label>User Name</mat-label>
+      <input
+        matInput
+        formControlName="username"
+        type="email"
+        name="username"
+        placeholder="username"
+      />
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Password</mat-label>
+      <input
+        matInput
+        formControlName="password"
+        type="password"
+        name="password"
+        placeholder="********"
+      />
+    </mat-form-field>
+
+    <div *ngIf="errorMsg" class="error-message text-center text-red-500 mb-4">
+      {{ errorMsg }}
+    </div>
+
+    <button  mat-raised-button color="primary" class="!mb-4">Signin</button>
+
+    <mat-divider></mat-divider>
+
+    
+
+  </form>
+</div>

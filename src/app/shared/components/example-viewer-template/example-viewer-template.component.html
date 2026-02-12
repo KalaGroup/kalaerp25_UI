@@ -1,0 +1,5 @@
+<div class="m-3">
+  <div *ngFor="let example of examples" class="mb-6">
+    <egret-example-viewer [exampleId]="example" [path]="componentDirPath" [data]="exampleComponents[example]"></egret-example-viewer>
+  </div>
+</div>

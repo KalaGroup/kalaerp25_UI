@@ -1,0 +1,175 @@
+.jobcard-container {
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.section-subtitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.jobcard-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 25px;
+
+  mat-form-field {
+    flex: 1 1 250px;
+  }
+
+  button {
+    height: 40px;
+    align-self: end;
+  }
+}
+
+.full-width-table {
+  width: 100%;
+  overflow: auto;
+}
+
+.no-record {
+  text-align: center;
+  font-style: italic;
+  color: gray;
+}
+
+.scrollable-table-wrapper {
+  overflow-x: auto;
+  max-height: 500px; // Adjust as needed
+  overflow-y: auto;
+  max-width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  scrollbar-width: thin;
+}
+
+.custom-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', sans-serif;
+
+  th {
+    position: sticky;
+    z-index: 2;
+    background: #8146cf;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 10px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+  }
+
+  tr:nth-child(even) {
+    background-color: #b7c2fffb;
+  }
+
+  tr:hover {
+    background-color: #e3f2fd;
+  }
+
+  .qty-input {
+    width: 60px;
+    padding: 4px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .partdesc-cell {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    color: #1e88e5;
+  }
+
+  .no-record {
+    text-align: center;
+    font-style: italic;
+    color: #888;
+    padding: 12px;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.qty-field {
+  width: 60px !important; /* Or adjust based on your layout */
+  margin: 0;
+  padding-left: 0 !important;
+}
+
+.qty-cell-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* center horizontally inside td */
+  padding: 0;
+  margin: 0;
+}
+
+.qty-field input {
+  text-align: center;
+}
+
+.scrollable-partdesc-cell {
+  max-width: 150px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background-color: #e0e0e0;
+
+  /* Optional: visual cue for scroll */
+  scrollbar-width: thin; /* Firefox */
+  -ms-overflow-style: auto; /* IE 10+ */
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+  }
+}
+
+.remark-section {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.remark-field {
+  flex: 1;
+  min-width: 250px;
+}
+
+
+
+

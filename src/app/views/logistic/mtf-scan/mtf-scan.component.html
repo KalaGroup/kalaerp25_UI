@@ -1,0 +1,147 @@
+<div class="qrcode-container">
+  <!-- Header -->
+  <div class="header">
+    <h1 class="title">QRCode Scan for MTF</h1>
+    <button class="save-button" (click)="onSave()" [disabled]="isSaveDisabled()">
+      <mat-icon class="save-icon">save</mat-icon>
+      SAVE
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+        {{ errorMessage }}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+   <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Form Content -->
+  <div class="form-content">
+    <!-- To PC Name Dropdown -->
+    <div class="form-group">
+      <label class="form-label">To PCName</label>
+      <mat-form-field appearance="fill" class="full-width">
+        <mat-select [(ngModel)]="toPCName" (selectionChange)="onPCNameChange()">
+          <mat-option *ngFor="let option of pcNameOptions" [value]="option.PCCode">
+            {{ option.PCName }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- MTF No Dropdown -->
+    <div class="form-group">
+      <label class="form-label">MTF No</label>
+      <mat-form-field appearance="fill" class="full-width">
+        <mat-select [(ngModel)]="mtfNo" (selectionChange)="onMTFNoChange()">
+          <mat-option *ngFor="let option of mtfNoOptions" [value]="option.MTFNo">
+            {{ option.MTFCode }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Kit PartDesc Display -->
+    <div class="form-group">
+      <span class="field-label">Kit PartDesc</span>
+      <span class="field-value field-value-bold">{{ kitPartDesc }}</span>
+    </div>
+
+    <!-- MTF Qty and Search Button -->
+    <div class="form-group qty-group">
+      <div class="qty-field">
+        <label class="form-label">MTF Qty</label>
+        <span class="field-value field-value-bold">{{ mtfQty }}</span>
+      </div>
+
+      <!-- <button class="search-button" (click)="searchPartDetails()">
+        SEARCH PART DETAILS
+      </button> -->
+      <button class="search-button" (click)="searchPartDetails()" [disabled]="isSearchDisabled()"
+        [ngClass]="{'button-disabled': isSearchDisabled()}">
+        SEARCH PART DETAILS
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Part Details Cards Section -->
+  <div class="part-details-section" *ngIf="showPartDetails">
+    <h2 class="section-title">Part Details</h2>
+
+    <div class="cards-container">
+      <mat-card class="part-card" *ngFor="let part of partDetailsList; let i = index">
+        <mat-card-header>
+          <div mat-card-avatar class="card-icon" [style.background-color]="getCategoryColor(part.Catname)">
+            <mat-icon>{{ getCategoryIcon(part.Catname) }}</mat-icon>
+          </div>
+          <mat-card-title>{{ part.Catname }}</mat-card-title>
+          <span class="card-sequence">{{ i + 1 }}</span>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="detail-row">
+            <span class="detail-label">Part Description:</span>
+            <span class="detail-value">{{ part.PartDesc }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Part Code:</span>
+            <span class="detail-value">{{ part.PartCode }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Serial No:</span>
+            <span class="detail-value serial-no">{{ part.SerialNo }}</span>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button mat-button color="primary" (click)="openQrScanner(part, i)" [disabled]="part.scanStatus === 'done'">
+            <mat-icon>qr_code_scanner</mat-icon>
+            SCAN QR
+          </button>
+          <span *ngIf="part.scanStatus === 'done'" class="scan-done-status">Done</span>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Full Screen QR Scanner -->
+  <div class="qr-scanner-fullscreen" *ngIf="showQrScanner">
+    <div class="qr-scanner-overlay">
+      <div class="qr-scanner-header">
+        <h2>Scan QR Code</h2>
+        <button class="close-scanner-btn" (click)="closeQrScanner()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="qr-scanner-content">
+        <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event)">
+        </zxing-scanner>
+      </div>
+      <div class="qr-scanner-info">
+        <p>Scanning for: <strong>{{ currentScanningCard?.Catname }}</strong></p>
+        <p>Expected Serial: <strong>{{ currentScanningCard?.SerialNo }}</strong></p>
+      </div>
+    </div>
+  </div>
+
+</div>

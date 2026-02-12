@@ -1,0 +1,83 @@
+.admin-page-container {
+    margin: 20px auto;
+    max-width: 800px;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .admin-header {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #3f51b5; /* Material primary color */
+    margin-bottom: 20px;
+  }
+  
+  .dropdown-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .dropdown-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  
+  .dropdown-field {
+    flex: 1;
+  }
+  
+  label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+    color: #555;
+  }
+  
+  .dropdown {
+    width: 100%;
+  }
+
+
+  .button-container {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .submit-button {
+    font-size: 16px;
+    padding: 10px 20px;
+    background-color: #007bff; /* Attractive blue color */
+    color: #fff;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .submit-button:hover {
+    background-color: #0056b3;
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .error-message {
+    color: red;
+    font-size: 14px;
+    margin: 10px 0;
+    text-align: center;
+  }
+
+  .success-message {
+    color: green;
+    font-size: 14px;
+    margin: 10px 0;
+    text-align: center;
+  }
+  
+  
+  

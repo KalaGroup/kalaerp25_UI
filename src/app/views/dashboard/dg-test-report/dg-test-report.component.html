@@ -1,0 +1,1031 @@
+<div class="dg-stage-container">
+  <div class="header-container">
+    <h6 class="dg-stage-header">DG Test Report</h6>
+    <!-- <button mat-button class="save-button"
+        (click)="submitData()"
+        [disabled]="
+        (selectedTab === 'TRStart' && (!scanDetails?.TRStart?.engine?.qrSrNo || !scanDetails?.TRStart?.alternator?.qrSrNo)) ||
+        (selectedTab === 'TREnd' && (!scanDetails?.TREnd?.engine?.qrSrNo || !scanDetails?.TREnd?.alternator?.qrSrNo)) ||
+        (selectedTab === 'DGStart' && (!scanDetails?.DGStart?.engine?.qrSrNo || !scanDetails?.DGStart?.alternator?.qrSrNo)) ||
+        (selectedTab === 'DGEnd' && (!scanDetails?.DGEnd?.engine?.qrSrNo || !scanDetails?.DGEnd?.alternator?.qrSrNo))"
+
+      [ngClass]="{
+               'disabled':(selectedTab === 'TRStart' && (!scanDetails?.TRStart?.engine?.qrSrNo || !scanDetails?.TRStart?.alternator?.qrSrNo)) ||
+               (selectedTab === 'TREnd' && (!scanDetails?.TREnd?.engine?.qrSrNo || !scanDetails?.TREnd?.alternator?.qrSrNo)) ||
+               (selectedTab === 'DGStart' && (!scanDetails?.DGStart?.engine?.qrSrNo || !scanDetails?.DGStart?.alternator?.qrSrNo)) ||
+               (selectedTab === 'DGEnd' && (!scanDetails?.DGEnd?.engine?.qrSrNo || !scanDetails?.DGEnd?.alternator?.qrSrNo))
+              }">
+  SAVE
+</button> -->
+
+    <button mat-button class="save-button" (click)="submitData()" [disabled]="isSaveDisabled()"
+      [ngClass]="{'disabled': isSaveDisabled()}">
+      SAVE
+    </button>
+
+  </div>
+
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+        {{ errorMessage }}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <mat-tab-group>
+    <mat-tab label="Scan Details">
+      <div class="tab-content">
+        <div class="scan-section">
+          <div class="scan-section-header">
+            <button class="scan-header" (click)="dgScanClick()">SCAN DG</button>
+          </div>
+          <div class="qr-scanner-container">
+            <div *ngIf="showQrScannerDGScan" class="qr-scanner-wrapper">
+              <div class="qr-scan-header">Scan QR Code</div>
+              <zxing-scanner [formats]="allowedFormats"
+                (scanSuccess)="handleQrCodeResult($event, 'dgscan')"></zxing-scanner>
+            </div>
+          </div>
+        </div>
+        <div class="label">
+          <label>TestReport(Start-End Details)</label>
+        </div>
+      </div>
+
+      <div class="radio-button-wrapper">
+        <label class="custom-radio">
+          <input type="radio" name="scanDetailsTab" value="TRStart" [(ngModel)]="selectedTab">
+          <span class="radio-label">TRStart</span>
+        </label>
+
+        <label class="custom-radio">
+          <input type="radio" name="scanDetailsTab" value="DGStart" [(ngModel)]="selectedTab">
+          <span class="radio-label">DGStart</span>
+        </label>
+
+        <label class="custom-radio">
+          <input type="radio" name="scanDetailsTab" value="DGEnd" [(ngModel)]="selectedTab">
+          <span class="radio-label">DGEnd</span>
+        </label>
+
+        <label class="custom-radio">
+          <input type="radio" name="scanDetailsTab" value="TREnd" [(ngModel)]="selectedTab">
+          <span class="radio-label">TREnd</span>
+        </label>
+      </div>
+
+      <div class="tab-content">
+        <div class="scan-section-details">
+          <div class="scan-details">
+            <div>TRStartTime: {{ currentTimes.trstart }}</div>
+            <div>DGStartTime: {{ currentTimes.dgstart }}</div>
+            <div>DGEndTime: {{ currentTimes.dgend }}</div>
+            <div>TREndTime: {{ currentTimes.trend }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTab === 'TRStart'">
+        <div *ngIf="scanDetails?.TRStart">
+          <div class="tab-content">
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanEngineClick('TRStart')">SCAN ENGINE</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerEngineTRStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'engine')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedEngineQrResult  === scanDetails?.TRStart?.engine?.qrSrNo, 'Eng-qr-sr-no': scannedEngineQrResult  !== scanDetails?.TRStart?.engine?.qrSrNo}">{{
+                      scanDetails?.TRStart?.engine?.qrSrNo }}</span></div>
+                  <div>Eng Desc: {{ scanDetails?.TRStart?.engine?.engDesc }}</div>
+                  <div>Eng Code: {{ scanDetails?.TRStart?.engine?.engCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanAlternatorClick('TRStart')">SCAN ALTERNATOR</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerAlternatorTRStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'alternator')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedAlternatorQrResult  === scanDetails?.TRStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult  !== scanDetails?.TRStart?.alternator?.qrSrNo}">{{
+                      scanDetails?.TRStart?.alternator?.qrSrNo }}</span></div>
+                  <div>Alt Desc: {{ scanDetails?.TRStart?.alternator?.altDesc }}</div>
+                  <div>TRStatus: {{ scanDetails?.TRStart?.alternator?.trStatus }}</div>
+                  <div>Alt Part: {{ scanDetails?.TRStart?.alternator?.altPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanDieselClick('TRStart')">DIESEL ENTRY</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerDieselTRStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'diesel')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <!-- <div>Qty(Ltr): <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.TRStart?.diesel?.qtyltr, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.TRStart?.diesel?.qtyltr}">{{ scanDetails?.TRStart?.diesel?.qtyltr }}</span></div> -->
+                  <div>
+                    Qty(Ltr):
+                    <span id="dieselQty" contenteditable="true"
+                      style="outline: none; border-bottom: 1px solid #000; padding: 0 4px; display: inline-block; min-width: 80px;">
+
+                    </span>
+                    BOM
+                  </div>
+                  <div>Qty: {{ scanDetails?.TRStart?.diesel?.dslQty }}</div>
+                  <div>Rate: {{ scanDetails?.TRStart?.diesel?.dslRate }}</div>
+                  <div>PartCode: {{scanDetails?.TRStart?.diesel?.dslPartCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- <div class="scan-section">
+            <div class="scan-section-header">
+              <button class="scan-header" (click)="onScanControlEWAPPDFClick('TRStart')">EWAP PDF ATTACHMENT</button>
+            </div>
+            <div class="qr-scanner-container">
+              <div *ngIf="showQrScannerEWAPPDFTRStart" class="qr-scanner-wrapper">
+                <div class="qr-scan-header">Scan QR Code</div>
+                <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event, 'ewppdf')"></zxing-scanner>
+              </div>
+            </div>
+            <div class="scan-section-details">
+              <div class="scan-details">
+                <div>File Name: <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.TRStart?.ewppdf?.fileName, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.TRStart?.ewppdf?.fileName}">{{ scanDetails?.TRStart?.ewppdf?.fileName }}</span></div>
+                <div>File Name: {{ scanDetails?.TRStart?.ewppdf?.fileName }}</div>
+              </div>
+            </div>
+          </div> -->
+
+            <!-- Process Checkpoints Section -->
+            <div class="action-section">
+              <div class="label">
+                <label>Process Checkpoints & Delay Time Reason(If Any)</label>
+              </div>
+              <div class="start-Play">
+                <div>Select 6M:</div>
+                <div class="custom-dropdown">
+                  <div class="selected-option" (click)="toggleDropdown()">
+                    {{ selectedItem }}
+                  </div>
+                  <ul class="dropdown-list" [class.show]="isDropdownOpen">
+                    <li *ngFor="let item of sixMOptions" [ngClass]="{'highlight': selectedSixMItem === item.Id}"
+                      (click)="selectItem(item)">
+                      {{ item.Name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Audio Clip Section -->
+            <div class="Audio-section-header">
+              <button class="scan-header" (click)="onAudioClipClick()">AUDIO CLIP</button>
+            </div>
+            <div *ngIf="isAudioClipVisible" class="Audio-buttons-container">
+              <button class="Audio-buttons" (click)="startRecordingTRStart" [disabled]="isRecordingTRStart">Start
+                Recording</button>
+              <span *ngIf="isRecordingTRStart">Recording Started...</span>
+              <span *ngIf="!isRecordingTRStart && audioBlob">Recording Stopped</span>
+              <button class="Audio-buttons" (click)="stopRecordingTRStart" [disabled]="!isRecordingTRStart">Stop
+                Recording</button>
+            </div>
+            <!-- Audio Player to Listen to the Recorded Audio -->
+            <div *ngIf="audioBlobTRStart" class="Audio-Player">
+              <audio controls [src]="audioUrlTRStart"></audio>
+            </div>
+
+            <div class="Video-section-header">
+              <button class="scan-header" (click)="onVideoClipClick()">VIDEO CLIP</button>
+            </div>
+            <div *ngIf="isVideoClipVisible" class="Video-buttons-container">
+              <button class="Video-buttons" (click)="startVideoRecordingTRStart"
+                [disabled]="isVideoRecordingTRStart">Start Recording</button>
+              <span *ngIf="isVideoRecordingTRStart">Recording Started...</span>
+              <span *ngIf="!isVideoRecordingTRStart && videoBlobTRStart">Recording Stopped</span>
+              <button class="Video-buttons" (click)="stopVideoRecordingTRStart"
+                [disabled]="!isVideoRecordingTRStart">Stop Recording</button>
+            </div>
+            <!-- Video Player to Listen to the Recorded Audio -->
+            <video controls [src]="videoUrlTRStart" class="small-video-player"></video>
+
+            <!-- Process Status Section -->
+            <div class="label">
+              <label>Process Checkpoints</label>
+            </div>
+            <div class="start-Play">
+              <div class="process-status">Process Status:</div>
+              <div class="custom-dropdown">
+                <!-- Dropdown button -->
+                <div class="selected-option" (click)="toggleSecondDropdown()">
+                  {{ selectedOption || 'Select an option' }}
+                </div>
+
+                <!-- Dropdown list -->
+                <ul class="dropdown-list" [class.show]="isSecondDropdownOpen">
+                  <li *ngFor="let option of dropdownOptions" [ngClass]="{'selected': selectedOption === option}"
+                    (click)="selectOption(option)">
+                    {{ option }}
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+
+            <div class="card-container-wrapper">
+              <div class="card-container">
+                <div *ngFor="let process of processCheckpoints; let i = index" class="card"
+                  [attr.data-prcid]="process.PrcId">
+                  <div class="card-header">
+                    <h6 class="card-title">{{ process.PartDesc }}</h6>
+                    <span class="card-number">{{ i + 1 }}</span>
+                  </div>
+                  <div class="card-body">
+                    <label>Remark=</label>
+                    <span contenteditable="true" class="remark">{{ process.Remark }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-details-section">
+              <div class="plan-details-label">
+                <label>Plan Details</label>
+              </div>
+              <div class="plan-details">
+                <div class="plan-row">
+                  <div>Plan No:</div>
+                  <div class="input-line">{{ planNoTRStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>Date:</div>
+                  <div class="input-line">{{ dateTRStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG Desc:</div>
+                  <div class="input-line">{{ dgDescTRStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG PartCode:</div>
+                  <div class="input-line">{{ dgPartcodeTRStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>CP Type:</div>
+                  <div class="input-line">{{ dgCPtypeTRStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>KVA:</div>
+                  <div class="input-line">{{ dgKVATRStart }}</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTab === 'DGStart'">
+        <div *ngIf="scanDetails?.DGStart">
+          <div class="tab-content">
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanEngineClick('DGStart')">SCAN ENGINE</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerEngineDGStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'engine')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedEngineQrResult === scanDetails?.DGStart?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult !== scanDetails?.DGStart?.engine?.qrSrNo}">{{
+                      scanDetails?.DGStart?.engine?.qrSrNo }}</span></div>
+                  <div>Eng Desc: {{ scanDetails?.DGStart?.engine?.engDesc }}</div>
+                  <div>Eng Code: {{ scanDetails?.DGStart?.engine?.engCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanAlternatorClick('DGStart')">SCAN ALTERNATOR</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerAlternatorDGStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'alternator')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedAlternatorQrResult === scanDetails?.DGStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult !== scanDetails?.DGStart?.alternator?.qrSrNo}">{{
+                      scanDetails?.DGStart?.alternator?.qrSrNo }}</span></div>
+                  <div>Alt Desc: {{ scanDetails?.DGStart?.alternator?.altDesc }}</div>
+                  <div>TRStatus: {{ scanDetails?.DGStart?.alternator?.trStatus }}</div>
+                  <div>Alt Part: {{ scanDetails?.DGStart?.alternator?.altPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanDieselClick('DGStart')">DIESEL ENTRY</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerDieselDGStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'diesel')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <!-- <div>Qty(Ltr): <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.DGStart?.diesel?.qtyltr, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.DGStart?.diesel?.qtyltr}">{{ scanDetails?.DGStart?.diesel?.qtyltr }}</span></div> -->
+                  <div>
+                    Qty(Ltr):
+                    <span id="dieselQty" contenteditable="true"
+                      style="outline: none; border-bottom: 1px solid #000; padding: 0 4px; display: inline-block; min-width: 80px;">
+
+                    </span>
+                    BOM
+                  </div>
+                  <div>Qty: {{ scanDetails?.DGStart?.diesel?.dslQty }}</div>
+                  <div>Rate: {{ scanDetails?.DGStart?.diesel?.dslRate }}</div>
+                  <div>PartCode: {{scanDetails?.DGStart?.diesel?.dslPartCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- <div class="scan-section">
+            <div class="scan-section-header">
+              <button class="scan-header" (click)="onScanControlEWAPPDFClick('DGStart')">EWAP PDF ATTACHMENT</button>
+            </div>
+            <div class="qr-scanner-container">
+              <div *ngIf="showQrScannerEWAPPDFDGStart" class="qr-scanner-wrapper">
+                <div class="qr-scan-header">Scan QR Code</div>
+                <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event, 'ewppdf')"></zxing-scanner>
+              </div>
+            </div>
+            <div class="scan-section-details">
+              <div class="scan-details">
+                <div>File Name: <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.DGStart?.ewppdf?.fileName, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.DGStart?.ewppdf?.fileName}">{{ scanDetails?.DGStart?.ewppdf?.fileName }}</span></div>
+                <div>File Name: {{ scanDetails?.DGStart?.ewppdf?.fileName }}</div>
+              </div>
+            </div>
+          </div> -->
+
+            <!-- Process Checkpoints Section -->
+            <div class="action-section">
+              <div class="label">
+                <label>Process Checkpoints & Delay Time Reason(If Any)</label>
+              </div>
+              <div class="start-Play">
+                <div>Select 6M:</div>
+                <div class="custom-dropdown">
+                  <div class="selected-option" (click)="toggleDropdown()">
+                    {{ selectedItem }}
+                  </div>
+                  <ul class="dropdown-list" [class.show]="isDropdownOpen">
+                    <li *ngFor="let item of sixMOptions" [ngClass]="{'highlight': selectedSixMItem === item.Id}"
+                      (click)="selectItem(item)">
+                      {{ item.Name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Audio Clip Section -->
+            <div class="Audio-section-header">
+              <button class="scan-header" (click)="onAudioClipClick()">AUDIO CLIP</button>
+            </div>
+            <div *ngIf="isAudioClipVisible" class="Audio-buttons-container">
+              <button class="Audio-buttons" (click)="startRecordingDGStart" [disabled]="isRecordingDGStart">Start
+                Recording</button>
+              <span *ngIf="isRecordingDGStart">Recording Started...</span>
+              <span *ngIf="!isRecordingDGStart && audioBlob">Recording Stopped</span>
+              <button class="Audio-buttons" (click)="stopRecordingDGStart" [disabled]="!isRecordingDGStart">Stop
+                Recording</button>
+            </div>
+            <!-- Audio Player to Listen to the Recorded Audio -->
+            <div *ngIf="audioBlobDGStart" class="Audio-Player">
+              <audio controls [src]="audioUrlDGStart"></audio>
+            </div>
+
+            <div class="Video-section-header">
+              <button class="scan-header" (click)="onVideoClipClick()">VIDEO CLIP</button>
+            </div>
+            <div *ngIf="isVideoClipVisible" class="Video-buttons-container">
+              <button class="Video-buttons" (click)="startVideoRecordingDGStart"
+                [disabled]="isVideoRecordingDGStart">Start Recording</button>
+              <span *ngIf="isVideoRecordingDGStart">Recording Started...</span>
+              <span *ngIf="!isVideoRecordingDGStart && videoBlobDGStart">Recording Stopped</span>
+              <button class="Video-buttons" (click)="stopVideoRecordingDGStart"
+                [disabled]="!isVideoRecordingDGStart">Stop Recording</button>
+            </div>
+            <!-- Video Player to Listen to the Recorded Audio -->
+            <video controls [src]="videoUrlDGStart" class="small-video-player"></video>
+
+            <!-- Process Status Section -->
+            <div class="label">
+              <label>Process Checkpoints</label>
+            </div>
+            <div class="start-Play">
+              <div class="process-status">Process Status:</div>
+              <div class="custom-dropdown">
+                <!-- Dropdown button -->
+                <div class="selected-option" (click)="toggleSecondDropdown()">
+                  {{ selectedOption || 'Select an option' }}
+                </div>
+
+                <!-- Dropdown list -->
+                <ul class="dropdown-list" [class.show]="isSecondDropdownOpen">
+                  <li *ngFor="let option of dropdownOptions" [ngClass]="{'selected': selectedOption === option}"
+                    (click)="selectOption(option)">
+                    {{ option }}
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+
+            <div class="card-container-wrapper">
+              <div class="card-container">
+                <div *ngFor="let process of processCheckpoints; let i = index" class="card"
+                  [attr.data-prcid]="process.PrcId">
+                  <div class="card-header">
+                    <h6 class="card-title">{{ process.PartDesc }}</h6>
+                    <span class="card-number">{{ i + 1 }}</span>
+                  </div>
+                  <div class="card-body">
+                    <label>Remark=</label>
+                    <span contenteditable="true" class="remark">{{ process.Remark }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-details-section">
+              <div class="plan-details-label">
+                <label>Plan Details</label>
+              </div>
+              <div class="plan-details">
+                <div class="plan-row">
+                  <div>Plan No:</div>
+                  <div class="input-line">{{ planNoDGStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>Date:</div>
+                  <div class="input-line">{{ dateDGStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG Desc:</div>
+                  <div class="input-line">{{ dgDescDGStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG PartCode:</div>
+                  <div class="input-line">{{ dgPartcodeDGStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>CP Type:</div>
+                  <div class="input-line">{{ dgCPtypeDGStart }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>KVA:</div>
+                  <div class="input-line">{{ dgKVADGStart }}</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTab === 'DGEnd'">
+        <div *ngIf="scanDetails?.DGEnd">
+          <div class="tab-content">
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanEngineClick('DGEnd')">SCAN ENGINE</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerEngineDGEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'engine')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedEngineQrResult  === scanDetails?.DGEnd?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult  !== scanDetails?.DGEnd?.engine?.qrSrNo}">{{
+                      scanDetails?.DGEnd?.engine?.qrSrNo }}</span></div>
+                  <div>Eng Desc: {{ scanDetails?.DGEnd?.engine?.engDesc }}</div>
+                  <div>Eng Code: {{ scanDetails?.DGEnd?.engine?.engCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanAlternatorClick('DGEnd')">SCAN ALTERNATOR</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerAlternatorDGEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'alternator')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedAlternatorQrResult  === scanDetails?.DGEnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult  !== scanDetails?.DGEnd?.alternator?.qrSrNo}">{{
+                      scanDetails?.DGEnd?.alternator?.qrSrNo }}</span></div>
+                  <div>Alt Desc: {{ scanDetails?.DGEnd?.alternator?.altDesc }}</div>
+                  <div>TRStatus: {{ scanDetails?.DGEnd?.alternator?.trStatus }}</div>
+                  <div>Alt Part: {{ scanDetails?.DGEnd?.alternator?.altPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanDieselClick('DGEnd')">DIESEL ENTRY</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerDieselDGEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'diesel')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <!-- <div>Qty(Ltr): <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.DGEnd?.diesel?.qtyltr, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.DGEnd?.diesel?.qtyltr}">{{ scanDetails?.DGEnd?.diesel?.qtyltr }}</span></div> -->
+                  <div>
+                    Qty(Ltr):
+                    <span id="dieselQty" contenteditable="true"
+                      style="outline: none; border-bottom: 1px solid #000; padding: 0 4px; display: inline-block; min-width: 80px;">
+
+                    </span>
+                    BOM
+                  </div>
+                  <div>Qty: {{ scanDetails?.DGEnd?.diesel?.dslQty }}</div>
+                  <div>Rate: {{ scanDetails?.DGEnd?.diesel?.dslRate }}</div>
+                  <div>PartCode: {{scanDetails?.DGEnd?.diesel?.dslPartCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- <div class="scan-section">
+            <div class="scan-section-header">
+              <button class="scan-header" (click)="onScanControlEWAPPDFClick('DGEnd')">EWAP PDF ATTACHMENT</button>
+            </div>
+            <div class="qr-scanner-container">
+              <div *ngIf="showQrScannerEWAPPDFDGEnd" class="qr-scanner-wrapper">
+                <div class="qr-scan-header">Scan QR Code</div>
+                <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event, 'ewppdf')"></zxing-scanner>
+              </div>
+            </div>
+            <div class="scan-section-details">
+              <div class="scan-details">
+                <div>File Name: <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.DGEnd?.ewppdf?.fileName, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.DGEnd?.ewppdf?.fileName}">{{ scanDetails?.DGEnd?.ewppdf?.fileName }}</span></div>
+                <div>File Name: {{ scanDetails?.DGEnd?.ewppdf?.fileName }}</div>
+              </div>
+            </div>
+          </div> -->
+
+            <!-- Process Checkpoints Section -->
+            <div class="action-section">
+              <div class="label">
+                <label>Process Checkpoints & Delay Time Reason(If Any)</label>
+              </div>
+              <div class="start-Play">
+                <div>Select 6M:</div>
+                <div class="custom-dropdown">
+                  <div class="selected-option" (click)="toggleDropdown()">
+                    {{ selectedItem }}
+                  </div>
+                  <ul class="dropdown-list" [class.show]="isDropdownOpen">
+                    <li *ngFor="let item of sixMOptions" [ngClass]="{'highlight': selectedSixMItem === item.Id}"
+                      (click)="selectItem(item)">
+                      {{ item.Name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Audio Clip Section -->
+            <div class="Audio-section-header">
+              <button class="scan-header" (click)="onAudioClipClick()">AUDIO CLIP</button>
+            </div>
+            <div *ngIf="isAudioClipVisible" class="Audio-buttons-container">
+              <button class="Audio-buttons" (click)="startRecordingDGEnd" [disabled]="isRecordingDGEnd">Start
+                Recording</button>
+              <span *ngIf="isRecordingDGEnd">Recording Started...</span>
+              <span *ngIf="!isRecordingDGEnd && audioBlob">Recording Stopped</span>
+              <button class="Audio-buttons" (click)="stopRecordingDGEnd" [disabled]="!isRecordingDGEnd">Stop
+                Recording</button>
+            </div>
+            <!-- Audio Player to Listen to the Recorded Audio -->
+            <div *ngIf="audioBlobDGEnd" class="Audio-Player">
+              <audio controls [src]="audioUrlDGEnd"></audio>
+            </div>
+
+            <div class="Video-section-header">
+              <button class="scan-header" (click)="onVideoClipClick()">VIDEO CLIP</button>
+            </div>
+            <div *ngIf="isVideoClipVisible" class="Video-buttons-container">
+              <button class="Video-buttons" (click)="startVideoRecordingDGEnd" [disabled]="isVideoRecordingDGEnd">Start
+                Recording</button>
+              <span *ngIf="isVideoRecordingDGEnd">Recording Started...</span>
+              <span *ngIf="!isVideoRecordingDGEnd && videoBlobDGEnd">Recording Stopped</span>
+              <button class="Video-buttons" (click)="stopVideoRecordingDGEnd" [disabled]="!isVideoRecordingDGEnd">Stop
+                Recording</button>
+            </div>
+            <!-- Video Player to Listen to the Recorded Audio -->
+            <video controls [src]="videoUrlDGEnd" class="small-video-player"></video>
+
+            <!-- Process Status Section -->
+            <div class="label">
+              <label>Process Checkpoints</label>
+            </div>
+            <div class="start-Play">
+              <div class="process-status">Process Status:</div>
+              <div class="custom-dropdown">
+                <!-- Dropdown button -->
+                <div class="selected-option" (click)="toggleSecondDropdown()">
+                  {{ selectedOption || 'Select an option' }}
+                </div>
+
+                <!-- Dropdown list -->
+                <ul class="dropdown-list" [class.show]="isSecondDropdownOpen">
+                  <li *ngFor="let option of dropdownOptions" [ngClass]="{'selected': selectedOption === option}"
+                    (click)="selectOption(option)">
+                    {{ option }}
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+
+            <div class="card-container-wrapper">
+              <div class="card-container">
+                <div *ngFor="let process of processCheckpoints; let i = index" class="card"
+                  [attr.data-prcid]="process.PrcId">
+                  <div class="card-header">
+                    <h6 class="card-title">{{ process.PartDesc }}</h6>
+                    <span class="card-number">{{ i + 1 }}</span>
+                  </div>
+                  <div class="card-body">
+                    <label>Remark=</label>
+                    <span contenteditable="true" class="remark">{{ process.Remark }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-details-section">
+              <div class="plan-details-label">
+                <label>Plan Details</label>
+              </div>
+              <div class="plan-details">
+                <div class="plan-row">
+                  <div>Plan No:</div>
+                  <div class="input-line">{{ planNoDGEnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>Date:</div>
+                  <div class="input-line">{{ dateDGEnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG Desc:</div>
+                  <div class="input-line">{{ dgDescDGEnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG PartCode:</div>
+                  <div class="input-line">{{ dgPartcodeDGEnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>CP Type:</div>
+                  <div class="input-line">{{ dgCPtypeDGEnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>KVA:</div>
+                  <div class="input-line">{{ dgKVADGEnd }}</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTab === 'TREnd'">
+        <div *ngIf="scanDetails?.TREnd">
+          <div class="tab-content">
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanEngineClick('TREnd')">SCAN ENGINE</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerEngineTREnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'engine')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedEngineQrResult  === scanDetails?.TREnd?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult  !== scanDetails?.TREnd?.engine?.qrSrNo}">{{
+                      scanDetails?.TREnd?.engine?.qrSrNo }}</span></div>
+                  <div>Eng Desc: {{ scanDetails?.TREnd?.engine?.engDesc }}</div>
+                  <div>Eng Code: {{ scanDetails?.TREnd?.engine?.engCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanAlternatorClick('TREnd')">SCAN ALTERNATOR</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerAlternatorTREnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'alternator')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedAlternatorQrResult  === scanDetails?.TREnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult  !== scanDetails?.TREnd?.alternator?.qrSrNo}">{{
+                      scanDetails?.TREnd?.alternator?.qrSrNo }}</span></div>
+                  <div>Alt Desc: {{ scanDetails?.TREnd?.alternator?.altDesc }}</div>
+                  <div>TRStatus: {{ scanDetails?.TREnd?.alternator?.trStatus }}</div>
+                  <div>Alt Part: {{ scanDetails?.TREnd?.alternator?.altPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanDieselClick('TREnd')">DIESEL ENTRY</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerDieselTREnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'diesel')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <!-- <div>Qty(Ltr): <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.TREnd?.diesel?.qtyltr, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.TREnd?.diesel?.qtyltr}">{{ scanDetails?.TREnd?.diesel?.qtyltr }}</span></div> -->
+                  <div>
+                    Qty(Ltr):
+                    <span id="dieselQty" contenteditable="true"
+                      style="outline: none; border-bottom: 1px solid #000; padding: 0 4px; display: inline-block; min-width: 80px;">
+
+                    </span>
+                    BOM
+                  </div>
+                  <div>Qty: {{ scanDetails?.TREnd?.diesel?.dslQty }}</div>
+                  <div>Rate: {{ scanDetails?.TREnd?.diesel?.dslRate }}</div>
+                  <div>PartCode: {{scanDetails?.TREnd?.diesel?.dslPartCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- <div class="scan-section">
+            <div class="scan-section-header">
+              <button class="scan-header" (click)="onScanControlEWAPPDFClick('TREnd')">EWAP PDF ATTACHMENT</button>
+            </div>
+            <div class="qr-scanner-container">
+              <div *ngIf="showQrScannerEWAPPDFTREnd" class="qr-scanner-wrapper">
+                <div class="qr-scan-header">Scan QR Code</div>
+                <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event, 'ewppdf')"></zxing-scanner>
+              </div>
+            </div>
+            <div class="scan-section-details">
+              <div class="scan-details">
+                <div>File Name: <span [ngClass]="{'green-text': scannedQrResult === scanDetails?.TREnd?.ewppdf?.fileName, 'Alt-qr-sr-no': scannedQrResult !== scanDetails?.TREnd?.ewppdf?.fileName}">{{ scanDetails?.TREnd?.ewppdf?.fileName }}</span></div>
+                <div>File Name: {{ scanDetails?.TREnd?.ewppdf?.fileName }}</div>
+              </div>
+            </div>
+          </div> -->
+
+            <!-- Process Checkpoints Section -->
+            <div class="action-section">
+              <div class="label">
+                <label>Process Checkpoints & Delay Time Reason(If Any)</label>
+              </div>
+              <div class="start-Play">
+                <div>Select 6M:</div>
+                <div class="custom-dropdown">
+                  <div class="selected-option" (click)="toggleDropdown()">
+                    {{ selectedItem }}
+                  </div>
+                  <ul class="dropdown-list" [class.show]="isDropdownOpen">
+                    <li *ngFor="let item of sixMOptions" [ngClass]="{'highlight': selectedSixMItem === item.Id}"
+                      (click)="selectItem(item)">
+                      {{ item.Name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Audio Clip Section -->
+            <div class="Audio-section-header">
+              <button class="scan-header" (click)="onAudioClipClick()">AUDIO CLIP</button>
+            </div>
+            <div *ngIf="isAudioClipVisible" class="Audio-buttons-container">
+              <button class="Audio-buttons" (click)="startRecordingTREnd" [disabled]="isRecordingTREnd">Start
+                Recording</button>
+              <span *ngIf="isRecordingTREnd">Recording Started...</span>
+              <span *ngIf="!isRecordingTREnd && audioBlob">Recording Stopped</span>
+              <button class="Audio-buttons" (click)="stopRecordingTREnd" [disabled]="!isRecordingTREnd">Stop
+                Recording</button>
+            </div>
+            <!-- Audio Player to Listen to the Recorded Audio -->
+            <div *ngIf="audioBlobTREnd" class="Audio-Player">
+              <audio controls [src]="audioUrlTREnd"></audio>
+            </div>
+
+            <div class="Video-section-header">
+              <button class="scan-header" (click)="onVideoClipClick()">VIDEO CLIP</button>
+            </div>
+            <div *ngIf="isVideoClipVisible" class="Video-buttons-container">
+              <button class="Video-buttons" (click)="startVideoRecordingTREnd" [disabled]="isVideoRecordingTREnd">Start
+                Recording</button>
+              <span *ngIf="isVideoRecordingTREnd">Recording Started...</span>
+              <span *ngIf="!isVideoRecordingTREnd && videoBlobTREnd">Recording Stopped</span>
+              <button class="Video-buttons" (click)="stopVideoRecordingTREnd" [disabled]="!isVideoRecordingTREnd">Stop
+                Recording</button>
+            </div>
+            <!-- Video Player to Listen to the Recorded Audio -->
+            <video controls [src]="videoUrlTREnd" class="small-video-player"></video>
+
+            <!-- Process Status Section -->
+            <div class="label">
+              <label>Process Checkpoints</label>
+            </div>
+            <div class="start-Play">
+              <div class="process-status">Process Status:</div>
+              <div class="custom-dropdown">
+                <!-- Dropdown button -->
+                <div class="selected-option" (click)="toggleSecondDropdown()">
+                  {{ selectedOption || 'Select an option' }}
+                </div>
+
+                <!-- Dropdown list -->
+                <ul class="dropdown-list" [class.show]="isSecondDropdownOpen">
+                  <li *ngFor="let option of dropdownOptions" [ngClass]="{'selected': selectedOption === option}"
+                    (click)="selectOption(option)">
+                    {{ option }}
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+
+            <div class="card-container-wrapper">
+              <div class="card-container">
+                <div *ngFor="let process of processCheckpoints; let i = index" class="card"
+                  [attr.data-prcid]="process.PrcId">
+                  <div class="card-header">
+                    <h6 class="card-title">{{ process.PartDesc }}</h6>
+                    <span class="card-number">{{ i + 1 }}</span>
+                  </div>
+                  <div class="card-body">
+                    <label>Remark=</label>
+                    <span contenteditable="true" class="remark">{{ process.Remark }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-details-section">
+              <div class="plan-details-label">
+                <label>Plan Details</label>
+              </div>
+              <div class="plan-details">
+                <div class="plan-row">
+                  <div>Plan No:</div>
+                  <div class="input-line">{{ planNoTREnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>Date:</div>
+                  <div class="input-line">{{ dateTREnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG Desc:</div>
+                  <div class="input-line">{{ dgDescTREnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>DG PartCode:</div>
+                  <div class="input-line">{{ dgPartcodeTREnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>CP Type:</div>
+                  <div class="input-line">{{ dgCPtypeTREnd }}</div>
+                </div>
+                <div class="plan-row">
+                  <div>KVA:</div>
+                  <div class="input-line">{{ dgKVATREnd }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="DG Kit Details">
+      <div class="table-container">
+        <div *ngIf="trDGKitDetails && trDGKitDetails.length > 0">
+          <table mat-table [dataSource]="trDGKitDetails" class="mat-elevation-z8 custom-table">
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef> Description </th>
+              <td mat-cell *matCellDef="let element"> {{ element.PartDesc }} </td>
+            </ng-container>
+
+            <!-- Total Qty Column -->
+            <ng-container matColumnDef="partcode">
+              <th mat-header-cell *matHeaderCellDef> PartCode </th>
+              <td mat-cell *matCellDef="let element"> {{ element.PartCode }} </td>
+            </ng-container>
+
+            <!-- Stock Qty Column -->
+            <ng-container matColumnDef="serialno">
+              <th mat-header-cell *matHeaderCellDef> SerialNo </th>
+              <td mat-cell *matCellDef="let element"> {{ element.SerialNo }} </td>
+            </ng-container>
+
+            <!-- Table Header & Row Definitions -->
+            <tr mat-header-row *matHeaderRowDef="['description', 'partcode', 'serialno']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['description', 'partcode', 'serialno'];"></tr>
+
+          </table>
+        </div>
+      </div>
+      <p *ngIf="trDGKitDetails && trDGKitDetails.length === 0" class="no-data">No Data Available Please Scan DG Serial
+        Code.</p>
+    </mat-tab>
+  </mat-tab-group>
+
+</div>

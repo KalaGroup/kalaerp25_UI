@@ -1,0 +1,116 @@
+.container {
+    max-width: 90%;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  mat-form-field {
+    width: 50%;
+    margin-bottom: 20px;
+   // margin-right: 5%;
+  }
+
+  // mat-form-field:last-child {
+  //   margin-right: 0; /* Remove the gap after the second dropdown */
+  // }
+
+  .table-container {
+    max-height: 400px; /* Set the table height for scrolling */
+   // overflow: auto;    /* Enable scroll for large datasets */
+    overflow-y: auto;  /* Enable vertical scrolling */
+    display: block;    /* Ensure the table is treated as a block-level element */
+  }
+  
+  /* Styling the table */
+.mat-table {
+    width: 100%; /* Make the table span the entire width of the container */
+    border-collapse: collapse; /* Remove any space between table cells */
+    margin-top: 40px; /* Add some space above the table */
+  }
+  
+  th.mat-header-cell, td.mat-cell {
+    padding: 12px; /* Add padding inside each cell */
+    text-align: center; /* Align text to the center */
+    font-size: 14px; /* Set a default font size */
+  }
+
+  th.mat-header-cell {
+    background-color: #f5f5f5; /* Light background for headers */
+    font-weight: bold; /* Make headers bold */
+    border-bottom: 2px solid #ddd; /* Add a bottom border to the header */
+  }
+
+  td.mat-cell {
+    border-bottom: 1px solid #ddd; /* Add a bottom border to table rows */
+  }
+
+  /* Styling the checkboxes */
+.mat-checkbox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Submit Button Styling */
+.submit-button {
+    display: block;
+    margin: 20px auto; /* Center the button horizontally */
+    padding: 10px 20px; /* Add padding for better appearance */
+    font-size: 16px; /* Set the font size */
+    width: 200px; /* Set the button width */
+    text-align: center; /* Center the text in the button */
+  }
+  
+  /* Make sure the table doesn't stretch to fill too much empty space */
+  .custom-table {
+    table-layout: fixed; /* Makes the table columns have fixed widths */
+  }
+  
+  /* For a cleaner table, adjust the table width for specific columns */
+  .mat-column-menuName {
+    width: 30%; /* Make the MenuName column wider */
+  }
+  
+  .mat-column-add, .mat-column-edit, .mat-column-delete,
+  .mat-column-auth, .mat-column-export {
+    width: 11%; /* Adjust the width of the action columns */
+  }
+
+
+
+
+  /* Make the page more responsive */
+@media screen and (max-width: 768px) {
+    .container {
+      width: 100%; /* Full width on smaller screens */
+      padding: 10px;
+    }
+  
+    .submit-button {
+      width: 100%; /* Make the button full width on mobile */
+    }
+  
+    .mat-column-menuName, .mat-column-add, .mat-column-edit,
+    .mat-column-delete, .mat-column-auth,
+    .mat-column-export {
+      width: auto; /* Allow columns to adjust based on content */
+    }
+  }
+
+  .mat-snack-bar-container.snackbar-success {
+    background-color: #4caf50 !important; /* Green for success */
+    color: white !important;
+  }
+  
+  .mat-snack-bar-container.snackbar-error {
+    background-color: #f44336 !important; /* Red for error */
+    color: white !important;
+  }
+  
+  .mat-snack-bar-container.snackbar-warning {
+    background-color: #ff9800 !important; /* Orange for warning */
+    color: white !important;
+  }
+  
+  
+  

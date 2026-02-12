@@ -1,0 +1,575 @@
+<div class="dg-stage-container">
+  <div class="header-container">
+    <h6 class="dg-stage-header">DG Packing Slip</h6>
+    <!-- <button mat-button class="save-button"
+                      (click)="submitData()"
+                      [disabled]="!scanDetails.Start.engine?.qrSrNo || !scanDetails.Start.alternator?.qrSrNo"
+                      [ngClass]="{'disabled': !scanDetails.Start.engine?.qrSrNo || !scanDetails.Start.alternator?.qrSrNo}">
+      SAVE
+      </button> -->
+    <!-- <button mat-button class="save-button"
+        (click)="submitData()"
+        [disabled]="
+        (selectedTab === 'PSStart' && (!scanDetails?.PSStart?.engine?.qrSrNo || !scanDetails?.PSStart?.alternator?.qrSrNo)) ||
+        (selectedTab === 'PSEnd' && (!scanDetails?.PSEnd?.engine?.qrSrNo || !scanDetails?.PSEnd?.alternator?.qrSrNo))"
+
+
+      [ngClass]="{
+               'disabled':(selectedTab === 'PSStart' && (!scanDetails?.PSStart?.engine?.qrSrNo || !scanDetails?.PSStart?.alternator?.qrSrNo)) ||
+               (selectedTab === 'PSEnd' && (!scanDetails?.PSEnd?.engine?.qrSrNo || !scanDetails?.PSEnd?.alternator?.qrSrNo))
+              }">
+  SAVE
+</button> -->
+    <button mat-button class="save-button" (click)="submitData()" [disabled]="isSaveDisabled()"
+      [ngClass]="{'disabled': isSaveDisabled()}">
+      SAVE
+    </button>
+
+  </div>
+
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+        {{ errorMessage }}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <mat-tab-group>
+    <mat-tab label="Scan Details">
+      <div class="tab-content">
+        <div class="scan-section">
+          <div class="scan-section-header">
+            <button class="scan-header" (click)="dgScanClick()">SCAN DG</button>
+          </div>
+          <div class="qr-scanner-container">
+            <div *ngIf="showQrScannerDGScan" class="qr-scanner-wrapper">
+              <div class="qr-scan-header">Scan QR Code</div>
+              <zxing-scanner [formats]="allowedFormats"
+                (scanSuccess)="handleQrCodeResult($event, 'dgscan')"></zxing-scanner>
+            </div>
+          </div>
+          <div class="scan-section-details">
+            <ng-container *ngIf="selectedTab === 'PSStart'">
+              <div class="scan-details">
+                <div>QR SrNo: <span
+                    [ngClass]="{'green-text': scannedQrResultDGScan  === scanDetails?.PSStart?.dgscan?.qrSrNo, 'Eng-qr-sr-no': scannedQrResultDGScan  !== scanDetails?.PSStart?.dgscan?.qrSrNo}">{{
+                    scanDetails?.PSStart?.dgscan?.qrSrNo }}</span></div>
+                <div>DG Desc: {{scanDetails?.PSStart?.dgscan?.dgDesc}}</div>
+                <div>DG Part: {{scanDetails?.PSStart?.dgscan?.dgPart}}</div>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="selectedTab === 'PSEnd'">
+              <div class="scan-details">
+                <div>QR SrNo: <span
+                    [ngClass]="{'green-text': scannedQrResultDGScan  === scanDetails?.PSEnd?.dgscan?.qrSrNo, 'Eng-qr-sr-no': scannedQrResultDGScan  !== scanDetails?.PSEnd?.dgscan?.qrSrNo}">{{
+                    scanDetails?.PSEnd?.dgscan?.qrSrNo }}</span></div>
+                <div>DG Desc: {{scanDetails?.PSEnd?.dgscan?.dgDesc}}</div>
+                <div>DG Part: {{scanDetails?.PSEnd?.dgscan?.dgPart}}</div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+        <div class="label">
+          <label>PackingSlip(Start-End Details)</label>
+        </div>
+      </div>
+
+      <div class="radio-button-wrapper">
+        <label class="custom-radio">
+          <input type="radio" name="scanDetailsTab" value="PSStart" [(ngModel)]="selectedTab">
+          <span class="radio-label">PSStart</span>
+        </label>
+
+        <label class="custom-radio">
+          <input type="radio" name="scanDetailsTab" value="PSEnd" [(ngModel)]="selectedTab">
+          <span class="radio-label">PSEnd</span>
+        </label>
+      </div>
+
+      <div class="tab-content">
+        <div class="scan-section-details">
+          <div class="scan-details">
+            <div>PSStartTime: {{ currentTimes.psstart }}</div>
+            <div>PSEndTime: {{ currentTimes.psend }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content">
+        <div class="scan-section">
+          <div class="label">
+            <label>DI Details</label>
+          </div>
+          <div class="scan-section-details">
+            <div class="scan-details">
+              <ng-container *ngIf="selectedTab === 'PSStart'">
+                <div>DI No: {{ _DINOPSStart }} </div>
+                <div>Date: {{ _Date1PSStart }} </div>
+                <div>Customer: {{ _CustomerPSStart }} </div>
+                <div>Date: {{ _Date2PSStart }} </div>
+                <div>Indentor: {{ _IndentorPSStart }} </div>
+                <div>MOF Code: {{ _MOFCodePSStart }} </div>
+                <div>CP: {{ _CPPSStart }}</div>
+                <div>KVA: {{ _KVAPSStart }}</div>
+                <div>TRCode: {{ _TRCodePSStart }} </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedTab === 'PSEnd'">
+                <div>DI No: {{ _DINOPSEnd }} </div>
+                <div>Date: {{ _Date1PSEnd }} </div>
+                <div>Customer: {{ _CustomerPSEnd }} </div>
+                <div>Date: {{ _Date2PSEnd }} </div>
+                <div>Indentor: {{ _IndentorPSEnd }} </div>
+                <div>MOF Code: {{ _MOFCodePSEnd }} </div>
+                <div>CP: {{ _CPPSEnd }} </div>
+                <div>KVA: {{ _KVAPSEnd }}</div>
+                <div>TRCode: {{ _TRCodePSEnd }} </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTab === 'PSStart'">
+        <div *ngIf="scanDetails?.PSStart">
+          <div class="tab-content">
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanEngineClick('PSStart')">SCAN ENGINE</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerEnginePSStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'engine', 'PSStart')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedEngineQrResultPSStart  === scanDetails?.PSStart?.engine?.qrSrNo, 'Eng-qr-sr-no': scannedEngineQrResultPSStart  !== scanDetails?.PSStart?.engine?.qrSrNo}">{{
+                      scanDetails?.PSStart?.engine?.qrSrNo }}</span></div>
+                  <div>Eng Desc: {{ scanDetails?.PSStart?.engine?.engDesc }}</div>
+                  <div>Eng Code: {{ scanDetails?.PSStart?.engine?.engCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanAlternatorClick('PSStart')">SCAN ALTERNATOR</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerAlternatorPSStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'alternator', 'PSStart')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedAlternatorQrResultPSStart  === scanDetails?.PSStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResultPSStart  !== scanDetails?.PSStart?.alternator?.qrSrNo}">{{
+                      scanDetails?.PSStart?.alternator?.qrSrNo }}</span></div>
+                  <div>Alt Desc: {{ scanDetails?.PSStart?.alternator?.altDesc }}</div>
+                  <div>Alt Part: {{ scanDetails?.PSStart?.alternator?.altPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanCanopyClick('PSStart')">SCAN CANOPY</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerCanopyPSStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'canopy','PSStart')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultCanopyPSStart === scanDetails.PSStart.canopy?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultCanopyPSStart !== scanDetails.PSStart.canopy?.qrSrNo}">{{
+                      scanDetails.PSStart.canopy?.qrSrNo }}</span></div>
+                  <div>Cpy Desc: {{ scanDetails.PSStart.canopy?.cpyDesc }}</div>
+                  <div>Cpy Part: {{ scanDetails.PSStart.canopy?.cpyPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngFor="let battery of batteryScanDetailsPSStart; let i = index" class="scan-section">
+              <div *ngIf="battery.qrSrNo && battery.batteryPart && battery.batteryDesc !== '0'">
+                <div class="scan-section-header">
+                  <button class="scan-header" (click)="onScanBatteryClick('PSStart', i)">SCAN BATTERY {{ i + 1
+                    }}</button>
+                </div>
+
+                <div class="qr-scanner-container">
+                  <div *ngIf="battery.showQrScanner" class="qr-scanner-wrapper">
+                    <div class="qr-scan-header">Scan QR Code</div>
+                    <zxing-scanner [formats]="allowedFormats"
+                      (scanSuccess)="handleQrCodeResult($event, 'battery', 'PSStart', i)"></zxing-scanner>
+                  </div>
+                </div>
+
+                <div class="scan-section-details">
+                  <div class="scan-details">
+                    <div>QR SrNo: <span
+                        [ngClass]="{'green-text': scannedBatteryQrResultsPSStart?.[i] === battery?.qrSrNo, 'Alt-qr-sr-no': scannedBatteryQrResultsPSStart?.[i] !== battery?.qrSrNo}">{{
+                        battery?.qrSrNo }}</span></div>
+                    <div>Bat Desc: {{ battery?.batteryDesc }}</div>
+                    <div>Bat Part: {{ battery?.batteryPart }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanControlPanel1Click('PSStart')">SCAN CONTROL PANEL 1</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerControlPanel1PSStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'controlPanel1','PSStart')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultCP1PSStart === scanDetails.PSStart.controlPanel1.qrSrNo, 'Alt-qr-sr-no': scannedQrResultCP1PSStart !== scanDetails.PSStart.controlPanel1.qrSrNo}">{{
+                      scanDetails.PSStart.controlPanel1.qrSrNo }}</span></div>
+                  <div>CP Desc: {{ scanDetails.PSStart.controlPanel1?.cp1Desc }}</div>
+                  <!-- <div>TRStatus: {{ scanDetails.PSStart.controlPanel1?.cp1TRStatus }}</div>
+                <div>CP Stk: {{ scanDetails.PSStart.controlPanel1?.cp1Stk }}</div> -->
+                  <div>CP Part: {{ scanDetails.PSStart.controlPanel1?.cp1Part }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanControlPanel2Click('PSStart')">SCAN CONTROL PANEL 2(IF
+                  ANY)</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQRScannerControlPanel2PSStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'controlPanel2','PSStart')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultCP2PSStart === scanDetails.PSStart.controlPanel2?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultCP2PSStart !== scanDetails.PSStart.controlPanel2?.qrSrNo}">{{
+                      scanDetails.PSStart.controlPanel2?.qrSrNo }}</span></div>
+                  <div>CP2 Desc: {{ scanDetails.PSStart.controlPanel2?.cp2Desc }}</div>
+                  <!-- <div>TRStatus: {{ scanDetails.PSStart.controlPanel2?.cp2TRStatus }}</div>
+                <div>CP2 Stk: {{ scanDetails.PSStart.controlPanel2?.cp2Stk }}</div> -->
+                  <div>CP2 Part: {{ scanDetails.PSStart.controlPanel2?.cp2Part }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanKRMClick('PSStart')">SCAN KRM(IF ANY)</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQRScannerKRMPSStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'krm','PSStart')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultKRMPSStart === scanDetails.PSStart.krm?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultKRMPSStart !== scanDetails.PSStart.krm?.qrSrNo}">{{
+                      scanDetails.PSStart.krm?.qrSrNo }}</span></div>
+                  <div>KRM Desc: {{ scanDetails.PSStart.krm?.krmDesc }}</div>
+                  <div>KRM Part: {{ scanDetails.PSStart.krm?.krmPart }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTab === 'PSEnd'">
+        <div *ngIf="scanDetails?.PSEnd">
+          <div class="tab-content">
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanEngineClick('PSEnd')">SCAN ENGINE</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerEnginePSEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'engine', 'PSEnd' )"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedEngineQrResultPSEnd  === scanDetails?.PSEnd?.engine?.qrSrNo, 'Eng-qr-sr-no': scannedEngineQrResultPSEnd  !== scanDetails?.PSEnd?.engine?.qrSrNo}">{{
+                      scanDetails?.PSEnd?.engine?.qrSrNo }}</span></div>
+                  <div>Eng Desc: {{ scanDetails?.PSEnd?.engine?.engDesc }}</div>
+                  <div>Eng Code: {{ scanDetails?.PSEnd?.engine?.engCode }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanAlternatorClick('PSEnd')">SCAN ALTERNATOR</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerAlternatorPSEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'alternator', 'PSEnd')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedAlternatorQrResultPSEnd  === scanDetails?.PSEnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResultPSEnd  !== scanDetails?.PSEnd?.alternator?.qrSrNo}">{{
+                      scanDetails?.PSEnd?.alternator?.qrSrNo }}</span></div>
+                  <div>Alt Desc: {{ scanDetails?.PSEnd?.alternator?.altDesc }}</div>
+                  <div>Alt Part: {{ scanDetails?.PSEnd?.alternator?.altPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanCanopyClick('PSEnd')">SCAN CANOPY</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerCanopyPSEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'canopy','PSEnd')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultCanopyPSEnd === scanDetails.PSEnd.canopy?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultCanopyPSEnd !== scanDetails.PSEnd.canopy?.qrSrNo}">{{
+                      scanDetails.PSEnd.canopy?.qrSrNo }}</span></div>
+                  <div>Cpy Desc: {{ scanDetails.PSEnd.canopy?.cpyDesc }}</div>
+                  <div>Cpy Part: {{ scanDetails.PSEnd.canopy?.cpyPart }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngFor="let battery of batteryScanDetailsPSEnd; let i = index" class="scan-section">
+              <div *ngIf="battery.qrSrNo && battery.batteryPart && battery.batteryDesc !== '0'">
+                <div class="scan-section-header">
+                  <button class="scan-header" (click)="onScanBatteryClick('PSEnd', i)">SCAN BATTERY {{ i + 1 }}</button>
+                </div>
+
+                <div class="qr-scanner-container">
+                  <div *ngIf="battery.showQrScanner" class="qr-scanner-wrapper">
+                    <div class="qr-scan-header">Scan QR Code</div>
+                    <zxing-scanner [formats]="allowedFormats"
+                      (scanSuccess)="handleQrCodeResult($event, 'battery', 'PSEnd', i)"></zxing-scanner>
+                  </div>
+                </div>
+
+                <div class="scan-section-details">
+                  <div class="scan-details">
+                    <div>QR SrNo: <span
+                        [ngClass]="{'green-text': scannedBatteryQrResultsPSEnd?.[i] === battery?.qrSrNo, 'Alt-qr-sr-no': scannedBatteryQrResultsPSEnd?.[i] !== battery?.qrSrNo}">{{
+                        battery?.qrSrNo }}</span></div>
+                    <div>Bat Desc: {{ battery?.batteryDesc }}</div>
+                    <div>Bat Part: {{ battery?.batteryPart }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanControlPanel1Click('PSEnd')">SCAN CONTROL PANEL 1</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQrScannerControlPanel1PSEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'controlPanel1','PSEnd')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultCP1PSEnd === scanDetails.PSEnd.controlPanel1.qrSrNo, 'Alt-qr-sr-no': scannedQrResultCP1PSEnd !== scanDetails.PSEnd.controlPanel1.qrSrNo}">{{
+                      scanDetails.PSEnd.controlPanel1.qrSrNo }}</span></div>
+                  <div>CP Desc: {{ scanDetails.PSEnd.controlPanel1?.cp1Desc }}</div>
+                  <div>CP Part: {{ scanDetails.PSEnd.controlPanel1?.cp1Part }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanControlPanel2Click('PSEnd')">SCAN CONTROL PANEL 2(IF
+                  ANY)</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQRScannerControlPanel2PSEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'controlPanel2','PSEnd')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultCP2PSEnd === scanDetails.PSEnd.controlPanel2?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultCP2PSEnd !== scanDetails.PSEnd.controlPanel2?.qrSrNo}">{{
+                      scanDetails.PSEnd.controlPanel2?.qrSrNo }}</span></div>
+                  <div>CP2 Desc: {{ scanDetails.PSEnd.controlPanel2?.cp2Desc }}</div>
+                  <!-- <div>TRStatus: {{ scanDetails.PSEnd.controlPanel2?.cp2TRStatus }}</div>
+                <div>CP2 Stk: {{ scanDetails.PSEnd.controlPanel2?.cp2Stk }}</div> -->
+                  <div>CP2 Part: {{ scanDetails.PSEnd.controlPanel2?.cp2Part }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scan-section">
+              <div class="scan-section-header">
+                <button class="scan-header" (click)="onScanKRMClick('PSEnd')">SCAN KRM(IF ANY)</button>
+              </div>
+              <div class="qr-scanner-container">
+                <div *ngIf="showQRScannerKRMPSEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'krm','PSEnd')"></zxing-scanner>
+                </div>
+              </div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultKRMPSEnd === scanDetails.PSEnd.krm?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultKRMPSEnd !== scanDetails.PSEnd.krm?.qrSrNo}">{{
+                      scanDetails.PSEnd.krm?.qrSrNo }}</span></div>
+                  <div>KRM Desc: {{ scanDetails.PSEnd.krm?.krmDesc }}</div>
+                  <div>KRM Part: {{ scanDetails.PSEnd.krm?.krmPart }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </mat-tab>
+
+    <mat-tab label="Accessories Details">
+      <div class="tab-content">
+        <div class="scan-section">
+          <div class="label">
+            <label>Accessories Details</label>
+          </div>
+          <div class="field-row">
+            <label>Battery Terminal:</label>
+            <span #bt contenteditable="true" (input)="batTer = bt.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 60px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>Battery Lead:</label>
+            <span #bl contenteditable="true" (input)="batLead = bl.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 84px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>Exh Pipe:</label>
+            <span #ep contenteditable="true" (input)="exhPipe = ep.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 110px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>DC Bulb</label>
+            <span #db contenteditable="true" (input)="dcBulb = db.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 117px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>Canopy Key:</label>
+            <span #ck contenteditable="true" (input)="canopyKey = ck.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 85px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>FuelCap Key:</label>
+            <span #fk contenteditable="true" (input)="fuelCapKey = fk.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 82px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>Rubber Pad:</label>
+            <span #rp contenteditable="true" (input)="rubberPad = rp.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 88px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>Funnel Pad:</label>
+            <span #fp contenteditable="true" (input)="funnelPad = fp.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 90px; outline: none;"></span>
+          </div>
+
+          <div class="field-row">
+            <label>Manual/CD:</label>
+            <span #mc contenteditable="true" (input)="manual_Cd = mc.innerText.trim()"
+              style="display: inline-block; min-width: 100px; border-bottom: 1px solid #000; padding: 2px 5px; margin-left: 89px; outline: none;"></span>
+          </div>
+        </div>
+        <div class="label">
+          <label>MOF Additional Part Details</label>
+        </div>
+
+        <div class="card-scroll-wrapper" *ngIf="psMOFPartDetails && psMOFPartDetails.length > 0">
+          <div class="card-scroll-container">
+            <mat-card *ngFor="let item of psMOFPartDetails" class="data-card">
+              <mat-card-content>
+                <p class="no-padding"><strong>SrNo:</strong> {{ item.SrNo }}</p>
+                <p class="no-padding"><strong>Part Code:</strong> {{ item.additionalPartShort }}</p>
+                <p class="no-padding"><strong>UOM:</strong> {{ item.uomShort }}</p>
+                <p class="no-padding"><strong>Qty:</strong> {{ item.Qty }}</p>
+                <p class="no-padding"><strong>WIP Stock:</strong> {{ item.WIPStock }}</p>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+
+        <p *ngIf="psMOFPartDetails?.length === 0" class="no-data">
+          No Data Available. Please Scan DG Serial Code.
+        </p>
+
+
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+</div>

@@ -1,0 +1,49 @@
+<div class="scrollable" [perfectScrollbar]>
+  <section class="home-section section-intro text-center">
+    <div class="container">
+        <span class="egret">Egret</span>
+        <img src="assets/images/5-star.png" alt="">
+        <h1>Angular Material Design Admin Template</h1>
+        <p>Quick start your project within <strong>few minutes</strong>.
+          Seed project is included.</p>
+        <div class="flex flex-col md:flex-row justify-center items-center mb-12">
+          <button class="mb-3 md:mb-0 md:mr-4 rtl:ml-4" mat-fab extended color="primary" (click)="goToDashboard(mainVersion)">MAIN DASHBOARD</button>
+
+          <a href="http://1.envato.market/JN1r7" target="_blank">
+            <button mat-fab extended class="" color="accent">BUY EGRET</button>
+          </a>
+        </div>
+        <div class="flex flex-col md:flex-row justify-center items-center !mb-10">
+          <a href="http://demos.ui-lib.com/egret-doc/" mat-button color="accent" target="_blank">Documentation</a>
+          <a href="http://githubaccess.ui-lib.com/" mat-button color="accent" target="_blank">GitHub Access</a>
+        </div>
+    </div>
+  </section>
+  <section id="demos" class="home-section section-demos mat-bg-default">
+    <div class="container">
+
+      <div class="flex justify-center w-full mb-4 relative -top-44">
+        <div class="rounded-lg overflow-hidden drop-shadow-2xl cursor-pointer" (click)="goToDashboard(mainVersion)">
+          <img class="" src="assets/images/screenshots/black_sidebar.png" alt="Egret Angular Admin Dashboard">
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row justify-center relative -top-20">
+        <div class="px-3 flex items-center">
+          <mat-icon class="text-[18px] mr-1 !flex items-center" color="primary">check_circle</mat-icon> Multiple layouts
+        </div>
+        <div class="px-3 flex items-center">
+          <mat-icon class="text-[18px] mr-1 !flex items-center" color="primary">check_circle</mat-icon> Simple and clean design
+        </div>
+        <div class="px-3 flex items-center">
+          <mat-icon class="text-[18px] mr-1 !flex items-center" color="primary">check_circle</mat-icon> Easy to customize
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="flex py-4 justify-center w-full mat-bg-card">
+    <span>Developed by <a class="text-decoration-underline" href="https://ui-lib.com/" target="_blank">UI Lib</a> with ❤️</span>
+  </div>
+</div>

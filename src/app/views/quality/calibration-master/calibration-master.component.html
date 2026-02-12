@@ -1,0 +1,140 @@
+<div class="calibration-master-container">
+  <div class="form-header">
+    <h2>Calibration Master - {{ designation === 'checker' ? 'Checker' : 'Maker' }}</h2>
+  </div>
+
+  <form [formGroup]="calibrationForm" (ngSubmit)="onSubmit()">
+    <!-- Company Dropdown Section -->
+    <div class="dropdown-section">
+      <div class="dropdown-wrapper">
+        <label for="company">Company</label>
+        <select id="company" formControlName="company" class="form-select">
+          <option value="">Select Company</option>
+          <option *ngFor="let company of companies" [value]="company.CID">
+            {{ company.CName }}
+          </option>
+        </select>
+        <div class="error-message"
+          *ngIf="calibrationForm.get('company')?.touched && calibrationForm.get('company')?.hasError('required')">
+          Company is required
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+      <!-- Add button only for Maker -->
+      <div class="table-header-row" *ngIf="designation === 'maker'">
+        <div class="add-btn-container">
+          <button type="button" class="btn-add" (click)="addEntry()" title="Add Row">
+            <span>+</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- No data message for Checker -->
+      <div class="no-data-message" *ngIf="designation === 'checker' && entries.length === 0">
+        Please select a company to load unauthorized records.
+      </div>
+
+      <div class="table-responsive">
+        <table class="calibration-table">
+          <thead>
+            <tr>
+              <th class="col-sr">Sr. No</th>
+              <th class="col-instrument">Instrument Name</th>
+              <th class="col-type">Type</th>
+              <th class="col-id">ID No.</th>
+              <th class="col-srno">SR NO</th>
+              <th class="col-make">Make</th>
+              <th class="col-range">Range</th>
+              <th class="col-unit">Unit</th>
+              <th class="col-lc">L.C.</th>
+              <th class="col-location">Location/PC</th>
+              <th class="col-caldate">Cal. Date</th>
+              <th class="col-duedate">Due Date</th>
+              <th class="col-action" *ngIf="designation === 'maker'">Action</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="entries">
+            <tr *ngFor="let entry of entries.controls; let i = index" [formGroupName]="i">
+              <td class="col-sr">
+                <span class="sr-no-display">{{ i + 1 }}</span>
+              </td>
+              <td class="col-instrument">
+                <select formControlName="instrumentName" class="form-select">
+                  <option value="">Select Instrument</option>
+                  <option *ngFor="let instrument of instruments" [value]="instrument.partcode">
+                    {{ instrument.instrument }}
+                  </option>
+                </select>
+              </td>
+              <td class="col-type">
+                <input type="text" formControlName="type" placeholder="Enter type" class="form-input">
+              </td>
+              <td class="col-id">
+                <input type="text" formControlName="idNo" placeholder="Enter ID No." class="form-input">
+              </td>
+              <td class="col-srno">
+                <input type="text" formControlName="srNoField" placeholder="Enter SR NO" class="form-input">
+              </td>
+              <td class="col-make">
+                <input type="text" formControlName="make" placeholder="Enter make" class="form-input">
+              </td>
+              <td class="col-range">
+                <input type="text" formControlName="range" placeholder="Enter range" class="form-input">
+              </td>
+              <td class="col-unit">
+                <input type="text" formControlName="unit" placeholder="Enter unit" class="form-input">
+              </td>
+              <td class="col-lc">
+                <input type="text" formControlName="lc" placeholder="Enter L.C." class="form-input">
+              </td>
+              <td class="col-location">
+                <select formControlName="locationPC" class="form-select">
+                  <option value="">Select Location/PC</option>
+                  <option *ngFor="let location of locations" [value]="location.PCCode">
+                    {{ location.PCName }}
+                  </option>
+                </select>
+              </td>
+              <td class="col-caldate">
+                <input type="date" formControlName="calDate" class="form-input date-input">
+              </td>
+              <td class="col-duedate">
+                <input type="date" formControlName="dueDate" class="form-input date-input">
+              </td>
+              <td class="col-action" *ngIf="designation === 'maker'">
+                <button type="button" class="btn-delete" (click)="removeEntry(i)" [disabled]="entries.length === 1"
+                  title="Delete Row">
+                  <span class="delete-icon">🗑</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Remark Section -->
+    <div class="remark-section">
+      <div class="remark-wrapper" *ngIf="designation === 'maker'">
+        <label for="makerRemark">Maker Remark</label>
+        <textarea id="makerRemark" formControlName="makerRemark" placeholder="Enter maker remark..."
+          class="remark-input" rows="3"></textarea>
+      </div>
+
+      <div class="remark-wrapper" *ngIf="designation === 'checker'">
+        <label for="checkerRemark">Checker Remark</label>
+        <textarea id="checkerRemark" formControlName="checkerRemark" placeholder="Enter checker remark..."
+          class="remark-input" rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button type="submit" class="btn-submit">Submit</button>
+      <button type="button" class="btn-reset" (click)="onReset()">Reset</button>
+    </div>
+  </form>
+</div>

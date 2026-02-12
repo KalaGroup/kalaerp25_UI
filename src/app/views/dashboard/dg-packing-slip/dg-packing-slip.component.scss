@@ -1,0 +1,768 @@
+.save-button {
+    position: absolute;
+    right: 20px;
+    background-color: #007bff; /* Bright blue background */
+    color: #fff; /* White text */
+    border: none; /* Remove default border */
+    padding: 5px 15px; /* Padding for a larger button */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Increase font size */
+    font-weight: bold; /* Bold text */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+  }
+
+  .save-button.disabled {
+    background-color: #ccc; /* Grey background when disabled */
+    cursor: not-allowed; /* Change cursor to indicate unclickable */
+  }
+
+  // .tab-content {
+  //   padding: 15px;
+  // }
+
+  .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    padding: 0 20px;
+    margin-bottom: 20px; /* Adds distance from the bottom */
+    position: relative;
+  }
+
+  .dg-stage-header {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0;
+  }
+
+  .Eng-qr-sr-no {
+    color: darkred !important; 
+    font-weight: bold;
+  }
+
+  .Alt-qr-sr-no {
+    color: darkred; /* Default color */
+    font-weight: bold;
+}
+
+.green-text {
+    color: green; /* Color when QR matches */
+    font-weight: bold;
+}
+
+.radio-button-wrapper {
+  display: flex;
+  justify-content: center; /* Centers the radio buttons */
+  gap: 18px; /* Adds spacing between buttons */
+  padding: 10px 0;
+}
+
+.custom-radio {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
+}
+
+.custom-radio input[type="radio"] {
+  appearance: none; /* Hide default radio button */
+  width: 16px;
+  height: 16px;
+  border: 2px solid #007bff; /* Blue border */
+  border-radius: 50%;
+  margin-right: 8px;
+  position: relative;
+}
+
+.custom-radio input[type="radio"]:checked {
+  background-color: #007bff; /* Fill color when selected */
+}
+
+.custom-radio input[type="radio"]:checked::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+/* ✅ This increases the font weight when the radio button is selected */
+.custom-radio input[type="radio"]:checked + .radio-label {
+  font-weight: bold;
+  color: #0c0c0c;
+}
+
+.radio-label {
+  color: #333;
+  font-weight: 500;
+}
+
+
+  .scan-section-header {
+    background-color: #E0E0E0;
+    margin-bottom: 10px;
+    padding: 8px;
+    text-align: center;
+
+  }
+  .scan-section-details {
+    //background-color: #F5F5F5;
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+  .scan-header {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-align: center;
+    display: block;
+    width: 100%;
+  }
+
+
+  .scan-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 10px;
+    background:white;
+  }
+
+  .label {
+    background-color: #8e239e;
+    color: white;
+    width: 100%;
+    text-align: center;
+   padding: 5px;
+  }
+
+  .start-Play{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 10px;
+    margin: 10px;
+  }
+
+  .input-line {
+    border-bottom: 1px solid #ccc; /* Creates the underline effect */
+    padding: 5px 0; /* Adds some space above and below the text */
+    min-height: 20px; /* Ensures the line has a minimum height */
+    outline: none; /* Removes the default outline */
+    color: #333; /* Text color */
+    max-width: 200px; /* Set a maximum width */
+    width: 100%; /* Make it responsive to the parent width */
+    box-sizing: border-box; /* Include padding and border in the element's total width */
+  }
+
+  /* Optional: Style when the input line is focused */
+  .input-line:focus {
+    border-color: #66afe9; /* Change border color on focus */
+  }
+
+
+  .plan-details-label {
+
+    background-color:#8e239e;
+    color: white;
+    width: 100%;
+    text-align: center;
+   padding: 5px;
+  }
+
+  .play-button,
+  .plan-button {
+    background-color: #3F51B5;
+    color: white;
+    width: 100%;
+  }
+
+  .plan-details {
+    padding: 15px;
+    background-color: #F5F5F5;
+
+  }
+
+  .plan-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 10px;
+  }
+
+  .qr-scanner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+
+  .qr-scanner-wrapper {
+    width: 300px; /* Adjust the width */
+    height: 300px; /* Adjust the height */
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3); /* Shadow effect */
+    background-color: #fff; /* Background color */
+    position: relative;
+  }
+
+  .qr-scan-header {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: bold;
+    color: #333;
+    background-color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+  }
+
+  zxing-scanner {
+    width: 100% !important; /* Force the scanner to fill the container */
+    height: 100% !important;
+    border-radius: 10px;
+    object-fit: cover; /* Ensures the video fits within the bounds */
+  }
+
+.dropdown {
+  width: 200px; /* Ensures the dropdown and options have the same width */
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  font-size: 16px;
+  appearance: none; /* Removes default OS styles */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.dropdown option {
+  width: 60%; /* Ensures options match the dropdown width */
+  white-space: nowrap; /* Prevents text from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds "..." if text overflows */
+}
+
+  .Audio-section-header{
+    background-color: #E0E0E0;
+    margin-bottom: 10px;
+    padding: 8px;
+    text-align: center;
+  }
+  .Audio-header{
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-align: center;
+    display: block;
+    width: 100%;
+  }
+
+  .Audio-buttons-container {
+    display: flex;
+    justify-content: center; /* Center the buttons horizontally */
+    gap: 25px; /* Space between buttons */
+    margin-top: 15px; /* Optional: Add some space above the buttons */
+    margin-bottom: 15px;
+  }
+
+  .Audio-buttons {
+    background-color: #007bff; /* Bright blue background */
+    color: #fff; /* White text */
+    border: none; /* Remove default border */
+    padding: 5px 15px; /* Padding for a larger button */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Increase font size */
+    font-weight: bold; /* Bold text */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+  }
+
+  .Audio-buttons:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2); /* Add shadow on hover */
+  }
+
+  .Audio-buttons:active {
+    background-color: #004085; /* Even darker blue on click */
+    box-shadow: none; /* Remove shadow on click */
+  }
+
+  .Audio-Player{
+   margin-left: 10%;
+   margin-bottom: 5%;
+
+  }
+
+  .Video-section-header{
+    background-color: #E0E0E0;
+    margin-bottom: 10px;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .Video-buttons-container{
+    display: flex;
+    justify-content: center; /* Center the buttons horizontally */
+    gap: 25px; /* Space between buttons */
+    margin-top: 20px; /* Optional: Add some space above the buttons */
+    margin-bottom: 20px;
+  }
+
+  .Video-buttons{
+    background-color: #007bff; /* Bright blue background */
+    color: #fff; /* White text */
+    border: none; /* Remove default border */
+    padding: 10px 20px; /* Padding for a larger button */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Increase font size */
+    font-weight: bold; /* Bold text */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+  }
+
+  .Video-buttons:hover{
+    background-color: #0056b3; /* Darker blue on hover */
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2); /* Add shadow on hover */
+  }
+
+  .Video-buttons:active{
+    background-color: #004085; /* Even darker blue on click */
+    box-shadow: none; /* Remove shadow on click */
+  }
+
+  .small-video-player {
+    width: 320px; /* Set the desired width */
+    height: 180px; /* Set the desired height */
+    border: 2px solid #000; /* Optional: Add a border for better visibility */
+    margin-top: 10px; /* Optional: Add some space at the top */
+   margin-left: 5%;
+   margin-bottom: 5%;
+  }
+
+
+  h6{
+    font-size: 16px;
+  }
+
+  .combined-view {
+    background-color:#ffffff; /* Light gray background */
+    padding: 5px; /* Add some padding inside the container */
+    border-radius: 8px; /* Round the corners of the container */
+    border: 1px solid #9b9898; /* Light border around the container */
+    max-width: 1200px; /* Set a max-width for the container */
+    margin-left: 15px;
+    margin-bottom:15px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+
+  .combined-view:hover {
+    background-color: hwb(220 92% 7%);
+    transform: translateY(-2px); /* Lift the container slightly */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for a subtle 3D effect */
+  }
+
+  .selected-option {
+    display: grid;
+    grid-template-columns: 1fr; /* One column for the title */
+    margin: 10px;
+  }
+
+  .remark-container {
+    display: flex; /* Use flex to align items in a row */
+    justify-content: space-between; /* Space out the remark and the number */
+    align-items: center; /* Center the items vertically */
+  }
+
+  .number {
+    font-weight: bold; /* Make the number bold for emphasis */
+    //margin-right: 250px;
+  }
+
+  .title-container {
+    display: flex; /* Use flexbox to align items in a row */
+    justify-content: space-between; /* Space between title and number */
+    align-items: center; /* Center the items vertically */
+  }
+
+
+  .remark {
+    /* Style for remark text */
+    padding: 2px 5px; /* Add some padding */
+    border-bottom: 1px solid #007bff; /* Create a bottom border for a line effect */
+    color: #000; /* Text color */
+    min-width: 300px; /* Set a minimum width */
+    max-width: 5%; /* Ensure it doesn’t exceed container width */
+    display: inline-block; /* Ensure the span behaves like a block */
+    outline: none; /* Remove outline on focus */
+    word-wrap: break-word; /* Ensures long words wrap properly */
+    white-space: pre-wrap; /* Allows text to wrap while maintaining spacing */
+    //margin-left: 250px; /* Add space between Remark= and the editable text */
+  }
+
+  .remark:focus {
+    border-bottom: 1px solid #0056b3; /* Change the bottom border color on focus */
+    background-color: rgba(0, 123, 255, 0.1); /* Light background color on focus */
+    transition: background-color 0.2s; /* Smooth transition for background */
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  // .error-message {
+  //   color: red;
+  //   font-weight: bold;
+  //   margin-top: 10px;
+  //   text-align: center;
+  // }
+
+  .errorModal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+  }
+
+  .successModal{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+  }
+
+  .warningModal{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+  }
+
+  .highlight {
+    font-weight: bold;
+    color: #ff5722;
+  }
+
+  .errorModal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+  }
+
+  .successModal_content{
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+  }
+
+  .warningModal_content{
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+  }
+
+  .error-ok-button {
+    padding: 8px 16px;
+    background:#f51202;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .success-ok-button{
+    padding: 8px 16px;
+    background:rgb(17, 243, 5);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .warning-ok-button{
+    padding: 8px 16px;
+    background:rgb(222, 2, 2);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+ 
+
+/* Remark Label */
+.remark-label {
+  font-size: 14px;
+  color: #555;
+}
+
+/* Editable Remark */
+.remark {
+  flex: 1;
+  padding: 5px;
+  border-bottom: 1px solid #007bff;
+  min-width: 200px;
+  max-width: 100%;
+  color: #000;
+  outline: none;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Focus Effect */
+.remark:focus {
+  border-bottom: 1px solid #0056b3;
+  background-color: rgba(0, 123, 255, 0.1);
+  transition: background-color 0.2s;
+}
+
+/* Highlight when the contenteditable field inside is focused */
+.card:focus-within {
+  border: 2px solid #007bff;
+  box-shadow: 0px 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+//for dropdown
+.custom-dropdown {
+  // width: 200px;
+  // position: relative;
+  // border: 1px solid #ccc;
+  // background-color: #f8f8f8;
+  // padding: 5px;
+  // font-size: 16px;
+  // cursor: pointer;
+  // border-radius: 5px;
+  width: 200px; /* Adjust as needed */
+  position: relative;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  font-size: 16px;
+  height: 35px; /* Match label height */
+  line-height: 1; /* Adjust text alignment */
+  vertical-align: middle; /* Align with the label */
+}
+
+.selected-option {
+   display: grid;
+    grid-template-columns: 1fr;
+    margin: 8px;
+}
+
+.dropdown-list {
+  position: absolute;
+  width: 100%; /* Options will match dropdown width */
+  background: white;
+  border: 1px solid #ccc;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: none;
+  z-index: 1000;
+}
+
+.dropdown-list.show {
+  display: block; /* Show dropdown on click */
+}
+
+.dropdown-list li {
+  padding: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Highlight dropdown options on hover */
+.dropdown-list li:hover {
+  background-color: #f0f0f0; /* Light gray background */
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Apply highlight when item is clicked */
+.highlight {
+  background-color: #dcdcdc !important;
+}
+
+.table-container {
+  margin-top: 5px;
+  width: 100%;
+  overflow-x: auto; /* Enables horizontal scroll on small screens */
+}
+
+.custom-table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Header Styling */
+.custom-table th {
+  background-color: #1976d2; /* Professional Blue */
+  color: white;
+  font-weight: bold;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #1259a3;
+}
+
+/* Alternating Row Colors */
+.custom-table tr:nth-child(even) {
+  background-color: #f2f7ff; /* Light blue shade */
+}
+
+.custom-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Cell Styling */
+.custom-table td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Row Hover Effect */
+.custom-table tr:hover {
+  background-color: #e3f2fd; /* Light blue hover effect */
+}
+
+//stage III DgKitDetails
+.no-data {
+  text-align: center;
+  font-size: 16px;
+  color: #ff0000;
+  margin-top: 10px;
+}
+
+.negative-value {
+  color: red;
+  font-weight: bold;
+}
+
+.editable-line {
+    display: inline-block;
+    min-width: 100px;
+    border-bottom: 1px solid #000;
+    padding: 2px 5px;
+    margin-left: 30px;
+    outline: none;
+  }
+
+  .field-row {
+    margin: 5px 0;
+  }
+
+  .card-scroll-wrapper {
+  height: 400px; /* or use max-height: 400px */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 5px;
+  background-color: #f9f9f9;
+}
+
+.card-scroll-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.data-card {
+  padding: 6px;
+  border-radius: 8px;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.15);
+  background: #fff;
+}
+
+.no-padding {
+  margin: 0;
+  padding: 0 !important;
+}
+
+
+//mobile width for stage III DG Kit Details
+@media (max-width: 412px) {
+  .table-container {
+    margin-top: 5px;
+    width: 100%;
+    overflow-x: hidden; 
+  }
+
+  .custom-table {
+    width: 100%;
+    //min-width: 100%;
+    table-layout: fixed; /* Forces columns to share space equally */
+    word-wrap: break-word; /* Prevents overflow from long text */
+  }
+
+  th, td {
+    padding: 7px;
+    font-size: 12px;
+  }
+}
+
+
+/* Mobile View Fix */
+@media (max-width: 768px) {
+  .custom-dropdown {
+    width: 100%;
+    max-width: 200px;
+    height: 32px;
+  }
+  .highlight {
+    background-color: #dcdcdc !important;
+  }
+}
+

@@ -1,0 +1,164 @@
+<div class="pending-site-visit-container">
+  <!-- Header Toolbar -->
+  <mat-toolbar class="header-toolbar" color="primary">
+    <span class="toolbar-title">Pending SiteVisit ({{ siteVisits.length }})</span>
+    <span class="toolbar-spacer"></span>
+  </mat-toolbar>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix class="search-prefix-icon">search</mat-icon>
+      <input matInput placeholder="Enter Serial No or Site Name" [(ngModel)]="searchSerialNo"
+        (input)="onSearchInputChange()" />
+      <button mat-icon-button matSuffix *ngIf="searchSerialNo" (click)="clearSearch()" aria-label="Clear search">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+
+
+  <!-- ✅ REPLACE: Loading Spinner with custom CSS spinner -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="custom-spinner"></div>
+    <p class="loading-text">Loading site visits...</p>
+  </div>
+
+  <!-- Site Visit Cards -->
+  <div class="cards-container">
+    <mat-card *ngFor="let visit of filteredSiteVisits; let i = index; trackBy: trackByVisitId"
+      class="site-visit-card clickable" appearance="outlined" (click)="onCardClick(visit)">
+      <!-- Card Header - Site Info -->
+      <mat-card-header class="card-header">
+        <div class="header-content">
+          <div class="site-info">
+            <div class="info-group site-name-group">
+              <span class="label">Site Name</span>
+              <span class="value site-name">{{ visit.siteName }}</span>
+            </div>
+            <div class="info-group site-address-group">
+              <span class="label">Site Address</span>
+              <span class="value site-address">{{ visit.siteAddress }}</span>
+            </div>
+          </div>
+          <div class="card-index">{{ i + 1 }}</div>
+        </div>
+      </mat-card-header>
+
+      <mat-divider></mat-divider>
+
+      <!-- Card Content -->
+      <mat-card-content class="card-content">
+        <!-- Row 1: Serial No, Ass Date, Work Details -->
+        <div class="info-row three-col">
+          <div class="info-group">
+            <span class="label">Serial No</span>
+            <span class="value serial-no">{{ visit.serialNo }}</span>
+          </div>
+          <div class="info-group">
+            <span class="label">Ass Date</span>
+            <span class="value">{{ visit.assDate }}</span>
+          </div>
+          <div class="info-group">
+            <span class="label">Work Details</span>
+            <span class="value work-details">{{ visit.workDetails }}</span>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Row 2: Last Work Dt, kVA, Ph, Model, Panel -->
+        <div class="info-row five-col">
+          <div class="info-group">
+            <span class="label">Last Work Dt</span>
+            <span class="value" [class.null-value]="!visit.lastWorkDt">
+              {{ visit.lastWorkDt || 'null' }}
+            </span>
+          </div>
+          <div class="info-group compact">
+            <span class="label">kVA</span>
+            <span class="value">{{ visit.kva }}</span>
+          </div>
+          <div class="info-group compact">
+            <span class="label">Ph</span>
+            <span class="value">{{ visit.ph || '-' }}</span>
+          </div>
+          <div class="info-group">
+            <span class="label">Model</span>
+            <span class="value model">{{ visit.model }}</span>
+          </div>
+          <div class="info-group compact">
+            <span class="label">Panel</span>
+            <span class="value">{{ visit.panel }}</span>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Row 3: Cust Name, Contact Person, Contact No -->
+        <div class="info-row three-col">
+          <div class="info-group">
+            <span class="label">Cust Name</span>
+            <span class="value" [class.null-value]="!visit.custName">
+              {{ visit.custName || '-' }}
+            </span>
+          </div>
+          <div class="info-group">
+            <span class="label">Contact Person</span>
+            <span class="value" [class.null-value]="!visit.contactPerson">
+              {{ visit.contactPerson || '-' }}
+            </span>
+          </div>
+          <div class="info-group">
+            <span class="label">Contact No</span>
+            <span class="value contact-no">
+              <mat-icon class="phone-icon">phone</mat-icon>
+              {{ visit.contactNo || '-' }}
+            </span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Empty State -->
+    <!-- For search results -->
+    <div class="empty-state" *ngIf="!isLoading && filteredSiteVisits.length === 0 && searchSerialNo.trim()">
+      <mat-icon class="empty-icon">search_off</mat-icon>
+      <p class="empty-text">No site visits found</p>
+      <p class="empty-subtext">Try adjusting your search criteria</p>
+      <button mat-stroked-button color="primary" (click)="clearSearch()">Clear Search</button>
+    </div>
+
+    <!-- For empty database -->
+    <div class="empty-state" *ngIf="!isLoading && filteredSiteVisits.length === 0 && !searchSerialNo.trim()">
+      <mat-icon class="empty-icon">event_busy</mat-icon>
+      <p class="empty-text">No pending site visits</p>
+      <p class="empty-subtext">All site visits have been completed</p>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+        {{ errorMessage }}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+</div>

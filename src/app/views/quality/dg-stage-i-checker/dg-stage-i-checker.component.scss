@@ -1,0 +1,1696 @@
+// Color Variables
+$primary-dark: #1a1f2e;
+$border-color: #e0e4e8;
+$bg-light: #f7f8fa;
+$bg-white: #ffffff;
+$text-primary: #1a1f2e;
+$text-muted: #8a92a3;
+$accent: #3d5a80;
+$row-hover: #f0f2f5;
+$modal-header-bg: #4a90a4;
+
+.checker-container {
+  padding: 24px;
+  background-color: $bg-light;
+  min-height: 100vh;
+}
+
+.filters-wrapper {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+
+    .field-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-primary;
+      margin-bottom: 6px;
+    }
+
+    // Default for Stage dropdown
+    .mat-mdc-form-field {
+      width: 150px;
+
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background: $bg-white;
+        }
+
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: $border-color !important;
+        }
+
+        .mat-mdc-form-field-infix {
+          padding-top: 8px;
+          padding-bottom: 8px;
+          min-height: 40px;
+        }
+
+        input,
+        .mat-mdc-select-value-text {
+          color: $text-primary;
+          font-weight: 500;
+        }
+
+        input {
+          cursor: default;
+        }
+      }
+    }
+
+    // Profit Center field - auto width
+    &.profit-center-field {
+      .mat-mdc-form-field {
+        width: auto !important;
+        min-width: 150px;
+        max-width: 350px; // Increased max-width
+
+        ::ng-deep {
+          .mat-mdc-text-field-wrapper {
+            width: auto;
+          }
+
+          .mat-mdc-form-field-infix {
+            width: auto !important;
+          }
+
+          input {
+            width: auto !important;
+            min-width: 100%;
+          }
+        }
+      }
+    }
+  }
+}
+
+.table-container {
+  background: $bg-white;
+  border-radius: 6px;
+  border: 1px solid $border-color;
+  overflow: hidden;
+}
+
+.table-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-light;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border-color;
+    border-radius: 3px;
+  }
+
+  table.mat-mdc-table {
+    table-layout: fixed;
+    width: 100%;
+
+    // Main table column widths
+    .mat-column-srNo {
+      width: 60px;
+    }
+
+    .mat-column-jobCardNo {
+      width: 160px;
+    }
+
+    .mat-column-kva {
+      width: 60px;
+    }
+
+    .mat-column-phase {
+      width: 60px;
+    }
+
+    .mat-column-model {
+      width: 140px;
+    }
+
+    .mat-column-jPriority {
+      width: 70px;
+    }
+
+    .mat-column-engSrNo {
+      width: 150px;
+    }
+
+    .mat-column-altSrNo {
+      width: 150px;
+    }
+
+    // Stage 2 additional columns
+    .mat-column-batSrNo {
+      width: 150px;
+    }
+
+    .mat-column-bat2SrNo {
+      width: 150px;
+    }
+
+    .mat-column-cpySrNo {
+      width: 150px;
+    }
+
+    // Stage 3 columns
+    .mat-column-pfbCode {
+      width: 180px;
+    }
+
+    .mat-column-profitCenterCode {
+      width: 120px;
+    }
+
+    .mat-column-qpcStatus {
+      width: 100px;
+    }
+
+    .mat-column-engine {
+      width: 150px;
+    }
+
+    .mat-column-alternator {
+      width: 150px;
+    }
+
+    .mat-column-canopy {
+      width: 150px;
+    }
+
+    .mat-column-controlPanel1,
+    .mat-column-controlPanel2 {
+      width: 140px;
+    }
+
+    .mat-column-battery1,
+    .mat-column-battery2,
+    .mat-column-battery3,
+    .mat-column-battery4,
+    .mat-column-battery5,
+    .mat-column-battery6 {
+      width: 140px;
+    }
+
+    .mat-column-krm {
+      width: 120px;
+    }
+
+  }
+}
+
+table.mat-mdc-table {
+  width: 100%;
+
+  .mat-mdc-header-row {
+    background: #5a8fa8;
+    height: 48px;
+  }
+
+  .mat-mdc-header-cell {
+    background: #5a8fa8;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    border-bottom: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  .mat-mdc-row {
+    height: 44px;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: #e3f2f5;
+    }
+
+    &:nth-child(even) {
+      background-color: #f5fbfc;
+
+      &:hover {
+        background-color: #e3f2f5;
+      }
+    }
+  }
+
+  .mat-mdc-cell {
+    padding: 12px 16px;
+    color: $text-primary;
+    font-size: 13px;
+    border-bottom: 1px solid $border-color;
+    border-right: 1px solid $border-color;
+
+    &:last-child {
+      border-right: none;
+    }
+
+    .job-link {
+      color: #0066cc;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+        color: #004499;
+      }
+    }
+  }
+}
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: $text-muted;
+  font-size: 14px;
+
+  p {
+    margin: 0;
+  }
+}
+
+// Modal Styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+
+  // Defect modal overlay (higher z-index to appear on top)
+  &.defect-modal-overlay {
+    z-index: 1100;
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-container {
+  background: $bg-white;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease;
+  overflow: hidden;
+
+  // Defect modal specific styles
+  &.defect-modal {
+    max-width: 1100px;
+    max-height: 85vh;
+
+    .modal-table-container {
+      padding: 16px 20px;
+      background: #f8fbfc;
+    }
+
+    .modal-table-wrapper {
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      overflow: hidden;
+      overflow-y: auto;
+      max-height: 320px;
+    }
+  }
+}
+
+.modal-header {
+  background: $modal-header-bg;
+  color: #ffffff;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .modal-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .btn-save {
+      background-color: #28a745;
+      color: #ffffff;
+      border: none;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #218838;
+      }
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+
+.job-details-section {
+  background: linear-gradient(to bottom, #e8f4f8, #f0f7fa);
+  padding: 12px 20px;
+  border-bottom: 1px solid $border-color;
+
+  .detail-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .detail-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: $text-primary;
+      white-space: nowrap;
+    }
+
+    .detail-value {
+      font-size: 13px;
+      color: $text-primary;
+      background: $bg-white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid $border-color;
+    }
+  }
+}
+
+.modal-table-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-light;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border-color;
+    border-radius: 3px;
+  }
+
+  table.mat-mdc-table {
+    table-layout: fixed;
+
+    // Column widths
+    .mat-column-srNo {
+      width: 50px;
+    }
+
+    .mat-column-defectName {
+      width: 220px;
+    }
+
+    .mat-column-actualValue,
+    .mat-column-tolerance,
+    .mat-column-instrument,
+    .mat-column-rate,
+    .mat-column-fromRange,
+    .mat-column-toRange {
+      width: 100px;
+    }
+
+    .mat-column-action {
+      width: 120px;
+    }
+
+    .mat-mdc-header-row {
+      background: #5a8fa8;
+      height: 42px;
+    }
+
+    .mat-mdc-header-cell {
+      background: #5a8fa8;
+      color: #ffffff;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: none;
+      letter-spacing: 0.3px;
+      padding: 10px 12px;
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    .mat-mdc-row {
+      height: 44px;
+
+      &:nth-child(even) {
+        background-color: #f5fbfc;
+      }
+
+      &:hover {
+        background-color: #e3f2f5;
+      }
+
+      &.editing-row {
+        background-color: #fff9e6;
+
+        &:hover {
+          background-color: #fff9e6;
+        }
+      }
+    }
+
+    .mat-mdc-cell {
+      padding: 6px 8px;
+      font-size: 12px;
+      border-bottom: 1px solid $border-color;
+      border-right: 1px solid $border-color;
+      vertical-align: middle;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      .cell-content {
+        height: 28px;
+        display: flex;
+        align-items: center;
+      }
+
+      .edit-link {
+        color: $accent;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .edit-input {
+        width: 100%;
+        height: 28px;
+        padding: 2px 6px;
+        font-size: 12px;
+        border: 1px solid $border-color;
+        border-radius: 4px;
+        outline: none;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: $accent;
+          box-shadow: 0 0 0 2px rgba($accent, 0.1);
+        }
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+
+        .btn-update,
+        .btn-cancel {
+          padding: 4px 8px;
+          font-size: 11px;
+          font-weight: 500;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+        }
+
+        .btn-update {
+          background-color: #28a745;
+          color: #ffffff;
+
+          &:hover {
+            background-color: #218838;
+          }
+        }
+
+        .btn-cancel {
+          background-color: #dc3545;
+          color: #ffffff;
+
+          &:hover {
+            background-color: #c82333;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// NEW: QUALITY CHECKPOINT MODAL STYLES
+// ============================================
+
+.modal-container.quality-modal {
+  max-width: 1200px;
+  min-width: 1000px;
+  max-height: 80vh;
+  overflow: hidden;
+  margin: 0 auto;
+
+  >.modal-header {
+    display: flex !important;
+    background: $modal-header-bg !important;
+    color: #ffffff !important;
+    padding: 12px 20px !important;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .btn-rework,
+      .btn-reject,
+      .btn-accept {
+        padding: 7px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-rework {
+        background-color: #ffc107;
+        color: #212529;
+
+        &:hover {
+          background-color: #e0a800;
+        }
+      }
+
+      .btn-reject {
+        background-color: #dc3545;
+        color: #ffffff;
+
+        &:hover {
+          background-color: #c82333;
+        }
+      }
+
+      .btn-accept {
+        background-color: #28a745;
+        color: #ffffff;
+
+        &:hover {
+          background-color: #218838;
+        }
+      }
+
+      .btn-save {
+        background-color: #17a2b8;
+        color: #ffffff;
+        border: none;
+        padding: 7px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &:hover {
+          background-color: #138496;
+        }
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: #ffffff;
+        font-size: 26px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 4px;
+        margin-left: 5px;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+}
+
+.quality-filter-section {
+  background: linear-gradient(to bottom, #e8f4f8, #f0f7fa);
+  padding: 14px 20px;
+  border-bottom: 1px solid $border-color;
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+  }
+
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .filter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: $text-primary;
+      white-space: nowrap;
+    }
+
+    .filter-field {
+      width: 130px;
+
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background: $bg-white;
+          padding: 0 10px;
+        }
+
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: $border-color !important;
+        }
+
+        .mat-mdc-form-field-infix {
+          padding-top: 6px;
+          padding-bottom: 6px;
+          min-height: 36px;
+        }
+
+        .mat-mdc-select-value-text {
+          font-size: 12px;
+          color: $text-primary;
+        }
+
+        .mat-mdc-form-field-subscript-wrapper {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    align-items: center;
+
+    button {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-rework {
+      background-color: #ffc107;
+      color: #212529;
+
+      &:hover {
+        background-color: #e0a800;
+      }
+    }
+
+    .btn-reject {
+      background-color: #dc3545;
+      color: #ffffff;
+
+      &:hover {
+        background-color: #c82333;
+      }
+    }
+
+    .btn-accept {
+      background-color: #28a745;
+      color: #ffffff;
+
+      &:hover {
+        background-color: #218838;
+      }
+    }
+  }
+}
+
+// Quality Checkpoint Table Specific Styles
+.modal-container.quality-modal {
+  .modal-table-container {
+    padding: 16px 20px;
+    background: #f8fbfc;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-table-wrapper {
+    max-height: 280px;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    overflow: hidden;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: $bg-light;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $border-color;
+      border-radius: 3px;
+    }
+
+    table.mat-mdc-table {
+      width: 100%;
+
+      // Quality Checkpoint column widths - Optimized for input fields
+      .mat-column-srNo {
+        width: 50px;
+        text-align: center;
+      }
+
+      .mat-column-subAssemblyPart {
+        width: 140px;
+      }
+
+      .mat-column-qualityProcessCheckpoint {
+        width: 200px;
+      }
+
+      .mat-column-specification {
+        width: 180px;
+      }
+
+      .mat-column-remark {
+        width: 160px;
+      }
+
+      .mat-column-raiseEsp {
+        width: 160px;
+        text-align: center;
+      }
+
+      .mat-column-sixM {
+        width: 130px;
+        text-align: center;
+      }
+
+      .mat-column-ok {
+        width: 50px;
+        text-align: center;
+      }
+
+      .mat-mdc-header-row {
+        background: #5a8fa8;
+        height: 44px;
+      }
+
+      .mat-mdc-header-cell {
+        background: #5a8fa8;
+        color: #ffffff;
+        font-weight: 500;
+        font-size: 12px;
+        text-transform: none;
+        padding: 10px 12px;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: none;
+
+        &:last-child {
+          border-right: none;
+        }
+      }
+
+      .mat-mdc-row {
+        height: 46px;
+
+        &:nth-child(even) {
+          background-color: #f5fbfc;
+        }
+
+        &:hover {
+          background-color: #e3f2f5;
+        }
+
+        &.ok-row {
+          background-color: #d4edda;
+
+          &:hover {
+            background-color: #c3e6cb;
+          }
+        }
+      }
+
+      .mat-mdc-cell {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid $border-color;
+        border-right: 1px solid $border-color;
+
+        &:last-child {
+          border-right: none;
+        }
+
+        .cell-content {
+          height: auto;
+          min-height: 32px;
+          display: flex;
+          align-items: center;
+        }
+
+        // Table input styling for editable columns
+        .table-input {
+          width: 100%;
+          height: 30px;
+          padding: 4px 8px;
+          font-size: 12px;
+          border: 1px solid $border-color;
+          border-radius: 4px;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          background: $bg-white;
+
+          &:focus {
+            border-color: $accent;
+            box-shadow: 0 0 0 2px rgba($accent, 0.1);
+          }
+
+          &::placeholder {
+            color: $text-muted;
+            font-style: italic;
+            font-size: 11px;
+          }
+
+          .esp-input {
+            width: 60px !important;
+            text-align: center;
+          }
+        }
+
+        // Checkbox cell styling
+        &.checkbox-cell,
+        .checkbox-cell {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          ::ng-deep {
+            .mat-mdc-checkbox {
+              .mdc-checkbox {
+                padding: 0;
+              }
+
+              .mdc-checkbox__background {
+                border-color: $border-color;
+              }
+
+              &.mat-mdc-checkbox-checked {
+                .mdc-checkbox__background {
+                  background-color: #28a745;
+                  border-color: #28a745;
+                }
+              }
+            }
+          }
+        }
+
+
+        .esp-cell {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .esp-input-wrapper {
+          position: relative;
+          width: 100%;
+          display: flex;
+          align-items: center;
+
+          &.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+
+            .esp-search-input {
+              background-color: #f5f5f5;
+              cursor: not-allowed;
+
+              &::placeholder {
+                color: #aaa;
+                font-style: italic;
+              }
+            }
+          }
+
+
+          .esp-search-input {
+            width: 100%;
+            height: 32px;
+            padding: 6px 30px 6px 10px;
+            font-size: 12px;
+            color: $text-primary;
+            border: 1px solid $border-color;
+            border-radius: 4px;
+            outline: none;
+            background: $bg-white;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+            &:disabled {
+              background-color: #f5f5f5;
+              cursor: not-allowed;
+            }
+
+            &::placeholder {
+              font-size: 11px;
+              color: $text-muted;
+              font-style: italic;
+            }
+
+            &:focus:not(:disabled) {
+              border-color: $accent;
+              box-shadow: 0 0 0 2px rgba($accent, 0.1);
+            }
+
+            &:hover:not(:focus):not(:disabled) {
+              border-color: darken($border-color, 10%);
+            }
+          }
+
+          .esp-clear-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            border: none;
+            background: #e0e0e0;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 18px;
+            text-align: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+              background: #dc3545;
+              color: #ffffff;
+            }
+
+            &:active {
+              transform: translateY(-50%) scale(0.95);
+            }
+          }
+        }
+
+        .sixm-dropdown {
+          width: 100%;
+
+          ::ng-deep {
+            .mat-mdc-text-field-wrapper {
+              background: $bg-white;
+              padding: 0 6px;
+              height: 32px;
+            }
+
+            .mat-mdc-form-field-infix {
+              padding-top: 4px;
+              padding-bottom: 4px;
+              min-height: 32px;
+            }
+
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing {
+              border-color: $border-color !important;
+            }
+
+            .mat-mdc-select-value-text {
+              font-size: 11px;
+              color: $text-primary;
+            }
+
+            .mat-mdc-select-arrow-wrapper {
+              height: 18px;
+            }
+
+            .mat-mdc-form-field-subscript-wrapper {
+              display: none;
+            }
+
+            .mat-mdc-select-placeholder {
+              font-size: 11px;
+              color: $text-muted;
+            }
+          }
+
+          &:hover {
+            ::ng-deep {
+
+              .mdc-notched-outline__leading,
+              .mdc-notched-outline__notch,
+              .mdc-notched-outline__trailing {
+                border-color: $accent !important;
+              }
+            }
+          }
+        }
+
+        // Autocomplete Panel Styles (dropdown)
+        ::ng-deep .mat-mdc-autocomplete-panel {
+          max-height: 200px !important;
+          border: 1px solid $border-color;
+          border-radius: 4px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          margin-top: 4px;
+
+          .mat-mdc-option {
+            height: 38px;
+            min-height: 38px;
+            padding: 0 12px;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            &:hover {
+              background-color: #e8f4f8;
+            }
+
+            &.mat-mdc-option-active {
+              background-color: #d4edda;
+            }
+
+            &.mat-mdc-option-disabled {
+              color: $text-muted;
+              font-style: italic;
+              background-color: #f9f9f9;
+            }
+
+            .emp-option {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              width: 100%;
+
+              .emp-code {
+                font-size: 10px;
+                font-weight: 600;
+                color: $accent;
+                background: #e8f4f8;
+                padding: 2px 6px;
+                border-radius: 3px;
+                min-width: 50px;
+                text-align: center;
+              }
+
+              .emp-name {
+                font-size: 12px;
+                color: $text-primary;
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+            }
+          }
+        }
+
+        // Ensure the option content takes full width
+        ::ng-deep .mat-mdc-autocomplete-panel .mdc-list-item__primary-text {
+          width: 100%;
+        }
+
+      }
+    }
+
+    // Empty state styling
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: $text-muted;
+      background: $bg-white;
+    }
+  }
+
+  // Job Details Section inside Quality Modal
+  .job-details-section {
+    background: #f8fbfc;
+    padding: 12px 20px;
+    border-bottom: 1px solid $border-color;
+    flex-shrink: 0;
+
+    .detail-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 24px;
+      align-items: center;
+
+      &:not(:last-child) {
+        margin-bottom: 10px;
+      }
+    }
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .detail-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: $text-muted;
+        white-space: nowrap;
+      }
+
+      .detail-value {
+        font-size: 13px;
+        color: $text-primary;
+        font-weight: 500;
+        background: $bg-white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        border: 1px solid $border-color;
+      }
+    }
+  }
+
+  // Filter section inside Quality Modal
+  .quality-filter-section {
+    flex-shrink: 0;
+  }
+}
+
+.loading-state {
+  padding: 40px;
+  text-align: center;
+  color: $text-muted;
+  font-size: 14px;
+  background: $bg-white;
+
+  p {
+    margin: 0;
+  }
+}
+
+// Responsive adjustments for Quality Modal
+@media (max-width: 1300px) {
+  .modal-container.quality-modal {
+    max-width: 95%;
+    min-width: auto;
+    margin: 0 20px;
+
+    >.modal-header {
+      .modal-header-actions {
+        gap: 8px;
+
+        .btn-rework,
+        .btn-reject,
+        .btn-accept,
+        .btn-save {
+          padding: 6px 12px;
+          font-size: 11px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .modal-container.quality-modal {
+    >.modal-header {
+      flex-wrap: wrap;
+      gap: 10px;
+
+      .modal-header-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .btn-rework,
+        .btn-reject,
+        .btn-accept,
+        .btn-save {
+          padding: 5px 10px;
+          font-size: 10px;
+        }
+      }
+    }
+
+    .modal-table-wrapper {
+      table.mat-mdc-table {
+
+        .mat-column-specification,
+        .mat-column-remark {
+          min-width: 140px;
+        }
+      }
+    }
+  }
+}
+
+.errorModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000; // Changed from 1000 to 2000
+}
+
+.successModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+}
+
+.warningModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+}
+
+.errorModal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+}
+
+.successModal_content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+}
+
+.warningModal_content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+}
+
+.error-ok-button {
+  padding: 8px 16px;
+  background: #f51202;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.success-ok-button {
+  padding: 8px 16px;
+  background: rgb(17, 243, 5);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.warning-ok-button {
+  padding: 8px 16px;
+  background: rgb(222, 2, 2);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+// Defect Status Bar in Quality Modal
+.defect-status-bar {
+  background: linear-gradient(to right, #fff3cd, #ffeeba);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #ffc107;
+
+  .status-icon {
+    font-size: 18px;
+  }
+
+  .status-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #856404;
+    flex: 1;
+  }
+
+  .btn-edit-defects {
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #e0a800;
+    }
+  }
+}
+
+// Action Badge in Defect Modal Header
+.action-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 8px;
+
+  &.rework {
+    background-color: #ffc107;
+    color: #212529;
+  }
+
+  &.reject {
+    background-color: #dc3545;
+    color: #ffffff;
+  }
+}
+
+// Button Active State & Badge
+.btn-rework,
+.btn-reject {
+  position: relative;
+
+  &.active {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+  }
+
+  .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #28a745;
+    color: white;
+    font-size: 10px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Save Final Button
+.btn-save-final {
+  background-color: #17a2b8 !important;
+  color: #ffffff !important;
+  border: none;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse 1.5s infinite;
+
+  &:hover {
+    background-color: #138496 !important;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(23, 162, 184, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(23, 162, 184, 0);
+  }
+}
+
+// Selected Count in Defect Modal Header
+.selected-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+// Selected Row in Defect Table
+.selected-row {
+  background-color: #d4edda !important;
+
+  &:hover {
+    background-color: #c3e6cb !important;
+  }
+}
+
+// Selection Column Width
+.mat-column-select {
+  width: 60px;
+  text-align: center;
+}
+
+// Success Modal Icon
+.success-icon {
+  width: 50px;
+  height: 50px;
+  background: #28a745;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 15px;
+}
+
+// Disabled button state
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Defect count in header - update existing style
+.defect-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mat-mdc-row {
+  &.complete-row {
+    background-color: #d4edda !important;
+
+    &:hover {
+      background-color: #c3e6cb !important;
+    }
+  }
+
+  &.incomplete-row {
+    background-color: #fff3cd !important;
+
+    &:hover {
+      background-color: #ffeeba !important;
+    }
+  }
+
+  &.editing-row {
+    background-color: #cce5ff !important;
+
+    &:hover {
+      background-color: #b8daff !important;
+    }
+  }
+}
+
+// Action cell with status icon
+.action-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .edit-link {
+    color: $accent;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .status-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+
+    &.complete {
+      background-color: #28a745;
+      color: #ffffff;
+    }
+
+    &.incomplete {
+      background-color: #ffc107;
+      color: #212529;
+    }
+  }
+}

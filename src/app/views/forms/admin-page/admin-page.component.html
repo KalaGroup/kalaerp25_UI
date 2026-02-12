@@ -1,0 +1,67 @@
+<div class="admin-page-container">
+    <h2 class="admin-header">Administrator</h2>
+    <div class="dropdown-container">
+      <div class="dropdown-row">
+        <div class="dropdown-field">
+            <label>Employee</label>
+            <mat-form-field appearance="fill" class="dropdown">
+              <mat-label *ngIf="!selectedEmployee">Select Employee</mat-label>
+             <mat-select [(ngModel)]="selectedEmployee" name="employee"  (ngModelChange)="onEmployeeChange()">
+                <mat-option *ngFor="let employee of employees" [value]="employee">
+                  {{ employee.Ename }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+              
+        <div class="dropdown-field">
+          <label>Role</label>
+          <mat-form-field appearance="fill" class="dropdown">
+            <mat-label *ngIf="!selectedRoles || selectedRoles.length === 0">Select Role</mat-label>
+            <mat-select [(ngModel)]="selectedRoles" name="role"  (ngModelChange)="onRoleChange()" multiple>
+              <mat-option *ngFor="let role of roles" [value]="role">
+                {{ role.RoleName }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+  
+      <div class="dropdown-row">
+        <div class="dropdown-field">
+          <label>Company</label>
+          <mat-form-field appearance="fill" class="dropdown">
+            <mat-label *ngIf="!selectedCompanies || selectedCompanies.length === 0">Select Company</mat-label>
+            <mat-select [(ngModel)]="selectedCompanies"  (ngModelChange)="onCompanyChange()" (selectionChange)="fetchProfitCenters()" multiple>
+              <mat-option *ngFor="let company of companies" [value]="company">
+                {{ company.CName }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="dropdown-field">
+          <label>ProfitCenter</label>
+          <mat-form-field appearance="fill" class="dropdown">
+            <mat-label *ngIf="!selectedProfitCenters || selectedProfitCenters.length === 0">Select ProfitCenter</mat-label>
+            <mat-select [(ngModel)]="selectedProfitCenters" name="profitCenter" (ngModelChange)="onProfitCenterChange()" multiple>
+              <mat-option *ngFor="let profitCenter of profitCenters" [value]="profitCenter">
+                {{ profitCenter.Pcname }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+   
+    <div class="error-message" *ngIf="errorMessage" [ngClass]="{'success-message': errorMessage.includes('success'), 'error-message': !errorMessage.includes('success')}">
+        {{ errorMessage }}
+      </div>
+      
+     <!-- Submit Button -->
+  <div class="button-container">
+    <button mat-raised-button color="primary" class="submit-button" (click)="onSubmit()">
+      Submit
+    </button>
+  </div>
+  </div>
+  

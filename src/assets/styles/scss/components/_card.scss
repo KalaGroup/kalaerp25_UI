@@ -1,0 +1,73 @@
+.mdc-card {
+  margin: .75rem;
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: $shadow-primary !important;
+  &.rounded-full {
+    border-radius: 200px !important;
+  }
+}
+
+.mdc-card.default {
+  padding: 0;
+}
+
+.mdc-card.default .mdc-card-title {
+  padding-top: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  line-height: 1;
+  font-weight: 400;
+}
+.mdc-card.default>:first-child {
+  border-radius: 2px 2px 0 0;
+}
+.mdc-card.default .mdc-card-subtitle:first-child {
+  padding-top: 1rem;
+}
+.mdc-card.default .mdc-card-subtitle {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  line-height: 1;
+}
+.mdc-card.default .mdc-card-content {
+  padding: 1rem;
+  margin-bottom: 0;
+  position: relative;
+}
+.mdc-card.default .mdc-card-actions,
+.mdc-card.default .mdc-card-actions:last-child {
+  padding: .5rem;
+  margin: 0;
+}
+.mdc-card.default>:last-child {
+  border-radius: 0 0 2px 2px;
+}
+
+.mdc-card .mdc-card-title .mat-divider, .mat-divider.full-width {
+  margin-left: -24px;
+  margin-right: -24px;
+}
+
+.mdc-card.p-0 .mdc-card-title .card-title-text {
+  padding: 1rem 1.5rem;
+}
+.mdc-card.p-0 .mdc-card-title .card-title-text .card-control {
+  height: 24px;
+  width: 24px;
+  line-height: 24px;
+}
+.mdc-card.p-0 .mdc-card-title .card-title-text .mdc-card-subtitle {
+  margin: 0;
+}
+.mdc-card.p-0 .mdc-card-title .mat-divider {
+  margin-left: 0;
+  margin-right: 0;
+  border-top-color: rgba(0, 0, 0, 0.04);
+}
+.mdc-card.p-0 .mdc-card-image {
+  margin: 0 0 1rem !important;
+}
+.mdc-card.p-0 .mdc-card-content {
+  padding:  0 1.5rem 1.5rem;
+}

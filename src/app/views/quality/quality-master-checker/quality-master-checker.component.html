@@ -1,0 +1,166 @@
+<div class="quality-checkpoint-form">
+  <!-- Header -->
+  <div class="form-header">
+    <h2 class="form-title">Quality Process Checkpoint</h2>
+    <div class="header-actions">
+      <button class="btn btn-save" (click)="onSave()" [disabled]="isLoading">Save</button>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+        {{ errorMessage }}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+
+  <!-- Body -->
+  <div class="form-body">
+    <!-- Filter Row -->
+    <div class="filter-row">
+      <!-- Profit Center -->
+      <div class="filter-item">
+        <label>Profit Center <span class="required">*</span></label>
+        <select class="form-select" [(ngModel)]="selectedProfitCenter" (change)="onFilterChange()">
+          <option value="">Select Profit Center</option>
+          <option *ngFor="let pc of profitCenters" [value]="pc.Pccode">{{ pc.PCName }}</option>
+        </select>
+      </div>
+
+      <!-- Stage -->
+      <div class="filter-item">
+        <label>Stage <span class="required">*</span></label>
+        <select class="form-select" [(ngModel)]="selectedStage" (change)="onFilterChange()">
+          <option value="">Select Stage</option>
+          <option *ngFor="let stage of stages" [value]="stage">{{ stage }}</option>
+        </select>
+      </div>
+
+      <!-- From KVA -->
+      <div class="filter-item">
+        <label>From KVA <span class="required">*</span></label>
+        <select class="form-select" [(ngModel)]="selectedFromKVA" (change)="onFilterChange()">
+          <option [ngValue]="null">Select KVA</option>
+          <option *ngFor="let kva of fromKvaOptions" [ngValue]="kva">{{ kva }}</option>
+        </select>
+      </div>
+
+      <!-- To KVA -->
+      <div class="filter-item">
+        <label>To KVA <span class="required">*</span></label>
+        <select class="form-select" [(ngModel)]="selectedToKVA" (change)="onFilterChange()">
+          <option [ngValue]="null">Select KVA</option>
+          <option *ngFor="let kva of toKvaOptions" [ngValue]="kva">{{ kva }}</option>
+        </select>
+      </div>
+
+      <!-- Fetch Button -->
+      <div class="filter-item fetch-btn-container">
+        <button class="btn btn-fetch" (click)="fetchCheckpointData()" [disabled]="isLoading">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span *ngIf="!isLoading">Search CheckPoints</span>
+          <span *ngIf="isLoading">Searching...</span>
+        </button>
+      </div>
+
+      <div class="filter-item-spacer"></div>
+
+      <!-- Add Row Button -->
+      <div class="filter-item add-row-container">
+        <button class="btn btn-add" (click)="addRow()" title="Add Row">+</button>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container">
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <span>Loading data...</span>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-srno">Sr.No.</th>
+            <th class="col-part">Sub-Assembly Part</th>
+            <th class="col-checkpoint">Quality/Process Checkpoint</th>
+            <th class="col-spec">Specification</th>
+            <th class="col-observation">Observation</th>
+            <th class="col-ok">OK</th>
+            <th class="col-action">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Empty State -->
+          <tr *ngIf="checkpointItems.length === 0 && !isLoading">
+            <td colspan="7" class="empty-state">
+              <p>No data available. Please select filters and click "Fetch Data".</p>
+            </td>
+          </tr>
+
+          <!-- Data Rows -->
+          <tr *ngFor="let item of checkpointItems; let i = index; trackBy: trackByIndex">
+            <td class="text-center">{{ i + 1 }}</td>
+            <td>
+              <input type="text" class="form-input" placeholder="Enter sub-assembly part"
+                [(ngModel)]="item.subAssemblyPart">
+            </td>
+            <td>
+              <input type="text" class="form-input" placeholder="Enter checkpoint" [(ngModel)]="item.checkpoint">
+            </td>
+            <td>
+              <input type="text" class="form-input" placeholder="Enter specification" [(ngModel)]="item.specification">
+            </td>
+            <td>
+              <input type="text" class="form-input" placeholder="Enter observation" [(ngModel)]="item.observation">
+            </td>
+            <td>
+              <input type="text" class="form-input" placeholder="Enter" [(ngModel)]="item.ok">
+            </td>
+            <td class="text-center">
+              <button class="btn btn-delete" (click)="deleteRow(i)" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Checker Remark Section -->
+    <div class="checker-remark-section">
+      <label class="remark-label">Checker Remark</label>
+      <textarea class="form-textarea" rows="3" placeholder="Enter checker remark..."
+        [(ngModel)]="checkerRemark"></textarea>
+    </div>
+  </div>
+</div>

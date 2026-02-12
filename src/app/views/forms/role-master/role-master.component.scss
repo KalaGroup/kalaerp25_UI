@@ -1,0 +1,66 @@
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center all content horizontally */
+    margin-top: 20px;
+   }
+  
+  .dropdown-section {
+    display: flex;
+    justify-content: center;
+    gap: 25px; /* Space between dropdowns */
+    margin-bottom: 24px;
+  
+    mat-form-field {
+      width: 350px;
+    }
+  }
+  
+  .table-container {
+    width: 70%; /* Adjust table width for better layout */
+    margin-top: 24px;
+    margin-left: 15%;
+    margin-right: 9%;
+    max-height: 400px; /* Set the max height to enable scrolling */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows */
+  
+    table {
+      width: 100%; /* Ensure table takes up full container width */
+      border-collapse: collapse;
+    }
+  
+    th.mat-header-cell, td.mat-cell {
+        position: sticky;
+        top: 0;
+        background: #f7f7f7;
+        z-index: 2;
+        text-align: left;
+       padding: 12px;
+    }
+  
+    th.mat-header-cell {
+      background-color: #f0f0f5;
+      font-weight: bold;
+    }
+  }
+  
+  .submit-button {
+    margin-top: 16px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .mdc-data-table__header-cell, .mdc-data-table__cell {
+    padding: 0 0 0 203px;
+}
+  
+  .success-message {
+    color: green;
+    font-weight: bold;
+    align-items: center;
+  }
+  
+  
+  

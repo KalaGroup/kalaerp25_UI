@@ -1,0 +1,81 @@
+<div class="container">
+    <!-- Dropdown for Role Selection -->
+    <div style="display: flex; justify-content: center;">
+    <!-- <mat-form-field appearance="fill">
+      <mat-label>Select Role</mat-label>
+      <mat-select [(ngModel)]="selectedRole" (selectionChange)="onRoleChange($event.value)">
+        <mat-option *ngFor="let role of roles" [value]="role.RoleId">
+            {{ role.RoleName }}
+       </mat-option>
+      </mat-select>
+    </mat-form-field> -->
+    <mat-form-field appearance="fill">
+      <mat-label>Select ProfitCenter</mat-label>
+      <mat-select [(ngModel)]="selectedProfitcenter" (selectionChange)="onProfitCenterChange($event.value)">
+        <mat-option *ngFor="let profitcenter of profitcenters" [value]="profitcenter.PCID">
+            {{ profitcenter.Pcname }}
+       </mat-option>
+      </mat-select>
+    </mat-form-field>
+    </div>
+<div class="table-container">
+<!-- Table displaying the menu data -->
+<table mat-table [dataSource]="profitCenter" class="mat-elevation-z8">
+    <!-- Menu Name Column -->
+    <ng-container matColumnDef="pageName">
+      <th mat-header-cell *matHeaderCellDef style="background-color: #d4d0e9;"> Page Name </th>
+      <td mat-cell *matCellDef="let element"> {{ element.PageName }} </td>
+    </ng-container>
+
+    <!-- Add Column -->
+    <ng-container matColumnDef="add">
+      <th mat-header-cell *matHeaderCellDef style="background-color: #d4d0e9;"> Add </th>
+      <td mat-cell *matCellDef="let element">
+        <mat-checkbox [(ngModel)]="element.Add"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <!-- Edit Column -->
+    <ng-container matColumnDef="edit">
+      <th mat-header-cell *matHeaderCellDef style="background-color: #d4d0e9;"> Edit </th>
+      <td mat-cell *matCellDef="let element">
+        <mat-checkbox [(ngModel)]="element.Edit"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <!-- Delete Column -->
+    <ng-container matColumnDef="delete">
+      <th mat-header-cell *matHeaderCellDef style="background-color: #d4d0e9;"> Delete </th>
+      <td mat-cell *matCellDef="let element">
+        <mat-checkbox [(ngModel)]="element.Delete"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <!-- Auth Column -->
+    <ng-container matColumnDef="auth">
+      <th mat-header-cell *matHeaderCellDef style="background-color: #d4d0e9;"> Auth </th>
+      <td mat-cell *matCellDef="let element">
+        <mat-checkbox [(ngModel)]="element.Auth"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <!-- Export Column -->
+    <ng-container matColumnDef="export">
+      <th mat-header-cell *matHeaderCellDef style="background-color: #d4d0e9;"> Export </th>
+      <td mat-cell *matCellDef="let element">
+        <mat-checkbox [(ngModel)]="element.Export"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <!-- Table Header and Row Definitions -->
+    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky:true"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+  </div>
+  <button mat-raised-button color="primary" class="submit-button" (click)="onSubmit()">
+    Submit
+  </button>
+
+</div>
+
+  

@@ -1,0 +1,183 @@
+<div class="form-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Employee Information</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="employeeForm">
+          <!-- Personal Information Section -->
+          <mat-accordion>
+            <mat-expansion-panel expanded="true">
+              <mat-expansion-panel-header>
+                <mat-panel-title>Personal Information</mat-panel-title>
+              </mat-expansion-panel-header>
+  
+               <!-- Employee Code and Active Checkbox -->
+            <div class="emp-code-container">
+                <mat-form-field appearance="fill" class="emp-code-input">
+                  <mat-label>Employee Code</mat-label>
+                  <input matInput formControlName="empCode" placeholder="Employee Code">
+                </mat-form-field>
+                 <!-- VA Dropdown -->
+              <mat-form-field appearance="fill" class="emp-code-input">
+                <mat-label>VA</mat-label>
+                <mat-select formControlName="sampleInput">
+                  <mat-option *ngFor="let sample of va" [value]="sample.id">
+                    {{ sample.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+                <mat-checkbox formControlName="isActive" class="active-checkbox">Active</mat-checkbox>
+              </div>
+
+              <!-- Temp Employee Dropdown -->
+              <mat-form-field appearance="fill">
+                <mat-label>Temp Employee</mat-label>
+                <mat-select formControlName="temperoryEmployee">
+                  <mat-option *ngFor="let tempEmployee of tempEmp" [value]="tempEmployee.value">
+                    {{ tempEmployee.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <!-- By Offer Letter Dropdown -->
+              <mat-form-field appearance="fill">
+                <mat-label>By Offer Letter</mat-label>
+                <mat-select formControlName="ByOfferLetter">
+                  <mat-option *ngFor="let OfferLetter of byOfferLetter" [value]="OfferLetter.value">
+                    {{ OfferLetter.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+  
+              <!-- Name Fields -->
+              <div class="name-fields">
+                <mat-form-field appearance="fill">
+                  <mat-label>First Name</mat-label>
+                  <input matInput formControlName="firstName" required>
+                </mat-form-field>
+  
+                <mat-form-field appearance="fill">
+                  <mat-label>Middle Name</mat-label>
+                  <input matInput formControlName="middleName">
+                </mat-form-field>
+  
+                <mat-form-field appearance="fill">
+                  <mat-label>Last Name</mat-label>
+                  <input matInput formControlName="lastName" required>
+                </mat-form-field>
+              </div>
+
+              <div class="overtime-section">
+                <mat-checkbox formControlName="isOvertime">Over Time</mat-checkbox>
+              </div>
+  
+              <!-- Photo Upload -->
+              <div class="file-input-container">
+                <mat-label>Photo Attachment</mat-label>
+                <input type="file" (change)="onFileSelected($event)">
+              </div>
+  
+              <!-- Contractor Name Dropdown -->
+              <mat-form-field appearance="fill">
+                <mat-label>Contractor Name</mat-label>
+                <mat-select formControlName="contractorName">
+                  <mat-option *ngFor="let contractor of contractors" [value]="contractor.id">
+                    {{ contractor.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+  
+              <!-- Join Date -->
+              <mat-form-field appearance="fill">
+                <mat-label>Join Date</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="joinDate">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
+  
+              <!-- Company Name Dropdown -->
+              <mat-form-field appearance="fill">
+                <mat-label>Company Name</mat-label>
+                <mat-select formControlName="companyName" (selectionChange)="onCompanyChange()">
+                  <mat-option *ngFor="let company of companyNames" [value]="company.value">
+                    {{ company.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+  
+              <!-- Department Name Dropdown -->
+              <mat-form-field appearance="fill">
+                <mat-label>Department Name</mat-label>
+                <mat-select formControlName="departmentName" (selectionChange)="onDepartmentChange()">
+                  <mat-option *ngFor="let department of departmentNames" [value]="department.value">
+                    {{ department.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+               <!-- RoleName Name Dropdown -->
+               <mat-form-field appearance="fill">
+                <mat-label>Role Name</mat-label>
+                <mat-select formControlName="roleName">
+                  <mat-option *ngFor="let role of roleNames" [value]="role.value">
+                    {{ role.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+               <!-- Grade Name Dropdown -->
+               <mat-form-field appearance="fill">
+                <mat-label>Grade Name</mat-label>
+                <mat-select formControlName="gradeName">
+                  <mat-option *ngFor="let grade of gradeNames" [value]="grade.value">
+                    {{ grade.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+  
+              <!-- Employee Type Section -->
+              <div class="employee-type-section">
+                <h4>Employee Type</h4>
+                <mat-form-field appearance="fill">
+                  <mat-label>Employee Type</mat-label>
+                  <mat-select formControlName="employeeType">
+                    <mat-option *ngFor="let type of employeeTypes" [value]="type.value">
+                      {{ type.value }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Designation Dropdown -->
+                <mat-form-field appearance="fill">
+                    <mat-label>Designation</mat-label>
+                    <mat-select formControlName="designation">
+                      <mat-option *ngFor="let designation of designations" [value]="designation.value">
+                        {{ designation.value }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+  
+                <!-- Work Designation Dropdown -->
+                <mat-form-field appearance="fill">
+                  <mat-label>Work Designation</mat-label>
+                  <mat-select formControlName="workDesignation">
+                    <mat-option *ngFor="let workdesignation of workdesignations" [value]="workdesignation.value">
+                      {{ workdesignation.value }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </form>
+      </mat-card-content>
+      <mat-card-actions>
+        <span *ngIf="successMessage" [ngClass]="{'success-message': !isErrorMessage, 'error-message': isErrorMessage}">
+            {{ successMessage }}
+          </span>
+        <button mat-raised-button color="primary" (click)="onSubmit()">Submit</button>
+        <button mat-raised-button color="warn" (click)="onReset()">Reset</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
