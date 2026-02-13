@@ -7,6 +7,7 @@ import {
   CalibrationInstrumentResponse,
   CalibrationMstResponse,
 } from '../quality.service';
+import { th } from 'date-fns/locale';
 
 @Component({
   selector: 'app-calibration-master',
@@ -21,6 +22,11 @@ export class CalibrationMasterComponent implements OnInit {
 
   // Hardcoded designation - change to 'maker' or 'checker'
   designation: string = 'maker';
+
+
+  successMessage: string = '';
+  errorMessage: string = '';
+  warningMessage: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -92,41 +98,9 @@ export class CalibrationMasterComponent implements OnInit {
     }
   }
 
-  // private loadUnauthorizedData(companyId: number): void {
-  //   this.qualityService.getUnauthorizedCalibrationData(companyId).subscribe({
-  //     next: (data: CalibrationMstResponse[]) => {
-  //       this.entries.clear();
-
-  //       if (data.length === 0) {
-  //         console.warn('No unauthorized records found for this company.');
-  //         return;
-  //       }
-
-  //       data.forEach((record) => {
-  //         const formGroup = this.createEntryFormGroupWithData(record);
-  //         this.entries.push(formGroup);
-  //       });
-
-  //       // Set maker remark from first record (same for all rows)
-  //       if (data[0]?.makerRemark) {
-  //         this.calibrationForm.get('makerRemark')?.setValue(data[0].makerRemark);
-  //       }
-  //     },
-  //     error: (error) => {
-  //       console.error('Error loading unauthorized data:', error);
-  //     },
-  //   });
-  // }
-
   private loadUnauthorizedData(companyId: number): void {
-  console.log('Fetching data for companyId:', companyId);
-
   this.qualityService.getUnauthorizedCalibrationData(companyId).subscribe({
     next: (data: CalibrationMstResponse[]) => {
-      console.log('Raw API Response:', data);
-      console.log('Response type:', typeof data);
-      console.log('Is Array:', Array.isArray(data));
-
       if (data && data.length > 0) {
         console.log('First record:', JSON.stringify(data[0], null, 2));
         console.log('First record keys:', Object.keys(data[0]));
@@ -135,7 +109,7 @@ export class CalibrationMasterComponent implements OnInit {
       this.entries.clear();
 
       if (!data || data.length === 0) {
-        console.warn('No unauthorized records found for this company.');
+        this.warningMessage = 'No unauthorized records found for this company.';
         return;
       }
 
@@ -154,20 +128,15 @@ export class CalibrationMasterComponent implements OnInit {
         });
 
         const formGroup = this.createEntryFormGroupWithData(record);
-        console.log(`FormGroup ${index} value:`, formGroup.getRawValue());
         this.entries.push(formGroup);
       });
 
       if (data[0]?.MakerRemark) {
         this.calibrationForm.get('makerRemark')?.setValue(data[0].MakerRemark);
       }
-
-      console.log('Total entries loaded:', this.entries.length);
-      console.log('All entries:', this.entries.getRawValue());
     },
     error: (error) => {
-      console.error('API Error:', error);
-      console.error('Error status:', error.status);
+      this.errorMessage = 'Failed to load unauthorized data. Please try again later.';
       console.error('Error message:', error.message);
     },
   });
@@ -236,12 +205,12 @@ export class CalibrationMasterComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.calibrationForm.get('company')?.value) {
-      console.warn('Please select a company.');
+      this.warningMessage = 'Please select a company.';
       return;
     }
 
     if (this.entries.length === 0) {
-      console.warn('Please add at least one calibration entry.');
+      this.warningMessage = 'Please add at least one calibration entry.';
       return;
     }
 
@@ -251,27 +220,27 @@ export class CalibrationMasterComponent implements OnInit {
       const rowNo = i + 1;
 
       if (!entry.instrumentName) {
-        console.warn(`Please select Instrument Name in Row ${rowNo}.`);
+        this.warningMessage = `Please select Instrument Name in Row ${rowNo}.`;
         return;
       }
       if (!entry.type || entry.type.trim() === '') {
-        console.warn(`Please enter Type in Row ${rowNo}.`);
+        this.warningMessage = `Please enter Type in Row ${rowNo}.`;
         return;
       }
       if (!entry.idNo || entry.idNo.trim() === '') {
-        console.warn(`Please enter ID No. in Row ${rowNo}.`);
+        this.warningMessage = `Please enter ID No. in Row ${rowNo}.`;
         return;
       }
       if (!entry.locationPC) {
-        console.warn(`Please select Location/PC in Row ${rowNo}.`);
+        this.warningMessage = `Please select Location/PC in Row ${rowNo}.`;
         return;
       }
       if (!entry.calDate) {
-        console.warn(`Please select Calibration Date in Row ${rowNo}.`);
+        this.warningMessage = `Please select Calibration Date in Row ${rowNo}.`;
         return;
       }
       if (!entry.dueDate) {
-        console.warn(`Please select Due Date in Row ${rowNo}.`);
+        this.warningMessage = `Please select Due Date in Row ${rowNo}.`;
         return;
       }
 
@@ -279,7 +248,7 @@ export class CalibrationMasterComponent implements OnInit {
         const calDate = new Date(entry.calDate);
         const dueDate = new Date(entry.dueDate);
         if (dueDate <= calDate) {
-          console.warn(`Due Date must be after Calibration Date in Row ${rowNo}.`);
+          this.warningMessage = `Due Date must be after Calibration Date in Row ${rowNo}.`;
           return;
         }
       }
@@ -288,7 +257,7 @@ export class CalibrationMasterComponent implements OnInit {
     const instrumentIds = rawEntries.map(e => e.instrumentName);
     const duplicates = instrumentIds.filter((id, index) => instrumentIds.indexOf(id) !== index);
     if (duplicates.length > 0) {
-      console.warn('Duplicate instrument entries found. Please remove duplicates.');
+      this.warningMessage = 'Duplicate instrument entries found. Please remove duplicates.';
       return;
     }
 
@@ -317,11 +286,11 @@ export class CalibrationMasterComponent implements OnInit {
 
     this.qualityService.saveCalibrationMaster(formData).subscribe({
       next: (res) => {
-        console.log('Calibration data saved successfully.', res);
+        this.successMessage = 'Calibration data saved successfully.';
         this.onReset();
       },
       error: (err) => {
-        console.error('Failed to save calibration data.', err);
+        this.errorMessage = 'Failed to save calibration data. Please try again later.';
       },
     });
   }
@@ -343,4 +312,11 @@ export class CalibrationMasterComponent implements OnInit {
       this.addEntry();
     }
   }
+
+     clearMessages() {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.warningMessage = '';
+  }
+
 }
