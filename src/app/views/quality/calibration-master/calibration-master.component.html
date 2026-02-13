@@ -3,6 +3,30 @@
     <h2>Calibration Master - {{ designation === 'checker' ? 'Checker' : 'Maker' }}</h2>
   </div>
 
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>
+        {{ errorMessage }}
+      </p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+   <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
   <form [formGroup]="calibrationForm" (ngSubmit)="onSubmit()">
     <!-- Company Dropdown Section -->
     <div class="dropdown-section">
