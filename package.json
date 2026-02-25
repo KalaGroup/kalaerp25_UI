@@ -16,7 +16,7 @@
     "@angular/compiler": "^19.2.18",
     "@angular/core": "^19.2.18",
     "@angular/forms": "^19.2.18",
-    "@angular/google-maps": "^18.2.14",
+    "@angular/google-maps": "^19.2.19",
     "@angular/localize": "^19.2.18",
     "@angular/material": "^19.2.19",
     "@angular/material-moment-adapter": "^19.2.19",
