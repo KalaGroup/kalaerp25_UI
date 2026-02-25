@@ -47,6 +47,7 @@ export class LayoutService {
         navigationPos: 'side', // side, top
         sidebarStyle: 'full', // full, compact, closed
         sidebarColor: 'slate', // http://demos.ui-lib.com/egret-doc/#egret-colors
+        //sidebarColor: 'egret-navy-dark', // http://demos.ui-lib.com/egret-doc/#egret-colors
         sidebarCompactToggle: false, // applied when "sidebarStyle" is "compact"
         dir: 'ltr', // ltr, rtl
         useBreadcrumb: true,

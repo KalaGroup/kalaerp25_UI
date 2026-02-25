@@ -804,7 +804,8 @@ export class DgStageIIIComponent implements OnInit {
   }
 
   fetchDGkitDetails(PrdPartCode: string) {
-    const PCCode = '01.004';
+   // const PCCode = '01.004';
+    const PCCode = this.profitcenter;
     this.dgAssemblyService.getDGKitDetails(PrdPartCode, PCCode).subscribe(
       (response) => {
         console.log('DGKitDetails API Response:', response);

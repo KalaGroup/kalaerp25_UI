@@ -40,6 +40,7 @@ export class JwtAuthService {
   private credentialsSubject = new BehaviorSubject<{
     userid: string;
     password: string;
+    loginType: string;
   } | null>(null);
   public credentials$ = this.credentialsSubject.asObservable();
 
@@ -47,11 +48,12 @@ export class JwtAuthService {
   private restoreCredentialsOnRefresh(): void {
     const token = this.getJwtToken();
     const userId = localStorage.getItem(this.APP_USER_ID);
+    const loginType = localStorage.getItem('loginType');
 
     if (token && userId) {
       console.log('Restoring credentials on refresh for user:', userId);
       // Emit credentials so NavigationService can fetch menu
-      this.credentialsSubject.next({ userid: userId, password: '' });
+      this.credentialsSubject.next({ userid: userId, password: '',loginType: loginType || '' });
     }
   }
 
@@ -77,12 +79,13 @@ export class JwtAuthService {
           localStorage.setItem('companyName', res.companyName);
           localStorage.setItem('companyId', res.companyId);
           localStorage.setItem('userName', res.username);
+          localStorage.setItem('loginType', res.loginType);
           localStorage.setItem('employeeCode', res.empCode);
           localStorage.setItem('profitCenterName', res.profitCenterName);
           localStorage.setItem(this.APP_USER_ID, userid); // store userid
           // ⭐ Store logged-in UserId in localStorage
           this.setUserAndToken(res.token, res.user, !!res);
-          this.credentialsSubject.next({ userid, password });
+          this.credentialsSubject.next({ userid, password, loginType: res.loginType });
           this.signingIn = false; // Reset signingIn state
           return res;
         }),
@@ -115,8 +118,9 @@ export class JwtAuthService {
         this.setUserAndToken(token, response, true); // Assuming the response contains user data
         // Also restore credentials after token validation
         const userId = localStorage.getItem(this.APP_USER_ID);
+        const loginType = localStorage.getItem('loginType');
         if (userId && !this.credentialsSubject.getValue()) {
-          this.credentialsSubject.next({ userid: userId, password: '' });
+          this.credentialsSubject.next({ userid: userId, password: '', loginType: loginType || '' });
         }
 
         return response; // Return the response data (e.g., user information)
@@ -136,6 +140,7 @@ export class JwtAuthService {
     localStorage.removeItem('employeeCode');
     localStorage.removeItem('companyId');
     localStorage.removeItem('profitCenterName');
+    localStorage.removeItem('loginType');
     this.setUserAndToken(null, null, false);
     this.credentialsSubject.next(null); // Emit null to trigger menu reset
     this.router.navigateByUrl('sessions/signin2');

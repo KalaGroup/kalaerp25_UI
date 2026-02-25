@@ -3,6 +3,7 @@ import{DgStageICheckerComponent} from './dg-stage-i-checker/dg-stage-i-checker.c
 import{DgQualityMasterComponent} from './dg-quality-master/dg-quality-master.component';
 import{QualityMasterCheckerComponent} from './quality-master-checker/quality-master-checker.component';
 import { CalibrationMasterComponent } from './calibration-master/calibration-master.component';
+import { KaizenComponent } from './kaizen/kaizen.component';
 
 export const QualityRoutes: Routes = [
     {
@@ -24,5 +25,10 @@ export const QualityRoutes: Routes = [
          path: 'calibration-master',
           component: CalibrationMasterComponent,
           data: { title: 'Quality', breadcrumb: 'Quality' }
+    },
+    {
+         path: 'kaizen',
+         component: KaizenComponent,
+         data: { title: 'Kaizen', breadcrumb: 'Kaizen' }
     }
 ];
