@@ -15,9 +15,10 @@ export const _filter = (opt: string[], value: string): string[] => {
 };
 
 @Component({
-  selector: 'app-option-group-autocomplete',
-  templateUrl: './option-group-autocomplete.component.html',
-  styleUrls: ['./option-group-autocomplete.component.scss']
+    selector: 'app-option-group-autocomplete',
+    templateUrl: './option-group-autocomplete.component.html',
+    styleUrls: ['./option-group-autocomplete.component.scss'],
+    standalone: false
 })
 export class OptionGroupAutocompleteComponent implements OnInit {
 

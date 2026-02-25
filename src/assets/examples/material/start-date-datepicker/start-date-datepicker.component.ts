@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-start-date-datepicker',
-  templateUrl: './start-date-datepicker.component.html',
-  styleUrls: ['./start-date-datepicker.component.scss']
+    selector: 'app-start-date-datepicker',
+    templateUrl: './start-date-datepicker.component.html',
+    styleUrls: ['./start-date-datepicker.component.scss'],
+    standalone: false
 })
 export class StartDateDatepickerComponent implements OnInit {
 

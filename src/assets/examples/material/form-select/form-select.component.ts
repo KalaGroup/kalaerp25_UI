@@ -11,9 +11,10 @@ export interface Car {
 }
 
 @Component({
-  selector: 'app-form-select',
-  templateUrl: './form-select.component.html',
-  styleUrls: ['./form-select.component.scss']
+    selector: 'app-form-select',
+    templateUrl: './form-select.component.html',
+    styleUrls: ['./form-select.component.scss'],
+    standalone: false
 })
 export class FormSelectComponent implements OnInit {
 

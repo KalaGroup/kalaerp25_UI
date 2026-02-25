@@ -15,9 +15,10 @@ import { Router, ActivatedRoute } from "@angular/router";
 import { AutoFocusDirective } from "app/shared/directives/auto-focus.directive";
 
 @Component({
-  selector: "egret-search-input-over",
-  templateUrl: "./search-input-over.component.html",
-  styleUrls: ["./search-input-over.component.scss"]
+    selector: "egret-search-input-over",
+    templateUrl: "./search-input-over.component.html",
+    styleUrls: ["./search-input-over.component.scss"],
+    standalone: false
 })
 export class SearchInputOverComponent implements OnInit, OnDestroy {
   isOpen: boolean;

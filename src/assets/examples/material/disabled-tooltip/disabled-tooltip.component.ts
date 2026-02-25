@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-disabled-tooltip',
-  templateUrl: './disabled-tooltip.component.html',
-  styleUrls: ['./disabled-tooltip.component.scss']
+    selector: 'app-disabled-tooltip',
+    templateUrl: './disabled-tooltip.component.html',
+    styleUrls: ['./disabled-tooltip.component.scss'],
+    standalone: false
 })
 export class DisabledTooltipComponent implements OnInit {
 

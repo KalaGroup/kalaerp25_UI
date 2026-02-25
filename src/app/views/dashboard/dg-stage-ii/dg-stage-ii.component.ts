@@ -6,9 +6,10 @@ import { Inject } from '@angular/core';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-dg-stage-ii',
-  templateUrl: './dg-stage-ii.component.html',
-  styleUrl: './dg-stage-ii.component.scss',
+    selector: 'app-dg-stage-ii',
+    templateUrl: './dg-stage-ii.component.html',
+    styleUrl: './dg-stage-ii.component.scss',
+    standalone: false
 })
 export class DgStageIIComponent implements OnInit {
   userId: string = '';

@@ -4,9 +4,10 @@ import { MatProgressBar as MatProgressBar } from '@angular/material/progress-bar
 import { Validators, UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 
 @Component({
-  selector: 'app-signup',
-  templateUrl: './signup.component.html',
-  styleUrls: ['./signup.component.css']
+    selector: 'app-signup',
+    templateUrl: './signup.component.html',
+    styleUrls: ['./signup.component.css'],
+    standalone: false
 })
 export class SignupComponent implements OnInit {
   @ViewChild(MatProgressBar) progressBar: MatProgressBar;

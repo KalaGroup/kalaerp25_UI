@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-echart-heatmap',
-  templateUrl: './echart-heatmap.component.html',
-  styleUrls: ['./echart-heatmap.component.scss']
+    selector: 'app-echart-heatmap',
+    templateUrl: './echart-heatmap.component.html',
+    styleUrls: ['./echart-heatmap.component.scss'],
+    standalone: false
 })
 export class EchartHeatmapComponent {
 

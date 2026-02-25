@@ -5,9 +5,10 @@ import { CustomizerService } from 'app/shared/services/customizer.service';
 import { ThemeService, ITheme } from 'app/shared/services/theme.service';
 
 @Component({
-  selector: 'app-customizer',
-  templateUrl: './customizer.component.html',
-  styleUrls: ['./customizer.component.scss'],
+    selector: 'app-customizer',
+    templateUrl: './customizer.component.html',
+    styleUrls: ['./customizer.component.scss'],
+    standalone: false
 })
 export class CustomizerComponent implements OnInit {
   isCustomizerOpen = false;

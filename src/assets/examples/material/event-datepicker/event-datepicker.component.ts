@@ -3,9 +3,10 @@ import {Component} from '@angular/core';
 import {MatDatepickerInputEvent} from '@angular/material/datepicker';
 
 @Component({
-  selector: 'app-event-datepicker',
-  templateUrl: './event-datepicker.component.html',
-  styleUrls: ['./event-datepicker.component.scss']
+    selector: 'app-event-datepicker',
+    templateUrl: './event-datepicker.component.html',
+    styleUrls: ['./event-datepicker.component.scss'],
+    standalone: false
 })
 export class EventDatepickerComponent implements OnInit {
 

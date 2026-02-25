@@ -10,9 +10,10 @@ import { ThemeService } from './shared/services/theme.service';
 import { LayoutService } from './shared/services/layout.service';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.css'],
+    standalone: false
 })
 export class AppComponent implements OnInit, AfterViewInit {
   appTitle = 'KALA Genset';

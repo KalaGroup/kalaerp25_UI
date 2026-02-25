@@ -13,14 +13,15 @@ import { PerfectScrollbarEvent, PerfectScrollbarEvents,
   PerfectScrollbarConfigInterface } from './perfect-scrollbar.interfaces';
 
 @Component({
-  selector: 'perfect-scrollbar',
-  exportAs: 'ngxPerfectScrollbar',
-  templateUrl: './perfect-scrollbar.component.html',
-  styleUrls: [
-    './perfect-scrollbar.component.css',
-    '../../../../../node_modules/perfect-scrollbar/css/perfect-scrollbar.css'
-  ],
-  encapsulation: ViewEncapsulation.None
+    selector: 'perfect-scrollbar',
+    exportAs: 'ngxPerfectScrollbar',
+    templateUrl: './perfect-scrollbar.component.html',
+    styleUrls: [
+        './perfect-scrollbar.component.css',
+        '../../../../../node_modules/perfect-scrollbar/css/perfect-scrollbar.css'
+    ],
+    encapsulation: ViewEncapsulation.None,
+    standalone: false
 })
 export class PerfectScrollbarComponent implements OnInit, OnDestroy, DoCheck {
   public states: any = {};

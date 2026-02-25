@@ -12,16 +12,17 @@ import * as _moment from 'moment';
 const moment = _moment;
 
 @Component({
-  selector: 'app-moment-js-datepicker',
-  templateUrl: './moment-js-datepicker.component.html',
-  styleUrls: ['./moment-js-datepicker.component.scss'],
-  providers: [
-    // `MomentDateAdapter` and `MAT_MOMENT_DATE_FORMATS` can be automatically provided by importing
-    // `MatMomentDateModule` in your applications root module. We provide it at the component level
-    // here, due to limitations of our example generation script.
-    {provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE]},
-    {provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS},
-  ],
+    selector: 'app-moment-js-datepicker',
+    templateUrl: './moment-js-datepicker.component.html',
+    styleUrls: ['./moment-js-datepicker.component.scss'],
+    providers: [
+        // `MomentDateAdapter` and `MAT_MOMENT_DATE_FORMATS` can be automatically provided by importing
+        // `MatMomentDateModule` in your applications root module. We provide it at the component level
+        // here, due to limitations of our example generation script.
+        { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
+        { provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS },
+    ],
+    standalone: false
 })
 export class MomentJsDatepickerComponent implements OnInit {
 

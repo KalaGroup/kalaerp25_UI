@@ -2,9 +2,10 @@ import { Component, OnInit, Input, ViewChild, ViewContainerRef, AfterViewInit, C
 // import { EXAMPLE_COMPONENTS } from "assets/examples/examples";
 
 @Component({
-  selector: "egret-example-viewer",
-  templateUrl: "./example-viewer.component.html",
-  styleUrls: ["./example-viewer.component.scss"]
+    selector: "egret-example-viewer",
+    templateUrl: "./example-viewer.component.html",
+    styleUrls: ["./example-viewer.component.scss"],
+    standalone: false
 })
 export class EgretExampleViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 

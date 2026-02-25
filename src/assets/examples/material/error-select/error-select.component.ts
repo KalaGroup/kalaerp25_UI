@@ -11,9 +11,10 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
 }
 
 @Component({
-  selector: 'app-error-select',
-  templateUrl: './error-select.component.html',
-  styleUrls: ['./error-select.component.scss']
+    selector: 'app-error-select',
+    templateUrl: './error-select.component.html',
+    styleUrls: ['./error-select.component.scss'],
+    standalone: false
 })
 export class ErrorSelectComponent implements OnInit {
 

@@ -7,9 +7,10 @@ export interface Fruit {
 }
 
 @Component({
-  selector: 'app-input-chip',
-  templateUrl: './input-chip.component.html',
-  styleUrls: ['./input-chip.component.scss']
+    selector: 'app-input-chip',
+    templateUrl: './input-chip.component.html',
+    styleUrls: ['./input-chip.component.scss'],
+    standalone: false
 })
 export class InputChipComponent {
 

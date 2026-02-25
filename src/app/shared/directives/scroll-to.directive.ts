@@ -1,6 +1,9 @@
 import { Directive, ElementRef, Attribute, OnInit, HostListener } from '@angular/core';
 
-@Directive({ selector: '[scrollTo]' })
+@Directive({
+    selector: '[scrollTo]',
+    standalone: false
+})
 export class ScrollToDirective implements OnInit {
   constructor( @Attribute('scrollTo') public elmID: string, private el: ElementRef) { }
 

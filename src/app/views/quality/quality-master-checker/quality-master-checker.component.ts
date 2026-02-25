@@ -39,9 +39,10 @@ export interface CheckpointRequest {
 }
 
 @Component({
-  selector: 'app-quality-master-checker',
-  templateUrl: './quality-master-checker.component.html',
-  styleUrls: ['./quality-master-checker.component.scss'],
+    selector: 'app-quality-master-checker',
+    templateUrl: './quality-master-checker.component.html',
+    styleUrls: ['./quality-master-checker.component.scss'],
+    standalone: false
 })
 export class QualityMasterCheckerComponent implements OnInit {
   // API Data

@@ -2,7 +2,8 @@ import { Directive, HostListener, Inject } from '@angular/core';
 import { DropdownLinkDirective } from './dropdown-link.directive';
 
 @Directive({
-  selector: '[appDropdownToggle]',
+    selector: '[appDropdownToggle]',
+    standalone: false
 })
 export class DropdownAnchorDirective {
   protected navlink: DropdownLinkDirective;

@@ -33,9 +33,10 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 @Component({
-  selector: 'app-pagination-table',
-  templateUrl: './pagination-table.component.html',
-  styleUrls: ['./pagination-table.component.scss']
+    selector: 'app-pagination-table',
+    templateUrl: './pagination-table.component.html',
+    styleUrls: ['./pagination-table.component.scss'],
+    standalone: false
 })
 export class PaginationTableComponent implements OnInit {
 

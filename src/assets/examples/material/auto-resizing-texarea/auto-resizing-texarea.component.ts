@@ -4,9 +4,10 @@ import { NgZone, ViewChild } from "@angular/core";
 import { take } from "rxjs/operators";
 
 @Component({
-  selector: "app-auto-resizing-texarea",
-  templateUrl: "./auto-resizing-texarea.component.html",
-  styleUrls: ["./auto-resizing-texarea.component.scss"]
+    selector: "app-auto-resizing-texarea",
+    templateUrl: "./auto-resizing-texarea.component.html",
+    styleUrls: ["./auto-resizing-texarea.component.scss"],
+    standalone: false
 })
 export class AutoResizingTexareaComponent implements OnInit {
   constructor(private ngZone: NgZone) {}

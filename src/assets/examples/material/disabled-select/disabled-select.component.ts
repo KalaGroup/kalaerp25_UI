@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-disabled-select',
-  templateUrl: './disabled-select.component.html',
-  styleUrls: ['./disabled-select.component.scss']
+    selector: 'app-disabled-select',
+    templateUrl: './disabled-select.component.html',
+    styleUrls: ['./disabled-select.component.scss'],
+    standalone: false
 })
 export class DisabledSelectComponent implements OnInit {
 

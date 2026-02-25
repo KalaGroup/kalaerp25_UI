@@ -3,12 +3,13 @@ import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {STEPPER_GLOBAL_OPTIONS} from '@angular/cdk/stepper';
 
 @Component({
-  selector: 'app-customized-stepper',
-  templateUrl: './customized-stepper.component.html',
-  styleUrls: ['./customized-stepper.component.scss'],
-  providers: [{
-    provide: STEPPER_GLOBAL_OPTIONS, useValue: {displayDefaultIndicatorType: false, showError: true}
-  }]
+    selector: 'app-customized-stepper',
+    templateUrl: './customized-stepper.component.html',
+    styleUrls: ['./customized-stepper.component.scss'],
+    providers: [{
+            provide: STEPPER_GLOBAL_OPTIONS, useValue: { displayDefaultIndicatorType: false, showError: true }
+        }],
+    standalone: false
 })
 export class CustomizedStepperComponent implements OnInit {
 

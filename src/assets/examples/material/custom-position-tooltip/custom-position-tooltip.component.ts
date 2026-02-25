@@ -3,9 +3,10 @@ import { UntypedFormControl } from '@angular/forms';
 import { TooltipPosition } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'app-custom-position-tooltip',
-  templateUrl: './custom-position-tooltip.component.html',
-  styleUrls: ['./custom-position-tooltip.component.scss']
+    selector: 'app-custom-position-tooltip',
+    templateUrl: './custom-position-tooltip.component.html',
+    styleUrls: ['./custom-position-tooltip.component.scss'],
+    standalone: false
 })
 export class CustomPositionTooltipComponent implements OnInit {
 

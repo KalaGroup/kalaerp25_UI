@@ -1,6 +1,9 @@
 import { Pipe, PipeTransform } from "@angular/core";
 
-@Pipe({ name: 'relativeTime' })
+@Pipe({
+    name: 'relativeTime',
+    standalone: false
+})
 export class RelativeTimePipe implements PipeTransform {
   transform(value: Date) {
     if(!(value instanceof Date))

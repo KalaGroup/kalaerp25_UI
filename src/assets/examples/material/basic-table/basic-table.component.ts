@@ -22,9 +22,10 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 @Component({
-  selector: 'app-basic-table',
-  templateUrl: './basic-table.component.html',
-  styleUrls: ['./basic-table.component.scss']
+    selector: 'app-basic-table',
+    templateUrl: './basic-table.component.html',
+    styleUrls: ['./basic-table.component.scss'],
+    standalone: false
 })
 export class BasicTableComponent implements OnInit, AfterViewInit {
 

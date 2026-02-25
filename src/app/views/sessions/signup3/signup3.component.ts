@@ -4,10 +4,11 @@ import { Component, OnInit } from "@angular/core";
 import { egretAnimations } from "app/shared/animations/egret-animations";
 
 @Component({
-  selector: "app-signup3",
-  templateUrl: "./signup3.component.html",
-  styleUrls: ["./signup3.component.scss"],
-  animations: egretAnimations
+    selector: "app-signup3",
+    templateUrl: "./signup3.component.html",
+    styleUrls: ["./signup3.component.scss"],
+    animations: egretAnimations,
+    standalone: false
 })
 export class Signup3Component implements OnInit {
   signupForm: UntypedFormGroup;

@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 
 @Component({
-  selector: 'app-fixed-sidenav',
-  templateUrl: './fixed-sidenav.component.html',
-  styleUrls: ['./fixed-sidenav.component.scss']
+    selector: 'app-fixed-sidenav',
+    templateUrl: './fixed-sidenav.component.html',
+    styleUrls: ['./fixed-sidenav.component.scss'],
+    standalone: false
 })
 export class FixedSidenavComponent implements OnInit {
   

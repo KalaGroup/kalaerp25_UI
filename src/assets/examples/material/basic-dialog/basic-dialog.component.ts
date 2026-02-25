@@ -8,9 +8,10 @@ export interface DialogData {
 }
 
 @Component({
-  selector: 'app-basic-dialog',
-  templateUrl: './basic-dialog.component.html',
-  styleUrls: ['./basic-dialog.component.scss']
+    selector: 'app-basic-dialog',
+    templateUrl: './basic-dialog.component.html',
+    styleUrls: ['./basic-dialog.component.scss'],
+    standalone: false
 })
 export class BasicDialogComponent {
 

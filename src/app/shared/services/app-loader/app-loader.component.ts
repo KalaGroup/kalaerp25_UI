@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
-  selector: 'app-app-loader',
-  templateUrl: './app-loader.component.html',
-  styleUrls: ['./app-loader.component.css']
+    selector: 'app-app-loader',
+    templateUrl: './app-loader.component.html',
+    styleUrls: ['./app-loader.component.css'],
+    standalone: false
 })
 export class AppLoaderComponent implements OnInit {
   title;

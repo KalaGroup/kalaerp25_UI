@@ -7,9 +7,10 @@ import { th } from 'date-fns/locale';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-dg-test-report',
-  templateUrl: './dg-test-report.component.html',
-  styleUrl: './dg-test-report.component.scss',
+    selector: 'app-dg-test-report',
+    templateUrl: './dg-test-report.component.html',
+    styleUrl: './dg-test-report.component.scss',
+    standalone: false
 })
 export class DgTestReport implements OnInit, AfterViewInit {
   userId: string = '';

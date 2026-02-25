@@ -22,9 +22,10 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 @Component({
-  selector: 'app-filter-table',
-  templateUrl: './filter-table.component.html',
-  styleUrls: ['./filter-table.component.scss']
+    selector: 'app-filter-table',
+    templateUrl: './filter-table.component.html',
+    styleUrls: ['./filter-table.component.scss'],
+    standalone: false
 })
 export class FilterTableComponent implements OnInit {
 

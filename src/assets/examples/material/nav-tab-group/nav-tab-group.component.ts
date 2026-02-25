@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-nav-tab-group',
-  templateUrl: './nav-tab-group.component.html',
-  styleUrls: ['./nav-tab-group.component.scss']
+    selector: 'app-nav-tab-group',
+    templateUrl: './nav-tab-group.component.html',
+    styleUrls: ['./nav-tab-group.component.scss'],
+    standalone: false
 })
 export class NavTabGroupComponent implements OnInit {
 

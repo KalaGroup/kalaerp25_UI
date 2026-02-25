@@ -1,8 +1,9 @@
 import { Pipe, PipeTransform } from "@angular/core";
 
 @Pipe({
-  name: "getValueByKey",
-  pure: false
+    name: "getValueByKey",
+    pure: false,
+    standalone: false
 })
 export class GetValueByKeyPipe implements PipeTransform {
   transform(value: any[], id: number, property: string): any {

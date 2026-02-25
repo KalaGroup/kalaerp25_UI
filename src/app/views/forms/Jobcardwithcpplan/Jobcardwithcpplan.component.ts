@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { JobcardService } from '../jobcard.service';
 
 @Component({
-  selector: 'app-Jobcardwithcpplan',
-  templateUrl: './Jobcardwithcpplan.component.html',
-  styleUrl: './Jobcardwithcpplan.component.scss',
+    selector: 'app-Jobcardwithcpplan',
+    templateUrl: './Jobcardwithcpplan.component.html',
+    styleUrl: './Jobcardwithcpplan.component.scss',
+    standalone: false
 })
 export class JobcardWithCPPlanComponent {
   warningMessage: string = '';

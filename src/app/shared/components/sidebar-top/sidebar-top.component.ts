@@ -4,8 +4,9 @@ import { NavigationService } from "../../../shared/services/navigation.service";
 import { Subscription } from "rxjs";
 
 @Component({
-  selector: 'app-sidebar-top',
-  templateUrl: './sidebar-top.component.html'
+    selector: 'app-sidebar-top',
+    templateUrl: './sidebar-top.component.html',
+    standalone: false
 })
 export class SidebarTopComponent implements OnInit, OnDestroy, AfterViewInit {
   // private sidebarPS: PerfectScrollbar;

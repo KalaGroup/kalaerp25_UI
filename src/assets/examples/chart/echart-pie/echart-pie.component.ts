@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-echart-pie',
-  templateUrl: './echart-pie.component.html',
-  styleUrls: ['./echart-pie.component.scss']
+    selector: 'app-echart-pie',
+    templateUrl: './echart-pie.component.html',
+    styleUrls: ['./echart-pie.component.scss'],
+    standalone: false
 })
 export class EchartPieComponent {
   pieOptions = {

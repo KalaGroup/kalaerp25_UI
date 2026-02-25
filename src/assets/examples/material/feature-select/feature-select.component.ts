@@ -7,9 +7,10 @@ export interface Animal {
 }
 
 @Component({
-  selector: 'app-feature-select',
-  templateUrl: './feature-select.component.html',
-  styleUrls: ['./feature-select.component.scss']
+    selector: 'app-feature-select',
+    templateUrl: './feature-select.component.html',
+    styleUrls: ['./feature-select.component.scss'],
+    standalone: false
 })
 export class FeatureSelectComponent implements OnInit {
 

@@ -2,9 +2,10 @@ import { MatSidenav } from '@angular/material/sidenav';
 import { Component, OnInit, ViewChild } from '@angular/core';
 
 @Component({
-  selector: 'app-escape-backdrop-sidenav',
-  templateUrl: './escape-backdrop-sidenav.component.html',
-  styleUrls: ['./escape-backdrop-sidenav.component.scss']
+    selector: 'app-escape-backdrop-sidenav',
+    templateUrl: './escape-backdrop-sidenav.component.html',
+    styleUrls: ['./escape-backdrop-sidenav.component.scss'],
+    standalone: false
 })
 export class EscapeBackdropSidenavComponent implements OnInit {
 

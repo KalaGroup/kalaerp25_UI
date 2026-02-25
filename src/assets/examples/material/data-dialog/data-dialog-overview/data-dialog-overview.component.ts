@@ -2,9 +2,10 @@ import { MAT_DIALOG_DATA as MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Component, OnInit, Inject } from '@angular/core';
 
 @Component({
-  selector: 'app-data-dialog-overview',
-  templateUrl: './data-dialog-overview.component.html',
-  styleUrls: ['./data-dialog-overview.component.scss']
+    selector: 'app-data-dialog-overview',
+    templateUrl: './data-dialog-overview.component.html',
+    styleUrls: ['./data-dialog-overview.component.scss'],
+    standalone: false
 })
 export class DataDialogOverviewComponent implements OnInit {
 

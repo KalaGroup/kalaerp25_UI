@@ -3,11 +3,12 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 
 @Component({
-  selector: 'app-emp-master',
-  // standalone: true,
-  // imports: [],
-  templateUrl: './emp-master.component.html',
-  styleUrl: './emp-master.component.scss'
+    selector: 'app-emp-master',
+    // standalone: true,
+    // imports: [],
+    templateUrl: './emp-master.component.html',
+    styleUrl: './emp-master.component.scss',
+    standalone: false
 })
 export class EmpMasterComponent {
   employeeForm: FormGroup;

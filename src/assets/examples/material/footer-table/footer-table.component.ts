@@ -6,9 +6,10 @@ export interface Transaction {
 }
 
 @Component({
-  selector: 'app-footer-table',
-  templateUrl: './footer-table.component.html',
-  styleUrls: ['./footer-table.component.scss']
+    selector: 'app-footer-table',
+    templateUrl: './footer-table.component.html',
+    styleUrls: ['./footer-table.component.scss'],
+    standalone: false
 })
 export class FooterTableComponent implements OnInit {
 

@@ -2,9 +2,10 @@ import {Component, OnInit} from '@angular/core';
 import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 
 @Component({
-  selector: 'app-vertical-stepper',
-  templateUrl: './vertical-stepper.component.html',
-  styleUrls: ['./vertical-stepper.component.scss']
+    selector: 'app-vertical-stepper',
+    templateUrl: './vertical-stepper.component.html',
+    styleUrls: ['./vertical-stepper.component.scss'],
+    standalone: false
 })
 export class VerticalStepperComponent implements OnInit {
 

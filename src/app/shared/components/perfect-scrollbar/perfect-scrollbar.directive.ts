@@ -19,8 +19,9 @@ import { PERFECT_SCROLLBAR_CONFIG, PerfectScrollbarConfig, PerfectScrollbarConfi
   PerfectScrollbarEvent, PerfectScrollbarEvents } from './perfect-scrollbar.interfaces';
 
 @Directive({
-  selector: '[perfectScrollbar]',
-  exportAs: 'ngxPerfectScrollbar'
+    selector: '[perfectScrollbar]',
+    exportAs: 'ngxPerfectScrollbar',
+    standalone: false
 })
 export class PerfectScrollbarDirective implements OnInit, OnDestroy, DoCheck, OnChanges {
   private instance: PerfectScrollbar | null = null;

@@ -10,9 +10,10 @@ import { JwtAuthService } from '../../../shared/services/auth/jwt-auth.service';
 
 
 @Component({
-  selector: 'app-signin2',
-  templateUrl: './signin2.component.html',
-  styleUrls: ['./signin2.component.scss']
+    selector: 'app-signin2',
+    templateUrl: './signin2.component.html',
+    styleUrls: ['./signin2.component.scss'],
+    standalone: false
 })
 export class Signin2Component implements OnInit, AfterViewInit, OnDestroy {
 

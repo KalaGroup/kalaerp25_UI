@@ -14,7 +14,8 @@ import { MatSidenav } from "@angular/material/sidenav";
 // import { MediaObserver } from "@angular/flex-layout";
 
 @Directive({
-  selector: "[egretSidenavHelper]"
+    selector: "[egretSidenavHelper]",
+    standalone: false
 })
 export class EgretSidenavHelperDirective implements OnInit, OnDestroy {
   @HostBinding("class.is-open")
@@ -75,7 +76,8 @@ export class EgretSidenavHelperDirective implements OnInit, OnDestroy {
 }
 
 @Directive({
-  selector: "[egretSidenavToggler]"
+    selector: "[egretSidenavToggler]",
+    standalone: false
 })
 export class EgretSidenavTogglerDirective {
   @Input("egretSidenavToggler")

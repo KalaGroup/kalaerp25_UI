@@ -17,9 +17,10 @@ import { Subject } from "rxjs";
 import { EgretSidebarHelperService } from "./egret-sidebar-helper.service";
 
 @Component({
-  selector: "egret-sidebar",
-  templateUrl: "./egret-sidebar.component.html",
-  styleUrls: ["./egret-sidebar.component.scss"]
+    selector: "egret-sidebar",
+    templateUrl: "./egret-sidebar.component.html",
+    styleUrls: ["./egret-sidebar.component.scss"],
+    standalone: false
 })
 export class EgretSidebarComponent implements OnInit, OnDestroy {
   // Name
@@ -137,7 +138,8 @@ export class EgretSidebarComponent implements OnInit, OnDestroy {
 }
 
 @Directive({
-  selector: "[egretSidebarToggler]"
+    selector: "[egretSidebarToggler]",
+    standalone: false
 })
 export class EgretSidebarTogglerDirective {
   @Input("egretSidebarToggler")

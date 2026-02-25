@@ -6,8 +6,9 @@ import { ILayoutConf, LayoutService } from "app/shared/services/layout.service";
 import { JwtAuthService } from "app/shared/services/auth/jwt-auth.service";
 
 @Component({
-  selector: "app-sidebar-side",
-  templateUrl: "./sidebar-side.component.html"
+    selector: "app-sidebar-side",
+    templateUrl: "./sidebar-side.component.html",
+    standalone: false
 })
 export class SidebarSideComponent implements OnInit, OnDestroy, AfterViewInit {
   public menuItems: any[];

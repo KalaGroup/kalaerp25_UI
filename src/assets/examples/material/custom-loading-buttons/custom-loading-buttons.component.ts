@@ -1,9 +1,10 @@
 import { Component, OnInit, ChangeDetectorRef } from "@angular/core";
 
 @Component({
-  selector: "app-custom-loading-buttons",
-  templateUrl: "./custom-loading-buttons.component.html",
-  styleUrls: ["./custom-loading-buttons.component.scss"]
+    selector: "app-custom-loading-buttons",
+    templateUrl: "./custom-loading-buttons.component.html",
+    styleUrls: ["./custom-loading-buttons.component.scss"],
+    standalone: false
 })
 export class CustomLoadingButtonsComponent implements OnInit {
   defaultLoading: boolean;

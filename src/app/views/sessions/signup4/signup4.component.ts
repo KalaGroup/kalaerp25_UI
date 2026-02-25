@@ -3,10 +3,11 @@ import { Validators, UntypedFormControl, UntypedFormBuilder, UntypedFormGroup } 
 import { egretAnimations } from 'app/shared/animations/egret-animations';
 
 @Component({
-  selector: 'app-signup4',
-  templateUrl: './signup4.component.html',
-  styleUrls: ['./signup4.component.scss'],
-  animations: egretAnimations
+    selector: 'app-signup4',
+    templateUrl: './signup4.component.html',
+    styleUrls: ['./signup4.component.scss'],
+    animations: egretAnimations,
+    standalone: false
 })
 export class Signup4Component implements OnInit {
 

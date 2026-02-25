@@ -21,9 +21,10 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 @Component({
-  selector: 'app-sticky-header-table',
-  templateUrl: './sticky-header-table.component.html',
-  styleUrls: ['./sticky-header-table.component.scss']
+    selector: 'app-sticky-header-table',
+    templateUrl: './sticky-header-table.component.html',
+    styleUrls: ['./sticky-header-table.component.scss'],
+    standalone: false
 })
 export class StickyHeaderTableComponent implements OnInit {
 

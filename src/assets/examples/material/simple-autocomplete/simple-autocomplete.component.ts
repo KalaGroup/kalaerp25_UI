@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-simple-autocomplete',
-  templateUrl: './simple-autocomplete.component.html',
-  styleUrls: ['./simple-autocomplete.component.scss']
+    selector: 'app-simple-autocomplete',
+    templateUrl: './simple-autocomplete.component.html',
+    styleUrls: ['./simple-autocomplete.component.scss'],
+    standalone: false
 })
 export class SimpleAutocompleteComponent implements OnInit {
 

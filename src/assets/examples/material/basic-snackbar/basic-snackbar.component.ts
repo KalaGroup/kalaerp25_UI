@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar as MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'app-basic-snackbar',
-  templateUrl: './basic-snackbar.component.html',
-  styleUrls: ['./basic-snackbar.component.scss']
+    selector: 'app-basic-snackbar',
+    templateUrl: './basic-snackbar.component.html',
+    styleUrls: ['./basic-snackbar.component.scss'],
+    standalone: false
 })
 export class BasicSnackbarComponent implements OnInit {
 

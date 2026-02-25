@@ -2,9 +2,10 @@ import { UntypedFormControl } from '@angular/forms';
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-configurable-sidenav',
-  templateUrl: './configurable-sidenav.component.html',
-  styleUrls: ['./configurable-sidenav.component.scss']
+    selector: 'app-configurable-sidenav',
+    templateUrl: './configurable-sidenav.component.html',
+    styleUrls: ['./configurable-sidenav.component.scss'],
+    standalone: false
 })
 export class ConfigurableSidenavComponent implements OnInit {
 

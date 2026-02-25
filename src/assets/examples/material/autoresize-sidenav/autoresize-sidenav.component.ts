@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-autoresize-sidenav',
-  templateUrl: './autoresize-sidenav.component.html',
-  styleUrls: ['./autoresize-sidenav.component.scss']
+    selector: 'app-autoresize-sidenav',
+    templateUrl: './autoresize-sidenav.component.html',
+    styleUrls: ['./autoresize-sidenav.component.scss'],
+    standalone: false
 })
 export class AutoresizeSidenavComponent implements OnInit {
 

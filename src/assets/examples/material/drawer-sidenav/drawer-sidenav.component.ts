@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-drawer-sidenav',
-  templateUrl: './drawer-sidenav.component.html',
-  styleUrls: ['./drawer-sidenav.component.scss']
+    selector: 'app-drawer-sidenav',
+    templateUrl: './drawer-sidenav.component.html',
+    styleUrls: ['./drawer-sidenav.component.scss'],
+    standalone: false
 })
 export class DrawerSidenavComponent implements OnInit {
 

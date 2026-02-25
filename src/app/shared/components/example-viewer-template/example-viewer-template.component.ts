@@ -4,9 +4,10 @@ import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
-  selector: 'egret-example-viewer-template',
-  templateUrl: './example-viewer-template.component.html',
-  styleUrls: ['./example-viewer-template.component.scss']
+    selector: 'egret-example-viewer-template',
+    templateUrl: './example-viewer-template.component.html',
+    styleUrls: ['./example-viewer-template.component.scss'],
+    standalone: false
 })
 export class EgretExampleViewerTemplateComponent implements OnInit, OnDestroy {
   private unsubscribeAll: Subject<any>;

@@ -3,9 +3,10 @@ import { Component, OnInit } from '@angular/core';
 import { ScrollableDialogOverviewComponent } from './scrollable-dialog-overview/scrollable-dialog-overview.component';
 
 @Component({
-  selector: 'app-scrollable-dialog',
-  templateUrl: './scrollable-dialog.component.html',
-  styleUrls: ['./scrollable-dialog.component.scss']
+    selector: 'app-scrollable-dialog',
+    templateUrl: './scrollable-dialog.component.html',
+    styleUrls: ['./scrollable-dialog.component.scss'],
+    standalone: false
 })
 export class ScrollableDialogComponent implements OnInit {
 

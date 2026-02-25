@@ -40,9 +40,10 @@ const TREE_DATA: FoodNode[] = [
 ];
 
 @Component({
-  selector: 'app-nested-tree',
-  templateUrl: './nested-tree.component.html',
-  styleUrls: ['./nested-tree.component.scss']
+    selector: 'app-nested-tree',
+    templateUrl: './nested-tree.component.html',
+    styleUrls: ['./nested-tree.component.scss'],
+    standalone: false
 })
 export class NestedTreeComponent implements OnInit {
 
