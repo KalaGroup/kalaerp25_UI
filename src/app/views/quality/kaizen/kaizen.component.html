@@ -1,0 +1,907 @@
+<div class="kaizen-container">
+  <!-- Header -->
+  <div class="form-header">
+    <h2>Kaizen Sheet</h2>
+  </div>
+
+  <!-- Error Modal -->
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Warning Modal -->
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- ═══ Kaizen Sheet Records Table (ALWAYS VISIBLE) ═══ -->
+  <div class="kaizen-table-section">
+    <div class="kaizen-table-header">
+      <h3>📋 Kaizen Sheet Records</h3>
+      <div class="table-header-right">
+        <span class="record-count">{{ kaizenRecords.length }} records</span>
+        <button type="button" class="btn-add-kaizen" (click)="onAddKaizen()" *ngIf="!showForm">
+          <span class="add-icon">＋</span> Add Kaizen
+        </button>
+      </div>
+    </div>
+    <div class="kaizen-table-wrapper" *ngIf="kaizenRecords.length > 0">
+      <table class="kaizen-table">
+        <thead>
+          <tr>
+            <th class="th-sr">Sr.</th>
+            <th class="th-sheet">Sheet No</th>
+            <th>Division</th>
+            <th>Department</th>
+            <th>Workstation</th>
+            <th>Theme</th>
+            <th>Initiation Date</th>
+            <th>Result</th>
+            <th>Improvement</th>
+            <th>Submitted By</th>
+            <th class="th-status">Status</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of kaizenRecords; let i = index"
+            [class.row-editing]="editingId === row.Id">
+            <td class="td-sr">{{ i + 1 }}</td>
+            <td class="td-sheet">{{ row.KaizenSheetNo }}</td>
+            <td>{{ row.DivisionName }}</td>
+            <td>{{ row.DepartmentName }}</td>
+            <td>{{ row.WorkstationName || '—' }}</td>
+            <td>
+              <span class="theme-chip" [ngClass]="{
+                'theme-reduce': row.KaizenTheme?.includes('Reduce'),
+                'theme-eliminate': row.KaizenTheme?.includes('Eliminate'),
+                'theme-increase': row.KaizenTheme?.includes('Increase')
+              }">{{ row.KaizenTheme || '—' }}</span>
+            </td>
+            <td>{{ row.KaizenInitiationDate }}</td>
+            <td>{{ row.Result || '—' }}</td>
+            <td>
+              <span *ngFor="let letter of splitImprovement(row.Improvement)"
+                class="pqcdsm-mini" [ngClass]="'pqcdsm-' + letter">{{ letter }}</span>
+              <span *ngIf="!row.Improvement">—</span>
+            </td>
+            <td>{{ row.DataSubmittedBy || '—' }}</td>
+            <td class="td-status">
+              <span class="status-badge" [ngClass]="{
+                'status-active': row.IsAuth,
+                'status-pending': !row.IsAuth
+              }">{{ row.IsAuth ? 'Authorized' : 'Pending' }}</span>
+            </td>
+            <td class="td-actions">
+              <button type="button" class="action-btn action-view" title="Preview"
+                (click)="onPreviewRecord(row)">👁️</button>
+              <button type="button" class="action-btn action-edit" title="Edit"
+                (click)="onEditRecord(row)">✏️</button>
+              <button type="button" class="action-btn action-delete" title="Delete"
+                (click)="onDeleteRecord(row)">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="kaizen-table-empty" *ngIf="kaizenRecords.length === 0">
+      <span class="empty-icon">📭</span>
+      <p>No Kaizen sheets found. Click <strong>"Add Kaizen"</strong> to create one.</p>
+    </div>
+  </div>
+
+  <!-- ═══ Kaizen Form (TOGGLED) ═══ -->
+  <div *ngIf="showForm" class="kaizen-form-section">
+    <div class="form-section-header">
+      <h3>{{ editingId ? '✏️ Edit Kaizen Sheet' : '➕ New Kaizen Sheet' }}</h3>
+      <button type="button" class="btn-close-form" (click)="onCloseForm()">✕ Close</button>
+    </div>
+
+  <form [formGroup]="kaizenForm" (ngSubmit)="onSubmit()">
+    <!-- Dropdown Section -->
+    <div class="dropdown-section">
+      <div class="dropdown-row">
+        <div class="dropdown-wrapper">
+          <label for="divisionId">* Division Name</label>
+          <select id="divisionId" formControlName="divisionId" class="form-select"
+            (change)="onDivisionChange()">
+            <option value="">Select Division</option>
+            <option *ngFor="let div of divisions" [value]="div.DivisionId">
+              {{ div.DivisionName }}
+            </option>
+          </select>
+          <div class="error-message"
+            *ngIf="kaizenForm.get('divisionId')?.touched && kaizenForm.get('divisionId')?.hasError('required')">
+            Division is required
+          </div>
+        </div>
+        <div class="dropdown-wrapper">
+          <label for="departmentCode">* Department Name</label>
+          <select id="departmentCode" formControlName="departmentCode" class="form-select">
+            <option value="">Select Department</option>
+            <option *ngFor="let dept of departments" [value]="dept.DepartmentCode">
+              {{ dept.DepartmentName }}
+            </option>
+          </select>
+          <div class="error-message"
+            *ngIf="kaizenForm.get('departmentCode')?.touched && kaizenForm.get('departmentCode')?.hasError('required')">
+            Department is required
+          </div>
+        </div>
+      </div>
+      <div class="dropdown-row">
+        <div class="dropdown-wrapper">
+          <label for="workstationCode">Machine/Station Name</label>
+          <select id="workstationCode" formControlName="workstationCode" class="form-select">
+            <option value="">Select Machine/Station</option>
+            <option *ngFor="let ws of workstations" [value]="ws.WorkstationCode">
+              {{ ws.WorkstationName }}
+            </option>
+          </select>
+        </div>
+        <div class="dropdown-wrapper">
+          <label for="kaizenTheme">Kaizen Theme</label>
+          <select id="kaizenTheme" formControlName="kaizenTheme" class="form-select">
+            <option value="">Select Kaizen Theme</option>
+            <option *ngFor="let theme of kaizenThemes" [value]="theme.id">
+              {{ theme.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="dropdown-row">
+        <div class="dropdown-wrapper dropdown-date-sm">
+          <label for="kaizenInitiationDate">* Kaizen Initiation Date Time</label>
+          <input type="date" id="kaizenInitiationDate" formControlName="kaizenInitiationDate"
+            class="form-date" />
+        </div>
+        <div class="dropdown-wrapper dropdown-date-sm">
+          <label for="completionDate">Completion Date</label>
+          <input type="date" id="completionDate" formControlName="completionDate"
+            class="form-date" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Section 1: Problem Description ═══ -->
+    <div class="collapsible-section">
+      <div class="collapsible-header header-teal" (click)="toggleProblemSection()">
+        <div class="header-left">
+          <span class="collapse-icon" [class.collapsed]="!isProblemSectionOpen">▾</span>
+          <span class="header-title">Problem Description</span>
+        </div>
+      </div>
+      <div class="collapsible-body" *ngIf="isProblemSectionOpen">
+        <div class="section-inner">
+          <!-- 5W2H Problem Description -->
+          <label class="section-label">* Problem Description
+            <span class="label-tag">(5W2H Analysis)</span>
+          </label>
+          <div class="w5h2-grid">
+            <div class="w5h2-item">
+              <label for="what">
+                <span class="w5h2-badge what">What</span>
+                <span class="w5h2-hint">— What is the problem?</span>
+              </label>
+              <textarea id="what" formControlName="what"
+                placeholder="Describe what the problem is..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="w5h2-item">
+              <label for="when">
+                <span class="w5h2-badge when">When</span>
+                <span class="w5h2-hint">— When does it happen?</span>
+              </label>
+              <textarea id="when" formControlName="when"
+                placeholder="When does the problem occur..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="w5h2-item">
+              <label for="where">
+                <span class="w5h2-badge where">Where</span>
+                <span class="w5h2-hint">— Where does it occur?</span>
+              </label>
+              <textarea id="where" formControlName="where"
+                placeholder="Location or area of the problem..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="w5h2-item">
+              <label for="who">
+                <span class="w5h2-badge who">Who</span>
+                <span class="w5h2-hint">— Who is affected / responsible?</span>
+              </label>
+              <textarea id="who" formControlName="who"
+                placeholder="People involved or affected..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="w5h2-item">
+              <label for="why">
+                <span class="w5h2-badge why">Why</span>
+                <span class="w5h2-hint">— Why is it a problem?</span>
+              </label>
+              <textarea id="why" formControlName="why"
+                placeholder="Why this needs to be solved..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="w5h2-item">
+              <label for="how">
+                <span class="w5h2-badge how">How</span>
+                <span class="w5h2-hint">— How does the problem occur?</span>
+              </label>
+              <textarea id="how" formControlName="how"
+                placeholder="How the problem manifests..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="w5h2-item w5h2-full-width">
+              <label for="howMuch">
+                <span class="w5h2-badge how-much">How Much</span>
+                <span class="w5h2-hint">— Impact / frequency / cost?</span>
+              </label>
+              <textarea id="howMuch" formControlName="howMuch"
+                placeholder="Quantity, frequency, or cost impact..."
+                class="form-textarea" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Section 2: After & Before Visuals ═══ -->
+    <div class="collapsible-section">
+      <div class="collapsible-header header-teal" (click)="toggleVisualSection()">
+        <div class="header-left">
+          <span class="collapse-icon" [class.collapsed]="!isVisualSectionOpen">▾</span>
+          <span class="header-title">After & Before Visuals</span>
+        </div>
+      </div>
+      <div class="collapsible-body" *ngIf="isVisualSectionOpen">
+        <div class="section-inner">
+          <div class="field-row">
+            <div class="field-wrapper">
+              <label class="upload-label">Upload Before Kaizen Photo (upto 25MB)</label>
+              <div class="upload-area" *ngIf="!beforePhoto">
+                <label for="beforePhotoInput" class="upload-dropzone">
+                  <span class="upload-icon">📁</span>
+                  <span class="upload-text">Click to browse file</span>
+                  <span class="upload-hint">JPG, PNG • Max 25MB</span>
+                </label>
+                <input type="file" id="beforePhotoInput" accept="image/jpeg,image/png"
+                  (change)="onBeforePhotoSelected($event)" hidden />
+              </div>
+              <div class="file-chip" *ngIf="beforePhoto">
+                <span class="file-icon">📄</span>
+                <span class="file-name">{{ beforePhoto.name }}</span>
+                <button type="button" class="file-remove" (click)="removeBeforePhoto()">✕</button>
+              </div>
+              <div class="image-preview" *ngIf="beforePhotoPreview">
+                <img [src]="beforePhotoPreview" alt="Before Kaizen Photo" />
+              </div>
+            </div>
+            <div class="field-wrapper">
+              <label class="upload-label">Upload After Kaizen Photo (upto 25MB)</label>
+              <div class="upload-area" *ngIf="!afterPhoto">
+                <label for="afterPhotoInput" class="upload-dropzone">
+                  <span class="upload-icon">📁</span>
+                  <span class="upload-text">Click to browse file</span>
+                  <span class="upload-hint">JPG, PNG • Max 25MB</span>
+                </label>
+                <input type="file" id="afterPhotoInput" accept="image/jpeg,image/png"
+                  (change)="onAfterPhotoSelected($event)" hidden />
+              </div>
+              <div class="file-chip" *ngIf="afterPhoto">
+                <span class="file-icon">📄</span>
+                <span class="file-name">{{ afterPhoto.name }}</span>
+                <button type="button" class="file-remove" (click)="removeAfterPhoto()">✕</button>
+              </div>
+              <div class="image-preview" *ngIf="afterPhotoPreview">
+                <img [src]="afterPhotoPreview" alt="After Kaizen Photo" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Section 3: RCA, Idea & Countermeasure ═══ -->
+    <div class="collapsible-section">
+      <div class="collapsible-header header-teal" (click)="toggleAnalysisSection()">
+        <div class="header-left">
+          <span class="collapse-icon" [class.collapsed]="!isAnalysisSectionOpen">▾</span>
+          <span class="header-title">RCA, Idea & Countermeasure</span>
+        </div>
+      </div>
+      <div class="collapsible-body" *ngIf="isAnalysisSectionOpen">
+        <div class="section-inner">
+
+          <!-- RCA + Idea side by side -->
+          <div class="rca-idea-row">
+
+            <!-- LEFT: RCA (5 Why Analysis) -->
+            <div class="rca-idea-col">
+              <div class="five-why-header">
+                <span class="five-why-icon">🔍</span>
+                <div>
+                  <h4>RCA — 5 Why Analysis</h4>
+                  <p>Drill down from symptom to root cause</p>
+                </div>
+              </div>
+              <div class="five-why-chain">
+                <div class="why-step">
+                  <div class="why-badge-row">
+                    <span class="why-badge why-1">WHY 1</span>
+                    <span class="why-hint">Start with the problem — Why is it happening?</span>
+                  </div>
+                  <textarea formControlName="why1"
+                    placeholder="e.g., Why is the machine stopping frequently? → Because the hydraulic oil is overheating."
+                    class="why-textarea" rows="2"></textarea>
+                </div>
+                <div class="why-connector">
+                  <span class="connector-arrow">↓</span>
+                  <span class="connector-text">leads to</span>
+                </div>
+                <div class="why-step">
+                  <div class="why-badge-row">
+                    <span class="why-badge why-2">WHY 2</span>
+                    <span class="why-hint">Why is that happening?</span>
+                  </div>
+                  <textarea formControlName="why2"
+                    placeholder="e.g., Why is hydraulic oil overheating? → Because the oil cooler fins are clogged with dust."
+                    class="why-textarea" rows="2"></textarea>
+                </div>
+                <div class="why-connector">
+                  <span class="connector-arrow">↓</span>
+                  <span class="connector-text">leads to</span>
+                </div>
+                <div class="why-step">
+                  <div class="why-badge-row">
+                    <span class="why-badge why-3">WHY 3</span>
+                    <span class="why-hint">Dig deeper — Why is that the case?</span>
+                  </div>
+                  <textarea formControlName="why3"
+                    placeholder="e.g., Why are cooler fins clogged? → Because there is no dust guard and no cleaning schedule."
+                    class="why-textarea" rows="2"></textarea>
+                </div>
+                <div class="why-connector">
+                  <span class="connector-arrow">↓</span>
+                  <span class="connector-text">leads to</span>
+                </div>
+                <div class="why-step">
+                  <div class="why-badge-row">
+                    <span class="why-badge why-4">WHY 4</span>
+                    <span class="why-hint">Getting closer to the root — Why?</span>
+                  </div>
+                  <textarea formControlName="why4"
+                    placeholder="e.g., Why is there no cleaning schedule? → Because preventive maintenance SOP was never created."
+                    class="why-textarea" rows="2"></textarea>
+                </div>
+                <div class="why-connector">
+                  <span class="connector-arrow">↓</span>
+                  <span class="connector-text">root cause</span>
+                </div>
+                <div class="why-step why-step-final">
+                  <div class="why-badge-row">
+                    <span class="why-badge why-5">WHY 5</span>
+                    <span class="why-hint">Root cause identified — This is the core reason</span>
+                  </div>
+                  <textarea formControlName="why5"
+                    placeholder="e.g., Why was SOP not created? → Equipment was commissioned without cooler maintenance in PM checklist."
+                    class="why-textarea" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: Idea (Opposite to RCA) -->
+            <div class="rca-idea-col">
+              <div class="idea-section-header">
+                <span class="idea-section-icon">💡</span>
+                <div>
+                  <h4>Idea (Opposite to RCA)</h4>
+                  <p>Select the approach to counter the root cause</p>
+                </div>
+              </div>
+              <div class="idea-section-body">
+                <div class="idea-options">
+                  <label class="idea-option-card"
+                    [class.selected]="kaizenForm.get('idea')?.value === 'Providing'">
+                    <input type="radio" formControlName="idea" value="Providing" hidden />
+                    <span class="idea-option-icon providing-bg">➕</span>
+                    <div class="idea-option-content">
+                      <span class="idea-option-title">Providing</span>
+                      <span class="idea-option-desc">Add something new to fix the issue</span>
+                    </div>
+                    <span class="idea-option-check" *ngIf="kaizenForm.get('idea')?.value === 'Providing'">✓</span>
+                  </label>
+                  <label class="idea-option-card"
+                    [class.selected]="kaizenForm.get('idea')?.value === 'Changing'">
+                    <input type="radio" formControlName="idea" value="Changing" hidden />
+                    <span class="idea-option-icon changing-bg">🔄</span>
+                    <div class="idea-option-content">
+                      <span class="idea-option-title">Changing</span>
+                      <span class="idea-option-desc">Modify or replace existing setup</span>
+                    </div>
+                    <span class="idea-option-check" *ngIf="kaizenForm.get('idea')?.value === 'Changing'">✓</span>
+                  </label>
+                </div>
+                <!-- Idea Remark -->
+                <div class="idea-remark-section" *ngIf="kaizenForm.get('idea')?.value">
+                  <label>
+                    <span class="remark-icon">📝</span> Idea Remark
+                  </label>
+                  <textarea formControlName="ideaRemark"
+                    placeholder="Describe your idea in detail — what will be provided or changed..."
+                    class="idea-remark-textarea" rows="4"></textarea>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Countermeasure Remark (below both columns) -->
+          <div class="countermeasure-remark-section">
+            <div class="countermeasure-remark-header">
+              <span class="countermeasure-remark-icon">🛠️</span>
+              <div>
+                <h4>Countermeasure</h4>
+                <p>Describe the specific action plan to implement your idea and prevent recurrence</p>
+              </div>
+            </div>
+            <div class="countermeasure-remark-body">
+              <textarea formControlName="countermeasureComment"
+                placeholder="e.g., 1. Install dust guard filter on cooler intake by 25th Feb.  2. Create SOP-HYD-07 for weekly cooler fin cleaning.  3. Add oil temperature check to daily operator checklist.  4. Train all 3 shift operators by 27th Feb..."
+                class="countermeasure-remark-textarea" rows="3"></textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══ Section 4: Result & Deployment ═══ -->
+    <div class="collapsible-section">
+      <div class="collapsible-header header-teal" (click)="toggleBenefitsSection()">
+        <div class="header-left">
+          <span class="collapse-icon" [class.collapsed]="!isBenefitsSectionOpen">▾</span>
+          <span class="header-title">Result & Deployment</span>
+        </div>
+      </div>
+      <div class="collapsible-body" *ngIf="isBenefitsSectionOpen">
+        <div class="section-inner">
+
+          <!-- Result + Improvement Row -->
+          <div class="field-row">
+            <!-- Result Checkboxes -->
+            <div class="field-wrapper">
+              <label class="section-sub-label">Result</label>
+              <div class="result-checkbox-group">
+                <label *ngFor="let r of resultOptions"
+                  class="result-chip"
+                  [class.selected]="isResultSelected(r.id)"
+                  [ngClass]="r.colorClass"
+                  (click)="toggleResult(r.id)">
+                  <span class="result-chip-icon">{{ r.icon }}</span>
+                  <span class="result-chip-label">{{ r.name }}</span>
+                  <span class="result-chip-check" *ngIf="isResultSelected(r.id)">✓</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Improvement PQCDSM -->
+            <div class="field-wrapper">
+              <label class="section-sub-label">Improvement
+                <span class="label-tag">(PQCDSM)</span>
+              </label>
+              <div class="pqcdsm-grid">
+                <label *ngFor="let item of pqcdsmOptions"
+                  class="pqcdsm-card"
+                  [class.selected]="isPqcdsmSelected(item.id)"
+                  (click)="togglePqcdsm(item.id)">
+                  <span class="pqcdsm-letter" [ngStyle]="{'background-color': item.color}">{{ item.letter }}</span>
+                  <span class="pqcdsm-name">{{ item.name }}</span>
+                  <span class="pqcdsm-check" *ngIf="isPqcdsmSelected(item.id)">✓</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefit + Investment Row -->
+          <div class="field-row">
+            <div class="field-wrapper">
+              <label class="section-sub-label">Benefit</label>
+              <div class="benefit-card-group">
+                <label class="benefit-card benefit-production"
+                  [class.selected]="isBenefitSelected('Increase Production')"
+                  (click)="toggleBenefit('Increase Production')">
+                  <span class="benefit-icon">📈</span>
+                  <div class="benefit-content">
+                    <span class="benefit-title">Increase Production</span>
+                    <span class="benefit-desc">Higher output & throughput</span>
+                  </div>
+                  <span class="benefit-check" *ngIf="isBenefitSelected('Increase Production')">✓</span>
+                </label>
+                <label class="benefit-card benefit-cost"
+                  [class.selected]="isBenefitSelected('Reduce Cost')"
+                  (click)="toggleBenefit('Reduce Cost')">
+                  <span class="benefit-icon">💰</span>
+                  <div class="benefit-content">
+                    <span class="benefit-title">Reduce Cost</span>
+                    <span class="benefit-desc">Lower expenses & waste</span>
+                  </div>
+                  <span class="benefit-check" *ngIf="isBenefitSelected('Reduce Cost')">✓</span>
+                </label>
+              </div>
+            </div>
+            <div class="field-wrapper">
+              <label for="investmentArea">Investment Area</label>
+              <textarea id="investmentArea" formControlName="investmentArea"
+                placeholder="Enter investment area..." class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- Saving + Horizontal Deployment Row -->
+          <div class="field-row">
+            <div class="field-wrapper">
+              <label for="savingArea">Saving Area</label>
+              <textarea id="savingArea" formControlName="savingArea"
+                placeholder="Enter saving area..." class="form-textarea" rows="4"></textarea>
+            </div>
+            <div class="field-wrapper">
+              <label for="horizontalDeployment">Horizontal Deployment</label>
+              <textarea id="horizontalDeployment" formControlName="horizontalDeployment"
+                placeholder="Enter horizontal deployment..." class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- Impact Analysis Graph -->
+          <div class="graph-upload-section">
+            <div class="graph-upload-header">
+              <span class="graph-upload-icon">📊</span>
+              <div>
+                <h4>Impact Analysis Graph</h4>
+                <p>Attach graph showing production loss, downtime, rejection rate, or cost impact before & after Kaizen</p>
+              </div>
+            </div>
+            <div class="graph-upload-body">
+              <div class="graph-side-by-side">
+                <!-- LEFT: Upload Control -->
+                <div class="graph-upload-left">
+                  <div class="graph-upload-area" *ngIf="!impactGraph">
+                    <label for="impactGraphInput" class="graph-dropzone">
+                      <span class="graph-drop-icon">📈</span>
+                      <span class="graph-drop-title">Click to upload graph</span>
+                      <span class="graph-drop-hint">JPG, PNG • Max 25MB</span>
+                    </label>
+                    <input type="file" id="impactGraphInput" accept="image/jpeg,image/png"
+                      (change)="onImpactGraphSelected($event)" hidden />
+                  </div>
+                  <div class="graph-file-chip" *ngIf="impactGraph">
+                    <span class="graph-chip-icon">📊</span>
+                    <div class="graph-chip-info">
+                      <span class="graph-chip-name">{{ impactGraph.name }}</span>
+                      <span class="graph-chip-size">{{ getFileSize(impactGraph) }}</span>
+                    </div>
+                    <button type="button" class="graph-chip-remove" (click)="removeImpactGraph()">✕</button>
+                  </div>
+                </div>
+
+                <!-- RIGHT: Visual Preview -->
+                <div class="graph-preview-right">
+                  <div class="graph-preview-box" *ngIf="impactGraphPreview">
+                    <img [src]="impactGraphPreview" alt="Impact Analysis Graph" />
+                  </div>
+                  <div class="graph-preview-empty" *ngIf="!impactGraphPreview">
+                    <span class="empty-icon">📉</span>
+                    <span class="empty-text">Graph preview will appear here</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Section 6: Kaizen Sustenance ═══ -->
+    <div class="collapsible-section">
+      <div class="collapsible-header header-teal" (click)="toggleSustenanceSection()">
+        <div class="header-left">
+          <span class="collapse-icon" [class.collapsed]="!isSustenanceSectionOpen">▾</span>
+          <span class="header-title">Kaizen Sustenance</span>
+        </div>
+      </div>
+      <div class="collapsible-body" *ngIf="isSustenanceSectionOpen">
+        <div class="section-inner">
+          <div class="sustenance-grid">
+            <!-- What To Do -->
+            <div class="sustenance-card">
+              <div class="sustenance-card-header what-to-do-header">
+                <span class="sustenance-icon">📋</span>
+                <div>
+                  <h4>What To Do</h4>
+                  <p>Course of action to be performed after implementation of Kaizen</p>
+                </div>
+              </div>
+              <div class="sustenance-card-body">
+                <textarea id="whatToDo" formControlName="whatToDo"
+                  placeholder="Describe the actions to sustain the Kaizen improvement..."
+                  class="form-textarea" rows="4"></textarea>
+              </div>
+            </div>
+
+            <!-- How To Do -->
+            <div class="sustenance-card">
+              <div class="sustenance-card-header how-to-do-header">
+                <span class="sustenance-icon">⚙️</span>
+                <div>
+                  <h4>How To Do</h4>
+                  <p>Method or work procedure to follow</p>
+                </div>
+              </div>
+              <div class="sustenance-card-body">
+                <textarea id="howToDo" formControlName="howToDo"
+                  placeholder="Describe the method or work procedure to follow..."
+                  class="form-textarea" rows="4"></textarea>
+              </div>
+            </div>
+
+            <!-- Frequency -->
+            <div class="sustenance-card">
+              <div class="sustenance-card-header frequency-header">
+                <span class="sustenance-icon">🔁</span>
+                <div>
+                  <h4>Frequency</h4>
+                  <p>How many times in a shift</p>
+                </div>
+              </div>
+              <div class="sustenance-card-body">
+                <textarea id="frequency" formControlName="frequency"
+                  placeholder="e.g., Once per shift, Every 2 hours, Continuous..."
+                  class="form-textarea" rows="4"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Data Submitted (Standalone) ═══ -->
+    <div class="data-submitted-section">
+      <div class="date-row">
+        <div class="date-wrapper">
+          <label for="dataSubmittedBy">Data Submitted By</label>
+          <input type="text" id="dataSubmittedBy" formControlName="dataSubmittedBy"
+            placeholder="Enter name" class="form-input-sm" />
+        </div>
+        <div class="date-wrapper">
+          <label for="dataSubmittedOn">Data Submitted On</label>
+          <input type="date" id="dataSubmittedOn" formControlName="dataSubmittedOn"
+            class="form-date" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button type="button" class="btn-reset" (click)="onReset()">
+        {{ editingId ? 'Cancel Edit' : 'Reset' }}
+      </button>
+      <div class="actions-right">
+        <button type="button" class="btn-preview" (click)="openPreview()"
+          [disabled]="kaizenForm.invalid">
+          <span class="preview-icon">📋</span> Preview
+        </button>
+        <button type="submit" class="btn-submit" [disabled]="kaizenForm.invalid">
+          {{ editingId ? 'Update' : 'Submit' }}
+        </button>
+      </div>
+    </div>
+  </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PREVIEW MODAL -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="preview-overlay" *ngIf="showPreview" (click)="closePreview()">
+  <div class="preview-modal" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="preview-modal-header">
+      <h3>Kaizen Sheet Preview</h3>
+      <button type="button" class="preview-close-btn" (click)="closePreview()">✕</button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="preview-modal-body">
+      <table class="preview-table">
+        <colgroup>
+          <col style="width: 22%;" />
+          <col style="width: 28%;" />
+          <col style="width: 30%;" />
+          <col style="width: 20%;" />
+        </colgroup>
+
+        <!-- Row 1: Division + Company branding -->
+        <tr>
+          <td class="preview-label">Division Name:</td>
+          <td class="preview-value">{{ getSelectedDivisionName() }}</td>
+          <td class="preview-company" colspan="2" rowspan="2">
+            <div class="company-brand">
+              <img src="assets/images/kala-logo.png" alt="Kala Logo" class="company-logo" />
+              <div class="company-text">
+                <strong>KALA GENSET PVT LTD</strong>
+                <span class="company-divider"></span>
+                <span class="company-tagline">A Kala Group Company</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Row 2: Department -->
+        <tr>
+          <td class="preview-label">Department Name:</td>
+          <td class="preview-value">{{ getSelectedDepartmentName() }}</td>
+        </tr>
+
+        <!-- Row 3: Kaizen No + KAIZEN SHEET -->
+        <tr>
+          <td class="preview-label">Kaizen No.:</td>
+          <td class="preview-value"></td>
+          <td class="preview-title" colspan="2"><strong>KAIZEN SHEET</strong></td>
+        </tr>
+
+        <!-- Row 4: Theme + Start Date -->
+        <tr>
+          <td class="preview-label">Kaizen Theme:</td>
+          <td class="preview-value">{{ getSelectedThemeName() }}</td>
+          <td class="preview-label">Start Date:</td>
+          <td class="preview-value">{{ formatDate(kaizenForm.get('kaizenInitiationDate')?.value) }}</td>
+        </tr>
+
+        <!-- Row 5: Machine + Finish Date -->
+        <tr>
+          <td class="preview-label">Machine Station Name:</td>
+          <td class="preview-value">{{ getSelectedWorkstationName() }}</td>
+          <td class="preview-label">Finish Date:</td>
+          <td class="preview-value">{{ formatDate(kaizenForm.get('completionDate')?.value) }}</td>
+        </tr>
+
+        <!-- Section: Problem / 5 Why / Idea / Countermeasure -->
+        <tr class="preview-section-header">
+          <td class="preview-label">Problem (5W2H):</td>
+          <td class="preview-label">RCA (5 Why):</td>
+          <td class="preview-label">Idea:</td>
+          <td class="preview-label">Countermeasure:</td>
+        </tr>
+        <tr>
+          <td class="preview-value preview-cell-tall">
+            <div class="preview-5w2h">
+              <p><strong>What:</strong> {{ kaizenForm.get('what')?.value }}</p>
+              <p><strong>When:</strong> {{ kaizenForm.get('when')?.value }}</p>
+              <p><strong>Where:</strong> {{ kaizenForm.get('where')?.value }}</p>
+              <p><strong>Who:</strong> {{ kaizenForm.get('who')?.value }}</p>
+              <p><strong>Why:</strong> {{ kaizenForm.get('why')?.value }}</p>
+              <p><strong>How:</strong> {{ kaizenForm.get('how')?.value }}</p>
+              <p><strong>How Much:</strong> {{ kaizenForm.get('howMuch')?.value }}</p>
+            </div>
+          </td>
+          <td class="preview-value preview-cell-tall">
+            <div class="preview-5w2h">
+              <p><strong>Why 1:</strong> {{ kaizenForm.get('why1')?.value }}</p>
+              <p><strong>Why 2:</strong> {{ kaizenForm.get('why2')?.value }}</p>
+              <p><strong>Why 3:</strong> {{ kaizenForm.get('why3')?.value }}</p>
+              <p><strong>Why 4:</strong> {{ kaizenForm.get('why4')?.value }}</p>
+              <p><strong>Why 5:</strong> {{ kaizenForm.get('why5')?.value }}</p>
+            </div>
+          </td>
+          <td class="preview-value preview-cell-tall">
+            <p><strong>{{ kaizenForm.get('idea')?.value }}</strong></p>
+            <p *ngIf="kaizenForm.get('ideaRemark')?.value"><em>{{ kaizenForm.get('ideaRemark')?.value }}</em></p>
+          </td>
+          <td class="preview-value preview-cell-tall">
+            {{ kaizenForm.get('countermeasureComment')?.value }}
+          </td>
+        </tr>
+
+        <!-- Section: Before / After -->
+        <tr class="preview-section-header">
+          <td class="preview-label" colspan="2">Before Sketch / Picture</td>
+          <td class="preview-label" colspan="2">After Sketch / Picture</td>
+        </tr>
+        <tr>
+          <td class="preview-value preview-cell-tall preview-img-cell" colspan="2">
+            <img *ngIf="beforePhotoPreview" [src]="beforePhotoPreview" alt="Before" class="preview-photo" />
+            <span *ngIf="!beforePhotoPreview" class="no-image">No image</span>
+          </td>
+          <td class="preview-value preview-cell-tall preview-img-cell" colspan="2">
+            <img *ngIf="afterPhotoPreview" [src]="afterPhotoPreview" alt="After" class="preview-photo" />
+            <span *ngIf="!afterPhotoPreview" class="no-image">No image</span>
+          </td>
+        </tr>
+
+        <!-- Section: Result / Improvement -->
+        <tr class="preview-section-header">
+          <td class="preview-label" colspan="2">Result:</td>
+          <td class="preview-label" colspan="2">Improvement (PQCDSM):</td>
+        </tr>
+        <tr>
+          <td class="preview-value" colspan="2">{{ selectedResultIds.join(', ') }}</td>
+          <td class="preview-value" colspan="2">{{ getSelectedPqcdsmNames() }}</td>
+        </tr>
+
+        <!-- Section: Benefit / Investment / Saving -->
+        <tr class="preview-section-header">
+          <td class="preview-label">Benefit:</td>
+          <td class="preview-label">Investment:</td>
+          <td class="preview-label" colspan="2">Saving:</td>
+        </tr>
+        <tr>
+          <td class="preview-value">{{ selectedBenefitIds.join(', ') }}</td>
+          <td class="preview-value">{{ kaizenForm.get('investmentArea')?.value }}</td>
+          <td class="preview-value" colspan="2">{{ kaizenForm.get('savingArea')?.value }}</td>
+        </tr>
+
+        <!-- Section: Deployment / Submitted -->
+        <tr class="preview-section-header">
+          <td class="preview-label" colspan="4">Horizontal Deployment:</td>
+        </tr>
+        <tr>
+          <td class="preview-value" colspan="4">{{ kaizenForm.get('horizontalDeployment')?.value }}</td>
+        </tr>
+
+        <!-- Section: Impact Analysis Graph -->
+        <tr class="preview-section-header">
+          <td class="preview-label" colspan="4">Impact Analysis Graph:</td>
+        </tr>
+        <tr>
+          <td class="preview-value" colspan="4">
+            <div class="preview-graph-area">
+              <div class="preview-graph-img" *ngIf="impactGraphPreview">
+                <img [src]="impactGraphPreview" alt="Impact Analysis Graph" />
+              </div>
+              <span class="preview-graph-file" *ngIf="impactGraph">📊 {{ impactGraph.name }} ({{ getFileSize(impactGraph) }})</span>
+              <span class="preview-no-graph" *ngIf="!impactGraph">No graph attached</span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Section: Kaizen Sustenance -->
+        <tr class="preview-section-header">
+          <td class="preview-label">What To Do:</td>
+          <td class="preview-label">How To Do:</td>
+          <td class="preview-label" colspan="2">Frequency:</td>
+        </tr>
+        <tr>
+          <td class="preview-value preview-cell-tall">{{ kaizenForm.get('whatToDo')?.value }}</td>
+          <td class="preview-value preview-cell-tall">{{ kaizenForm.get('howToDo')?.value }}</td>
+          <td class="preview-value preview-cell-tall" colspan="2">{{ kaizenForm.get('frequency')?.value }}</td>
+        </tr>
+
+        <!-- Section: Data Submitted -->
+        <tr class="preview-section-header">
+          <td class="preview-label" colspan="2">Data Submitted By:</td>
+          <td class="preview-label" colspan="2">Data Submitted On:</td>
+        </tr>
+        <tr>
+          <td class="preview-value" colspan="2">{{ kaizenForm.get('dataSubmittedBy')?.value }}</td>
+          <td class="preview-value" colspan="2">{{ formatDate(kaizenForm.get('dataSubmittedOn')?.value) }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>

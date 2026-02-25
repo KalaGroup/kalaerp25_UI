@@ -5,6 +5,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
+//import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
@@ -28,19 +29,22 @@ import { DgQualityMasterComponent } from './dg-quality-master/dg-quality-master.
 import { DgStageICheckerComponent } from './dg-stage-i-checker/dg-stage-i-checker.component';
 import { QualityMasterCheckerComponent } from './quality-master-checker/quality-master-checker.component';
 import { CalibrationMasterComponent } from './calibration-master/calibration-master.component';
+import { KaizenComponent } from './kaizen/kaizen.component';
 
 @NgModule({
   declarations: [
     DgStageICheckerComponent,
     DgQualityMasterComponent,
     QualityMasterCheckerComponent,
-    CalibrationMasterComponent
+    CalibrationMasterComponent,
+    KaizenComponent
   ],
   imports: [
     CommonModule,
     MatInputModule,
     FormsModule,
     ReactiveFormsModule,
+    //BrowserAnimationsModule,
     MatAutocompleteModule,
     MatIconModule,
     MatCardModule,

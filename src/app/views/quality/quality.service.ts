@@ -7,9 +7,79 @@ import {
   CheckpointResponse,
 } from './quality-master-checker/quality-master-checker.component';
 
+export interface KaizenSheetRecord {
+  id: number;
+  kaizenSheetNo: string;
+  divisionId: number | null;
+  divisionName: string | null;
+  departmentCode: string | null;
+  departmentName: string | null;
+  workstationCode: string | null;
+  workstationName: string | null;
+  kaizenTheme: string | null;
+  kaizenInitiationDate: string | null;
+  completionDate: string | null;
+  problemWhat: string | null;
+  problemWhen: string | null;
+  problemWhere: string | null;
+  problemWho: string | null;
+  problemWhy: string | null;
+  problemHow: string | null;
+  problemHowMuch: string | null;
+  beforePhotoPath: string | null;
+  beforePhotoName: string | null;
+  afterPhotoPath: string | null;
+  afterPhotoName: string | null;
+  rcaWhy1: string | null;
+  rcaWhy2: string | null;
+  rcaWhy3: string | null;
+  rcaWhy4: string | null;
+  rcaWhy5: string | null;
+  idea: string | null;
+  ideaRemark: string | null;
+  countermeasureRemark: string | null;
+  result: string | null;
+  improvement: string | null;
+  benefit: string | null;
+  investmentArea: string | null;
+  savingArea: string | null;
+  horizontalDeployment: string | null;
+  impactGraphPath: string | null;
+  impactGraphName: string | null;
+  sustenanceWhatToDo: string | null;
+  sustenanceHowToDo: string | null;
+  sustenanceFrequency: string | null;
+  dataSubmittedBy: string | null;
+  dataSubmittedOn: string | null;
+  isActive: boolean;
+  isDiscard: boolean;
+  isAuth: boolean;
+}
+
+export interface CreateKaizenSheetResponse {
+ // id: number;
+  kaizenSheetNo: string;
+  message: string;
+}
+
+export interface DivisionResponse {
+  DivisionId: number;
+  DivisionName: string;
+}
+
+export interface DepartmentResponse {
+  DepartmentCode: number;
+  DepartmentName: string;
+}
+
 export interface CalibrationInstrumentResponse {
   partcode: string;
   instrument: string;
+}
+
+export interface WorkstationResponse {
+  WorkstationCode: string;
+  WorkstationName: string;
 }
 
 export interface CalibrationMstResponse {
@@ -155,6 +225,26 @@ export class QualityService {
     return this.http.get<LocationPCResponse[]>(url);
   }
 
+  // fetch Division Code and Name for kaizen form dropdown
+  getDivisionCodeAndName(): Observable<DivisionResponse[]> {
+    const url = `${this.baseUrl}Quality/GetDivisionCodeAndName`;
+    return this.http.get<DivisionResponse[]>(url);
+  }
+
+  // fetch Division Code and Name for kaizen form dropdown
+  getDepartmentsByDivisionId(
+    divisionId: number,
+  ): Observable<DepartmentResponse[]> {
+    const url = `${this.baseUrl}Quality/GetDepartmentsByDivisionId/${divisionId}`;
+    return this.http.get<DepartmentResponse[]>(url);
+  }
+
+  // fetch Division Code and Name for kaizen form dropdown
+  getWorkstationCodeAndName(): Observable<WorkstationResponse[]> {
+    const url = `${this.baseUrl}Quality/GetWorkstationCodeAndName`;
+    return this.http.get<WorkstationResponse[]>(url);
+  }
+
   // For Stage 3
   getDgStage3CheckerData(
     stageName: string,
@@ -252,13 +342,35 @@ export class QualityService {
   }
 
   saveCalibrationMaster(data: any): Observable<any> {
-  const url = `${this.baseUrl}Quality/SaveCalibrationMaster`;
-  return this.http.post<any>(url, data);
-}
+    const url = `${this.baseUrl}Quality/SaveCalibrationMaster`;
+    return this.http.post<any>(url, data);
+  }
 
-getUnauthorizedCalibrationData(companyId: number): Observable<CalibrationMstResponse[]> {
-  const url = `${this.baseUrl}Quality/GetUnauthorizedCalibrationData/${companyId}`;
-  return this.http.get<CalibrationMstResponse[]>(url);
-}
+  getUnauthorizedCalibrationData(
+    companyId: number,
+  ): Observable<CalibrationMstResponse[]> {
+    const url = `${this.baseUrl}Quality/GetUnauthorizedCalibrationData/${companyId}`;
+    return this.http.get<CalibrationMstResponse[]>(url);
+  }
 
+  // Save Kaizen Sheet (FormData with file uploads)
+  saveKaizenSheet(formData: FormData): Observable<CreateKaizenSheetResponse> {
+    const url = `${this.baseUrl}Quality/SaveKaizenSheet`;
+    return this.http.post<CreateKaizenSheetResponse>(url, formData);
+  }
+
+  getAllKaizenSheets(): Observable<KaizenSheetRecord[]> {
+    const url = `${this.baseUrl}Quality/GetAllKaizenSheets`;
+    return this.http.get<KaizenSheetRecord[]>(url);
+  }
+
+  deleteKaizenSheet(id: number): Observable<any> {
+    const url = `${this.baseUrl}Quality/DeleteKaizenSheet/${id}`;
+    return this.http.delete<any>(url);
+  }
+
+  updateKaizenSheet(id: number, formData: FormData): Observable<CreateKaizenSheetResponse> {
+    const url = `${this.baseUrl}Quality/UpdateKaizenSheet/${id}`;
+    return this.http.put<CreateKaizenSheetResponse>(url, formData);
+  }
 }
