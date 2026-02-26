@@ -11,9 +11,10 @@ import {
   selector: 'app-kaizen',
   templateUrl: './kaizen.component.html',
   styleUrls: ['./kaizen.component.scss'],
+  standalone: false,
 })
 export class KaizenComponent implements OnInit {
-  kaizenForm!: FormGroup;
+ kaizenForm!: FormGroup;
   isProblemSectionOpen = false;
   isVisualSectionOpen = false;
   isAnalysisSectionOpen = false;
@@ -51,7 +52,12 @@ export class KaizenComponent implements OnInit {
   // Table & Edit
   kaizenRecords: any[] = [];
   editingId: number | null = null;
+  editingRow: any = null;
   showForm = false;
+  isChecker = true; // Toggle: false = Maker, true = Checker (for testing auth flow)
+  previewSheetNo = '';
+  previewRecord: any = null;
+  isGeneratingPdf = false;
 
   constructor(
     private fb: FormBuilder,
@@ -423,11 +429,14 @@ export class KaizenComponent implements OnInit {
   }
 
   openPreview(): void {
+    this.previewRecord = null;
+    this.previewSheetNo = '';
     this.showPreview = true;
   }
 
   closePreview(): void {
     this.showPreview = false;
+    this.previewRecord = null;
   }
 
   onSubmit(): void {
@@ -475,7 +484,7 @@ export class KaizenComponent implements OnInit {
     fd.append('DepartmentName', this.getSelectedDepartmentName());
     fd.append('WorkstationCode', v.workstationCode || '');
     fd.append('WorkstationName', this.getSelectedWorkstationName());
-    fd.append('KaizenTheme', this.getSelectedThemeName());
+    fd.append('KaizenTheme', v.kaizenTheme || '');
     fd.append('KaizenInitiationDate', v.kaizenInitiationDate || '');
     fd.append('CompletionDate', v.completionDate || '');
 
@@ -519,6 +528,23 @@ export class KaizenComponent implements OnInit {
     }
     if (this.impactGraph) {
       fd.append('impactGraph', this.impactGraph, this.impactGraph.name);
+    }
+
+    // For update: send existing file paths if no new file selected
+    // This prevents backend from nulling out existing files
+    if (this.editingId && this.editingRow) {
+      if (!this.beforePhoto && this.editingRow.BeforePhotoPath) {
+        fd.append('BeforePhotoPath', this.editingRow.BeforePhotoPath);
+        fd.append('BeforePhotoName', this.editingRow.BeforePhotoName || '');
+      }
+      if (!this.afterPhoto && this.editingRow.AfterPhotoPath) {
+        fd.append('AfterPhotoPath', this.editingRow.AfterPhotoPath);
+        fd.append('AfterPhotoName', this.editingRow.AfterPhotoName || '');
+      }
+      if (!this.impactGraph && this.editingRow.ImpactGraphPath) {
+        fd.append('ImpactGraphPath', this.editingRow.ImpactGraphPath);
+        fd.append('ImpactGraphName', this.editingRow.ImpactGraphName || '');
+      }
     }
 
     return fd;
@@ -615,6 +641,20 @@ export class KaizenComponent implements OnInit {
     this.selectedPqcdsmIds = row.Improvement ? row.Improvement.split(',').filter((s: string) => s) : [];
     this.selectedBenefitIds = row.Benefit ? row.Benefit.split(',').filter((s: string) => s) : [];
 
+    // Load existing server images as previews for edit mode
+    this.beforePhoto = null;
+    this.afterPhoto = null;
+    this.impactGraph = null;
+    this.beforePhotoPreview = row.BeforePhotoPath
+      ? this.qualityService.getKaizenFileUrl(row.BeforePhotoPath) : null;
+    this.afterPhotoPreview = row.AfterPhotoPath
+      ? this.qualityService.getKaizenFileUrl(row.AfterPhotoPath) : null;
+    this.impactGraphPreview = row.ImpactGraphPath
+      ? this.qualityService.getKaizenFileUrl(row.ImpactGraphPath) : null;
+
+    // Store editing row for reference (file names etc.)
+    this.editingRow = row;
+
     // Open all sections so user can see data
     this.isProblemSectionOpen = true;
     this.isVisualSectionOpen = true;
@@ -626,56 +666,381 @@ export class KaizenComponent implements OnInit {
     setTimeout(() => {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }, 100);
-    this.successMessage = `Editing: ${row.KaizenSheetNo}`;
   }
+
+  // ── Generic Confirmation Modal ──
+  confirmModal = {
+    show: false,
+    type: '' as 'delete' | 'authorize',
+    message: '',
+    confirmText: '',
+    row: null as any,
+  };
 
   onDeleteRecord(row: any): void {
-    if (confirm(`Are you sure you want to delete ${row.KaizenSheetNo}?`)) {
-      this.qualityService.deleteKaizenSheet(row.Id).subscribe({
-        next: () => {
-          this.successMessage = `${row.KaizenSheetNo} deleted successfully.`;
-          this.loadKaizenRecords();
-          if (this.editingId === row.Id) {
-            this.onCloseForm();
-          }
-        },
-        error: (err) => {
-          this.errorMessage = err.error?.message || 'Failed to delete.';
-        },
-      });
-    }
+    this.confirmModal = {
+      show: true,
+      type: 'delete',
+      message: `Are you sure you want to delete ${row.KaizenSheetNo}?`,
+      confirmText: 'Yes, Delete',
+      row: row,
+    };
   }
 
+  onAuthorizeRecord(row: any): void {
+    this.confirmModal = {
+      show: true,
+      type: 'authorize',
+      message: `Are you sure you want to authorize Kaizen Sheet "${row.KaizenSheetNo}"? This action cannot be undone.`,
+      confirmText: 'Yes, Authorize',
+      row: row,
+    };
+  }
+
+  onConfirmAction(): void {
+    if (!this.confirmModal.row) return;
+    if (this.confirmModal.type === 'delete') {
+      this.executeDelete(this.confirmModal.row);
+    } else if (this.confirmModal.type === 'authorize') {
+      this.executeAuthorize(this.confirmModal.row);
+    }
+    this.resetConfirmModal();
+  }
+
+  onCancelAction(): void {
+    this.resetConfirmModal();
+  }
+
+  private resetConfirmModal(): void {
+    this.confirmModal = { show: false, type: '' as any, message: '', confirmText: '', row: null };
+  }
+
+  private executeDelete(row: any): void {
+    this.qualityService.deleteKaizenSheet(row.Id).subscribe({
+      next: () => {
+        this.successMessage = `${row.KaizenSheetNo} deleted successfully.`;
+        this.loadKaizenRecords();
+        if (this.editingId === row.Id) {
+          this.onCloseForm();
+        }
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to delete.';
+      },
+    });
+  }
+
+  private executeAuthorize(row: any): void {
+    this.qualityService.authorizeKaizenSheet(row.Id).subscribe({
+      next: () => {
+        this.successMessage = `${row.KaizenSheetNo} authorized successfully.`;
+        this.loadKaizenRecords();
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to authorize.';
+      },
+    });
+  }
+
+  // Preview — only open modal, don't open form or show editing message
   onPreviewRecord(row: any): void {
-    this.showForm = true;
+    this.previewSheetNo = row.KaizenSheetNo || '';
+    this.previewRecord = row;
     if (row.DivisionId) {
       this.qualityService.getDepartmentsByDivisionId(row.DivisionId).subscribe({
         next: (depts) => {
           this.departments = depts;
-          this.patchForm(row);
-          this.editingId = null;
-          setTimeout(() => { this.showPreview = true; }, 200);
+          this.patchFormSilent(row);
+          setTimeout(() => { this.showPreview = true; }, 100);
         },
         error: () => {
-          this.patchForm(row);
-          this.editingId = null;
-          setTimeout(() => { this.showPreview = true; }, 200);
+          this.patchFormSilent(row);
+          setTimeout(() => { this.showPreview = true; }, 100);
         },
       });
     } else {
-      this.patchForm(row);
-      this.editingId = null;
-      setTimeout(() => { this.showPreview = true; }, 200);
+      this.patchFormSilent(row);
+      setTimeout(() => { this.showPreview = true; }, 100);
     }
+  }
+
+  // Patch form without opening form or showing messages
+  patchFormSilent(row: any): void {
+    const themeMatch = this.kaizenThemes.find((t: any) =>
+      row.KaizenTheme?.includes(t.id)
+    );
+    this.kaizenForm.patchValue({
+      divisionId: row.DivisionId || '',
+      departmentCode: row.DepartmentCode || '',
+      workstationCode: row.WorkstationCode || '',
+      kaizenTheme: themeMatch ? themeMatch.id : '',
+      kaizenInitiationDate: row.KaizenInitiationDate || '',
+      completionDate: row.CompletionDate || '',
+      what: row.ProblemWhat || '',
+      when: row.ProblemWhen || '',
+      where: row.ProblemWhere || '',
+      who: row.ProblemWho || '',
+      why: row.ProblemWhy || '',
+      how: row.ProblemHow || '',
+      howMuch: row.ProblemHowMuch || '',
+      why1: row.RcaWhy1 || '',
+      why2: row.RcaWhy2 || '',
+      why3: row.RcaWhy3 || '',
+      why4: row.RcaWhy4 || '',
+      why5: row.RcaWhy5 || '',
+      idea: row.Idea || '',
+      ideaRemark: row.IdeaRemark || '',
+      countermeasureComment: row.CountermeasureRemark || '',
+      investmentArea: row.InvestmentArea || '',
+      savingArea: row.SavingArea || '',
+      horizontalDeployment: row.HorizontalDeployment || '',
+      whatToDo: row.SustenanceWhatToDo || '',
+      howToDo: row.SustenanceHowToDo || '',
+      frequency: row.SustenanceFrequency || '',
+      dataSubmittedBy: row.DataSubmittedBy || '',
+      dataSubmittedOn: row.DataSubmittedOn || '',
+    });
+    this.selectedResultIds = row.Result ? row.Result.split(',').filter((s: string) => s) : [];
+    this.selectedPqcdsmIds = row.Improvement ? row.Improvement.split(',').filter((s: string) => s) : [];
+    this.selectedBenefitIds = row.Benefit ? row.Benefit.split(',').filter((s: string) => s) : [];
   }
 
   splitImprovement(improvement: string | null): string[] {
     return improvement ? improvement.split(',').filter(s => s.trim()) : [];
   }
 
+  // Build full URL for server-stored images via API
+  getServerImageUrl(path: string | null): string {
+    if (!path) return '';
+    return this.qualityService.getKaizenFileUrl(path);
+  }
+
+  // Download preview as PDF (direct download, no print dialog)
+  async downloadPreviewPdf(): Promise<void> {
+    const previewBody = document.querySelector('.preview-modal-body') as HTMLElement;
+    const previewModal = document.querySelector('.preview-modal') as HTMLElement;
+    const overlay = document.querySelector('.preview-overlay') as HTMLElement;
+    if (!previewBody || !previewModal) return;
+
+    this.isGeneratingPdf = true;
+
+    // Dynamically load html2canvas and jsPDF if not already loaded
+    if (!(window as any).html2canvas) {
+      await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    }
+    if (!(window as any).jspdf) {
+      await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    }
+
+    const html2canvas = (window as any).html2canvas;
+    const jsPDF = (window as any).jspdf.jsPDF;
+
+    if (!html2canvas || !jsPDF) {
+      alert('PDF libraries failed to load. Please try again.');
+      this.isGeneratingPdf = false;
+      return;
+    }
+
+    // Convert logo to base64 before capturing
+    const logoImg = previewBody.querySelector('.company-logo') as HTMLImageElement;
+    if (logoImg && !logoImg.src.startsWith('data:')) {
+      try {
+        const base64 = await this.imageToBase64(logoImg.src);
+        logoImg.src = base64;
+      } catch (e) {
+        console.warn('Logo conversion failed:', e);
+      }
+    }
+
+    // ── Save original styles ──
+    const savedStyles = {
+      modalMaxHeight: previewModal.style.maxHeight,
+      modalOverflow: previewModal.style.overflow,
+      bodyOverflow: previewBody.style.overflow,
+      bodyMaxHeight: previewBody.style.maxHeight,
+      bodyFlex: previewBody.style.flex,
+      bodyHeight: previewBody.style.height,
+      overlayOverflow: overlay ? overlay.style.overflow : '',
+      overlayAlignItems: overlay ? overlay.style.alignItems : '',
+    };
+
+    // ── Temporarily expand to full content height ──
+    previewModal.style.maxHeight = 'none';
+    previewModal.style.overflow = 'visible';
+    previewBody.style.overflow = 'visible';
+    previewBody.style.maxHeight = 'none';
+    previewBody.style.flex = 'none';
+    previewBody.style.height = 'auto';
+    if (overlay) {
+      overlay.style.overflow = 'visible';
+      overlay.style.alignItems = 'flex-start';
+    }
+
+    // Wait for layout reflow + images
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    try {
+      const canvas = await html2canvas(previewBody, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        imageTimeout: 5000,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        width: previewBody.scrollWidth,
+        height: previewBody.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 5;
+      const usableWidth = pdfWidth - margin * 2;
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = usableWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
+
+      if (scaledHeight <= pdfHeight - margin * 2) {
+        pdf.addImage(imgData, 'PNG', margin, margin, usableWidth, scaledHeight);
+      } else {
+        let yOffset = 0;
+        const pageContentHeight = (pdfHeight - margin * 2) / ratio;
+
+        while (yOffset < imgHeight) {
+          const sourceHeight = Math.min(pageContentHeight, imgHeight - yOffset);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = imgWidth;
+          pageCanvas.height = sourceHeight;
+          const ctx = pageCanvas.getContext('2d')!;
+          ctx.drawImage(canvas, 0, yOffset, imgWidth, sourceHeight, 0, 0, imgWidth, sourceHeight);
+
+          const pageData = pageCanvas.toDataURL('image/png');
+          const pageScaledHeight = sourceHeight * ratio;
+
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(pageData, 'PNG', margin, margin, usableWidth, pageScaledHeight);
+          yOffset += sourceHeight;
+        }
+      }
+
+      const fileName = `Kaizen_Sheet_${this.previewSheetNo || 'Preview'}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      // ── Restore original styles ──
+      previewModal.style.maxHeight = savedStyles.modalMaxHeight;
+      previewModal.style.overflow = savedStyles.modalOverflow;
+      previewBody.style.overflow = savedStyles.bodyOverflow;
+      previewBody.style.maxHeight = savedStyles.bodyMaxHeight;
+      previewBody.style.flex = savedStyles.bodyFlex;
+      previewBody.style.height = savedStyles.bodyHeight;
+      if (overlay) {
+        overlay.style.overflow = savedStyles.overlayOverflow;
+        overlay.style.alignItems = savedStyles.overlayAlignItems;
+      }
+      this.isGeneratingPdf = false;
+    }
+  }
+
+  // Load external script dynamically
+  private loadScript(src: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load: ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  // Convert image URL to base64
+  private imageToBase64(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // Download all Kaizen records as Excel
+  async downloadKaizenExcel(): Promise<void> {
+    if (!this.kaizenRecords.length) return;
+
+    // Load SheetJS (xlsx) from CDN
+    if (!(window as any).XLSX) {
+      await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+    }
+    const XLSX = (window as any).XLSX;
+    if (!XLSX) {
+      alert('Excel library failed to load.');
+      return;
+    }
+
+    // Build data rows (exclude image/graph paths)
+    const headers = [
+      'Sr.', 'Kaizen Sheet No', 'Division', 'Department', 'Workstation',
+      'Theme', 'Initiation Date', 'Completion Date',
+      'What', 'When', 'Where', 'Who', 'Why', 'How', 'How Much',
+      'RCA Why 1', 'RCA Why 2', 'RCA Why 3', 'RCA Why 4', 'RCA Why 5',
+      'Idea', 'Idea Remark', 'Countermeasure',
+      'Result', 'Improvement', 'Benefit',
+      'Investment Area', 'Saving Area', 'Horizontal Deployment',
+      'Sustenance What', 'Sustenance How', 'Frequency',
+      'Submitted By', 'Submitted On', 'Status'
+    ];
+
+    const rows = this.kaizenRecords.map((r: any, i: number) => [
+      i + 1, r.KaizenSheetNo, r.DivisionName, r.DepartmentName, r.WorkstationName,
+      r.KaizenTheme, r.KaizenInitiationDate, r.CompletionDate,
+      r.ProblemWhat, r.ProblemWhen, r.ProblemWhere, r.ProblemWho, r.ProblemWhy, r.ProblemHow, r.ProblemHowMuch,
+      r.RcaWhy1, r.RcaWhy2, r.RcaWhy3, r.RcaWhy4, r.RcaWhy5,
+      r.Idea, r.IdeaRemark, r.CountermeasureRemark,
+      r.Result, r.Improvement, r.Benefit,
+      r.InvestmentArea, r.SavingArea, r.HorizontalDeployment,
+      r.SustenanceWhatToDo, r.SustenanceHowToDo, r.SustenanceFrequency,
+      r.DataSubmittedBy, r.DataSubmittedOn, r.IsAuth ? 'Authorized' : 'Pending'
+    ]);
+
+    const wsData = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Auto-fit column widths
+    const colWidths = headers.map((h: string, ci: number) => {
+      let max = h.length;
+      rows.forEach((row: any[]) => {
+        const val = row[ci] != null ? String(row[ci]) : '';
+        if (val.length > max) max = val.length;
+      });
+      return { wch: Math.min(max + 2, 35) };
+    });
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Kaizen Sheets');
+    XLSX.writeFile(wb, `Kaizen_Sheets_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   onReset(): void {
     this.kaizenForm.reset();
     this.editingId = null;
+    this.editingRow = null;
     this.departments = [];
     this.selectedResultIds = [];
     this.selectedPqcdsmIds = [];
