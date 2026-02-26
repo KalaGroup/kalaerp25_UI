@@ -21,11 +21,15 @@
     </div>
   </div>
 
-  <!-- Warning Modal -->
-  <div *ngIf="warningMessage" class="warningModal">
+  <!-- Warning / Delete Confirm Modal -->
+  <div *ngIf="confirmModal.show" class="warningModal">
     <div class="warningModal_content">
-      <p>{{ warningMessage }}</p>
-      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+      <p>{{ confirmModal.message }}</p>
+      <div class="warning-btn-group">
+        <button [class]="confirmModal.type === 'delete' ? 'warning-confirm-button' : 'warning-auth-button'"
+          (click)="onConfirmAction()">{{ confirmModal.confirmText }}</button>
+        <button class="warning-cancel-button" (click)="onCancelAction()">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -35,6 +39,15 @@
       <h3>📋 Kaizen Sheet Records</h3>
       <div class="table-header-right">
         <span class="record-count">{{ kaizenRecords.length }} records</span>
+        <button type="button" class="btn-download-excel" (click)="downloadKaizenExcel()" [disabled]="kaizenRecords.length === 0">
+          <span class="excel-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <rect width="16" height="16" rx="2" fill="#217346"/>
+              <path d="M4.5 4L8 8.5L4.5 13H6.5L8.8 9.5L11 13H13L9.5 8.5L13 4H11L8.8 7.5L6.5 4H4.5Z" fill="white"/>
+            </svg>
+          </span>
+          Download Excel
+        </button>
         <button type="button" class="btn-add-kaizen" (click)="onAddKaizen()" *ngIf="!showForm">
           <span class="add-icon">＋</span> Add Kaizen
         </button>
@@ -55,6 +68,7 @@
             <th>Improvement</th>
             <th>Submitted By</th>
             <th class="th-status">Status</th>
+            <th class="th-auth" *ngIf="isChecker">Auth</th>
             <th class="th-actions">Actions</th>
           </tr>
         </thead>
@@ -87,13 +101,18 @@
                 'status-pending': !row.IsAuth
               }">{{ row.IsAuth ? 'Authorized' : 'Pending' }}</span>
             </td>
+            <td class="td-auth" *ngIf="isChecker">
+              <button *ngIf="!row.IsAuth" type="button" class="action-btn-auth"
+                (click)="onAuthorizeRecord(row)">🛡️ Authorize</button>
+              <span *ngIf="row.IsAuth" class="auth-done">✔</span>
+            </td>
             <td class="td-actions">
               <button type="button" class="action-btn action-view" title="Preview"
                 (click)="onPreviewRecord(row)">👁️</button>
               <button type="button" class="action-btn action-edit" title="Edit"
-                (click)="onEditRecord(row)">✏️</button>
+                (click)="onEditRecord(row)" [disabled]="row.IsAuth && !isChecker">✏️</button>
               <button type="button" class="action-btn action-delete" title="Delete"
-                (click)="onDeleteRecord(row)">🗑️</button>
+                (click)="onDeleteRecord(row)" [disabled]="row.IsAuth && !isChecker">🗑️</button>
             </td>
           </tr>
         </tbody>
@@ -288,6 +307,11 @@
                 <span class="file-name">{{ beforePhoto.name }}</span>
                 <button type="button" class="file-remove" (click)="removeBeforePhoto()">✕</button>
               </div>
+              <div class="file-chip file-chip-existing" *ngIf="!beforePhoto && editingRow?.BeforePhotoName">
+                <span class="file-icon">🖼️</span>
+                <span class="file-name">{{ editingRow.BeforePhotoName }}</span>
+                <span class="file-existing-tag">Existing</span>
+              </div>
               <div class="image-preview" *ngIf="beforePhotoPreview">
                 <img [src]="beforePhotoPreview" alt="Before Kaizen Photo" />
               </div>
@@ -307,6 +331,11 @@
                 <span class="file-icon">📄</span>
                 <span class="file-name">{{ afterPhoto.name }}</span>
                 <button type="button" class="file-remove" (click)="removeAfterPhoto()">✕</button>
+              </div>
+              <div class="file-chip file-chip-existing" *ngIf="!afterPhoto && editingRow?.AfterPhotoName">
+                <span class="file-icon">🖼️</span>
+                <span class="file-name">{{ editingRow.AfterPhotoName }}</span>
+                <span class="file-existing-tag">Existing</span>
               </div>
               <div class="image-preview" *ngIf="afterPhotoPreview">
                 <img [src]="afterPhotoPreview" alt="After Kaizen Photo" />
@@ -597,6 +626,13 @@
                     </div>
                     <button type="button" class="graph-chip-remove" (click)="removeImpactGraph()">✕</button>
                   </div>
+                  <div class="graph-file-chip graph-chip-existing" *ngIf="!impactGraph && editingRow?.ImpactGraphName">
+                    <span class="graph-chip-icon">📊</span>
+                    <div class="graph-chip-info">
+                      <span class="graph-chip-name">{{ editingRow.ImpactGraphName }}</span>
+                      <span class="file-existing-tag">Existing</span>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- RIGHT: Visual Preview -->
@@ -723,7 +759,13 @@
     <!-- Modal Header -->
     <div class="preview-modal-header">
       <h3>Kaizen Sheet Preview</h3>
-      <button type="button" class="preview-close-btn" (click)="closePreview()">✕</button>
+      <div class="preview-header-actions">
+        <button type="button" class="btn-download-pdf" (click)="downloadPreviewPdf()" [disabled]="isGeneratingPdf">
+          <span *ngIf="!isGeneratingPdf">📥 Download PDF</span>
+          <span *ngIf="isGeneratingPdf">⏳ Generating...</span>
+        </button>
+        <button type="button" class="preview-close-btn" (click)="closePreview()">✕</button>
+      </div>
     </div>
 
     <!-- Modal Body -->
@@ -761,7 +803,7 @@
         <!-- Row 3: Kaizen No + KAIZEN SHEET -->
         <tr>
           <td class="preview-label">Kaizen No.:</td>
-          <td class="preview-value"></td>
+          <td class="preview-value">{{ previewSheetNo }}</td>
           <td class="preview-title" colspan="2"><strong>KAIZEN SHEET</strong></td>
         </tr>
 
@@ -826,11 +868,15 @@
         <tr>
           <td class="preview-value preview-cell-tall preview-img-cell" colspan="2">
             <img *ngIf="beforePhotoPreview" [src]="beforePhotoPreview" alt="Before" class="preview-photo" />
-            <span *ngIf="!beforePhotoPreview" class="no-image">No image</span>
+            <img *ngIf="!beforePhotoPreview && previewRecord?.BeforePhotoPath"
+              [src]="getServerImageUrl(previewRecord.BeforePhotoPath)" alt="Before" class="preview-photo" />
+            <span *ngIf="!beforePhotoPreview && !previewRecord?.BeforePhotoPath" class="no-image">No image</span>
           </td>
           <td class="preview-value preview-cell-tall preview-img-cell" colspan="2">
             <img *ngIf="afterPhotoPreview" [src]="afterPhotoPreview" alt="After" class="preview-photo" />
-            <span *ngIf="!afterPhotoPreview" class="no-image">No image</span>
+            <img *ngIf="!afterPhotoPreview && previewRecord?.AfterPhotoPath"
+              [src]="getServerImageUrl(previewRecord.AfterPhotoPath)" alt="After" class="preview-photo" />
+            <span *ngIf="!afterPhotoPreview && !previewRecord?.AfterPhotoPath" class="no-image">No image</span>
           </td>
         </tr>
 
@@ -874,8 +920,12 @@
               <div class="preview-graph-img" *ngIf="impactGraphPreview">
                 <img [src]="impactGraphPreview" alt="Impact Analysis Graph" />
               </div>
+              <div class="preview-graph-img" *ngIf="!impactGraphPreview && previewRecord?.ImpactGraphPath">
+                <img [src]="getServerImageUrl(previewRecord.ImpactGraphPath)" alt="Impact Analysis Graph" />
+              </div>
               <span class="preview-graph-file" *ngIf="impactGraph">📊 {{ impactGraph.name }} ({{ getFileSize(impactGraph) }})</span>
-              <span class="preview-no-graph" *ngIf="!impactGraph">No graph attached</span>
+              <span class="preview-graph-file" *ngIf="!impactGraph && previewRecord?.ImpactGraphName">📊 {{ previewRecord.ImpactGraphName }}</span>
+              <span class="preview-no-graph" *ngIf="!impactGraphPreview && !previewRecord?.ImpactGraphPath && !impactGraph">No graph attached</span>
             </div>
           </td>
         </tr>

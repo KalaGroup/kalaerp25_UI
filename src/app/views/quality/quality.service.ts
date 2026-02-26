@@ -373,4 +373,16 @@ export class QualityService {
     const url = `${this.baseUrl}Quality/UpdateKaizenSheet/${id}`;
     return this.http.put<CreateKaizenSheetResponse>(url, formData);
   }
+
+  // Build URL to fetch Kaizen uploaded file (image/graph)
+  getKaizenFileUrl(filePath: string): string {
+    if (!filePath) return '';
+    return `${this.baseUrl}Quality/GetKaizenFile?path=${encodeURIComponent(filePath)}`;
+  }
+
+  authorizeKaizenSheet(id: number): Observable<any> {
+    const url = `${this.baseUrl}Quality/AuthorizeKaizenSheet/${id}`;
+    return this.http.put<any>(url, {});
+  }
+
 }
