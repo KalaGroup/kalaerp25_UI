@@ -3,9 +3,10 @@ import {UntypedFormControl} from '@angular/forms';
 import { TooltipPosition } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'app-auto-hide-tooltip',
-  templateUrl: './auto-hide-tooltip.component.html',
-  styleUrls: ['./auto-hide-tooltip.component.scss']
+    selector: 'app-auto-hide-tooltip',
+    templateUrl: './auto-hide-tooltip.component.html',
+    styleUrls: ['./auto-hide-tooltip.component.scss'],
+    standalone: false
 })
 export class AutoHideTooltipComponent implements OnInit {
 

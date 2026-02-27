@@ -4,9 +4,10 @@ import {Observable} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 
 @Component({
-  selector: 'app-filter-autocomplete',
-  templateUrl: './filter-autocomplete.component.html',
-  styleUrls: ['./filter-autocomplete.component.scss']
+    selector: 'app-filter-autocomplete',
+    templateUrl: './filter-autocomplete.component.html',
+    styleUrls: ['./filter-autocomplete.component.scss'],
+    standalone: false
 })
 export class FilterAutocompleteComponent implements OnInit {
 

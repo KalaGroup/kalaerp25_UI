@@ -1,7 +1,8 @@
 import { Directive, ElementRef, Renderer2 } from '@angular/core';
 
 @Directive({
-  selector: '[forceNativeScrolling]'
+    selector: '[forceNativeScrolling]',
+    standalone: false
 })
 export class ForceNativeScrollDirective {
 

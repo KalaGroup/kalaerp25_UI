@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-form-input',
-  templateUrl: './form-input.component.html',
-  styleUrls: ['./form-input.component.scss']
+    selector: 'app-form-input',
+    templateUrl: './form-input.component.html',
+    styleUrls: ['./form-input.component.scss'],
+    standalone: false
 })
 export class FormInputComponent implements OnInit {
 

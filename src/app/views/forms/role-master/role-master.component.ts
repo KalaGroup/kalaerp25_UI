@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
-  selector: 'app-role-master',
-  //standalone: true,
-  //imports: [],
-  templateUrl: './role-master.component.html',
-  styleUrl: './role-master.component.scss'
+    selector: 'app-role-master',
+    //standalone: true,
+    //imports: [],
+    templateUrl: './role-master.component.html',
+    styleUrl: './role-master.component.scss',
+    standalone: false
 })
 export class RoleMasterComponent {
   profitCenters: { id: number; value: string }[] = [];

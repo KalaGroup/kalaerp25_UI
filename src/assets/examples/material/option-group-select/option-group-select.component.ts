@@ -13,9 +13,10 @@ export interface PokemonGroup {
 }
 
 @Component({
-  selector: 'app-option-group-select',
-  templateUrl: './option-group-select.component.html',
-  styleUrls: ['./option-group-select.component.scss']
+    selector: 'app-option-group-select',
+    templateUrl: './option-group-select.component.html',
+    styleUrls: ['./option-group-select.component.scss'],
+    standalone: false
 })
 export class OptionGroupSelectComponent implements OnInit {
 

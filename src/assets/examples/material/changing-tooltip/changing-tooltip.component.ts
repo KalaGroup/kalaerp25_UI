@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-changing-tooltip',
-  templateUrl: './changing-tooltip.component.html',
-  styleUrls: ['./changing-tooltip.component.scss']
+    selector: 'app-changing-tooltip',
+    templateUrl: './changing-tooltip.component.html',
+    styleUrls: ['./changing-tooltip.component.scss'],
+    standalone: false
 })
 export class ChangingTooltipComponent implements OnInit {
 

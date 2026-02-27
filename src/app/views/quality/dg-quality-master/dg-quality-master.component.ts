@@ -16,9 +16,10 @@ interface CheckpointItem {
 }
 
 @Component({
-  selector: 'app-dg-quality-master',
-  templateUrl: './dg-quality-master.component.html',
-  styleUrl: './dg-quality-master.component.scss',
+    selector: 'app-dg-quality-master',
+    templateUrl: './dg-quality-master.component.html',
+    styleUrl: './dg-quality-master.component.scss',
+    standalone: false
 })
 export class DgQualityMasterComponent implements OnInit {
   // Filter Options

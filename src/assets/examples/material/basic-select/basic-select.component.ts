@@ -6,9 +6,10 @@ export interface Food {
 }
 
 @Component({
-  selector: 'app-basic-select',
-  templateUrl: './basic-select.component.html',
-  styleUrls: ['./basic-select.component.scss']
+    selector: 'app-basic-select',
+    templateUrl: './basic-select.component.html',
+    styleUrls: ['./basic-select.component.scss'],
+    standalone: false
 })
 export class BasicSelectComponent implements OnInit {
 

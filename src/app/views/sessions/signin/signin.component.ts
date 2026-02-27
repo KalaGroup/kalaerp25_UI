@@ -9,9 +9,10 @@ import { AppLoaderService } from '../../../shared/services/app-loader/app-loader
 import { JwtAuthService } from '../../../shared/services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-signin',
-  templateUrl: './signin.component.html',
-  styleUrls: ['./signin.component.css']
+    selector: 'app-signin',
+    templateUrl: './signin.component.html',
+    styleUrls: ['./signin.component.css'],
+    standalone: false
 })
 export class SigninComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MatProgressBar) progressBar: MatProgressBar;

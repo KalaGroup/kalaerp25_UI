@@ -8,10 +8,10 @@ import {
 } from '../quality.service';
 
 @Component({
-  selector: 'app-kaizen',
-  templateUrl: './kaizen.component.html',
-  styleUrls: ['./kaizen.component.scss'],
-  standalone: false,
+    selector: 'app-kaizen',
+    templateUrl: './kaizen.component.html',
+    styleUrls: ['./kaizen.component.scss'],
+    standalone: false
 })
 export class KaizenComponent implements OnInit {
  kaizenForm!: FormGroup;

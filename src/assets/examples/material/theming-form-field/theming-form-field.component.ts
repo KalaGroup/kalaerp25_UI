@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 
 @Component({
-  selector: 'app-theming-form-field',
-  templateUrl: './theming-form-field.component.html',
-  styleUrls: ['./theming-form-field.component.scss']
+    selector: 'app-theming-form-field',
+    templateUrl: './theming-form-field.component.html',
+    styleUrls: ['./theming-form-field.component.scss'],
+    standalone: false
 })
 export class ThemingFormFieldComponent implements OnInit {
 

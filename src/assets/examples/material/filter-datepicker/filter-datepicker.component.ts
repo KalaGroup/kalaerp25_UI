@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-filter-datepicker',
-  templateUrl: './filter-datepicker.component.html',
-  styleUrls: ['./filter-datepicker.component.scss']
+    selector: 'app-filter-datepicker',
+    templateUrl: './filter-datepicker.component.html',
+    styleUrls: ['./filter-datepicker.component.scss'],
+    standalone: false
 })
 export class FilterDatepickerComponent implements OnInit {
 

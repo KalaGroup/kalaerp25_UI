@@ -10,9 +10,10 @@ export interface State {
 }
 
 @Component({
-  selector: 'app-autocomplete-overview',
-  templateUrl: './autocomplete-overview.component.html',
-  styleUrls: ['./autocomplete-overview.component.scss']
+    selector: 'app-autocomplete-overview',
+    templateUrl: './autocomplete-overview.component.html',
+    styleUrls: ['./autocomplete-overview.component.scss'],
+    standalone: false
 })
 export class AutocompleteOverviewComponent {
 

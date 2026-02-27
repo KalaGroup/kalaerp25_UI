@@ -2,9 +2,10 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatButton as MatButton } from '@angular/material/button';
 import { MatProgressBar as MatProgressBar } from '@angular/material/progress-bar';
 @Component({
-  selector: 'app-forgot-password',
-  templateUrl: './forgot-password.component.html',
-  styleUrls: ['./forgot-password.component.css']
+    selector: 'app-forgot-password',
+    templateUrl: './forgot-password.component.html',
+    styleUrls: ['./forgot-password.component.css'],
+    standalone: false
 })
 export class ForgotPasswordComponent implements OnInit {
   userEmail;

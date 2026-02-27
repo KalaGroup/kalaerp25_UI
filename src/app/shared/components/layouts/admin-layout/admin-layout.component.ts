@@ -15,8 +15,9 @@ import { filter } from 'rxjs/operators';
 import { JwtAuthService } from '../../../services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-admin-layout',
-  templateUrl: './admin-layout.template.html',
+    selector: 'app-admin-layout',
+    templateUrl: './admin-layout.template.html',
+    standalone: false
 })
 export class AdminLayoutComponent implements OnInit, AfterViewInit {
   public isModuleLoading: Boolean = false;

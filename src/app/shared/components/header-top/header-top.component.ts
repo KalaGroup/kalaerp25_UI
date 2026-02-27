@@ -7,8 +7,9 @@ import { LayoutService } from '../../services/layout.service';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-header-top',
-  templateUrl: './header-top.component.html'
+    selector: 'app-header-top',
+    templateUrl: './header-top.component.html',
+    standalone: false
 })
 export class HeaderTopComponent implements OnInit, OnDestroy {
   layoutConf: any;

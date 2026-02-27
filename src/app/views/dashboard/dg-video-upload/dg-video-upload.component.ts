@@ -4,9 +4,10 @@ import { environment } from 'environments/environment';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
-  selector: 'app-dg-video-upload',
-  templateUrl: './dg-video-upload.component.html',
-  styleUrl: './dg-video-upload.component.scss',
+    selector: 'app-dg-video-upload',
+    templateUrl: './dg-video-upload.component.html',
+    styleUrl: './dg-video-upload.component.scss',
+    standalone: false
 })
 export class DgVideoUploadComponent {
   private baseUrl = environment.apiURL;

@@ -3,10 +3,11 @@ import { UntypedFormGroup, UntypedFormBuilder, Validators, UntypedFormControl } 
 import { egretAnimations } from 'app/shared/animations/egret-animations';
 
 @Component({
-  selector: 'app-signin4',
-  templateUrl: './signin4.component.html',
-  styleUrls: ['./signin4.component.scss'],
-  animations: egretAnimations
+    selector: 'app-signin4',
+    templateUrl: './signin4.component.html',
+    styleUrls: ['./signin4.component.scss'],
+    animations: egretAnimations,
+    standalone: false
 })
 export class Signin4Component implements OnInit {
 

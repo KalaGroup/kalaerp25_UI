@@ -31,9 +31,10 @@ interface PhotoItem {
 }
 
 @Component({
-  selector: 'app-site-visit-details',
-  templateUrl: './site-visit-details.component.html',
-  styleUrl: './site-visit-details.component.scss',
+    selector: 'app-site-visit-details',
+    templateUrl: './site-visit-details.component.html',
+    styleUrl: './site-visit-details.component.scss',
+    standalone: false
 })
 export class SiteVisitDetailsComponent implements OnInit, AfterViewInit {
   selectedTabIndex: number = 0;

@@ -2,9 +2,10 @@ import {Component} from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-selected-value-datepicker',
-  templateUrl: './selected-value-datepicker.component.html',
-  styleUrls: ['./selected-value-datepicker.component.scss']
+    selector: 'app-selected-value-datepicker',
+    templateUrl: './selected-value-datepicker.component.html',
+    styleUrls: ['./selected-value-datepicker.component.scss'],
+    standalone: false
 })
 export class SelectedValueDatepickerComponent {
 

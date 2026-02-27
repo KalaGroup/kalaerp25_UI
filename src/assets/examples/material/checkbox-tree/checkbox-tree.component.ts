@@ -102,10 +102,11 @@ export class ChecklistDatabase {
 }
 
 @Component({
-  selector: 'app-checkbox-tree',
-  templateUrl: './checkbox-tree.component.html',
-  styleUrls: ['./checkbox-tree.component.scss'],
-  providers: [ChecklistDatabase]
+    selector: 'app-checkbox-tree',
+    templateUrl: './checkbox-tree.component.html',
+    styleUrls: ['./checkbox-tree.component.scss'],
+    providers: [ChecklistDatabase],
+    standalone: false
 })
 export class CheckboxTreeComponent {
 

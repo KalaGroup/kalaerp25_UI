@@ -8,9 +8,10 @@ export interface Tile {
 }
 
 @Component({
-  selector: 'app-dynamic-grid',
-  templateUrl: './dynamic-grid.component.html',
-  styleUrls: ['./dynamic-grid.component.scss']
+    selector: 'app-dynamic-grid',
+    templateUrl: './dynamic-grid.component.html',
+    styleUrls: ['./dynamic-grid.component.scss'],
+    standalone: false
 })
 export class DynamicGridComponent implements OnInit {
 

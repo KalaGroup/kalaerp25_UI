@@ -5,34 +5,36 @@
  *
 */
 
-// Import Tailwind 
+// Import Tailwind
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 // // Third pirty style files
 // // Sidebar Scroll
-@import '~perfect-scrollbar/css/perfect-scrollbar.css';
+@import 'perfect-scrollbar/css/perfect-scrollbar.css';
 
 // // Flag icon
-// @import '~flag-icon-css/css/flag-icon.min.css';
-@import '~flag-icons/css/flag-icons.min.css';
+// @import 'flag-icon-css/css/flag-icon.min.css';
+//@import 'flag-icons/css/flag-icons.min.css';
+$flag-icons-path: '/assets/flags' !default;
+@import 'flag-icons/sass/flag-icons';
 
 // // Rich Text Editor
-@import '~quill/dist/quill.core.css';
-@import '~quill/dist/quill.snow.css';
+@import 'quill/dist/quill.core.css';
+@import 'quill/dist/quill.snow.css';
 
 // // Calendar
 @import 'angular-calendar/scss/angular-calendar.scss';
 
 // // User tour
-@import '~hopscotch/dist/css/hopscotch.min.css';
+@import 'hopscotch/dist/css/hopscotch.min.css';
 
 // // Page loader Topbar
 @import '../../vendor/pace/pace-theme-min.css';
 
 // // Highlightjs theme
-@import '~highlight.js/styles/github.css';
+@import 'highlight.js/styles/github.css';
 
 // Main Variables File
 @import "scss/variables";

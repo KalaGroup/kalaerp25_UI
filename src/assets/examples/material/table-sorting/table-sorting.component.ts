@@ -23,9 +23,10 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 @Component({
-  selector: 'app-table-sorting',
-  templateUrl: './table-sorting.component.html',
-  styleUrls: ['./table-sorting.component.scss']
+    selector: 'app-table-sorting',
+    templateUrl: './table-sorting.component.html',
+    styleUrls: ['./table-sorting.component.scss'],
+    standalone: false
 })
 export class TableSortingComponent implements OnInit {
 

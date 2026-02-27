@@ -10,9 +10,10 @@ import {
 import { th } from 'date-fns/locale';
 
 @Component({
-  selector: 'app-calibration-master',
-  templateUrl: './calibration-master.component.html',
-  styleUrls: ['./calibration-master.component.scss'],
+    selector: 'app-calibration-master',
+    templateUrl: './calibration-master.component.html',
+    styleUrls: ['./calibration-master.component.scss'],
+    standalone: false
 })
 export class CalibrationMasterComponent implements OnInit {
   calibrationForm!: FormGroup;

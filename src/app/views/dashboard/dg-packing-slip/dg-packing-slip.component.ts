@@ -7,9 +7,10 @@ import { th } from 'date-fns/locale';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-dg-packing-slip',
-  templateUrl: './dg-packing-slip.component.html',
-  styleUrl: './dg-packing-slip.component.scss',
+    selector: 'app-dg-packing-slip',
+    templateUrl: './dg-packing-slip.component.html',
+    styleUrl: './dg-packing-slip.component.scss',
+    standalone: false
 })
 export class DgPackingSlip implements OnInit {
   userId: string = '';

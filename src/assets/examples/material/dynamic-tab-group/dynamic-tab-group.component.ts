@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-dynamic-tab-group',
-  templateUrl: './dynamic-tab-group.component.html',
-  styleUrls: ['./dynamic-tab-group.component.scss']
+    selector: 'app-dynamic-tab-group',
+    templateUrl: './dynamic-tab-group.component.html',
+    styleUrls: ['./dynamic-tab-group.component.scss'],
+    standalone: false
 })
 export class DynamicTabGroupComponent implements OnInit {
 

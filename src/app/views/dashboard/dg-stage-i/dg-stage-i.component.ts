@@ -5,9 +5,10 @@ import { DgStageIService } from './dg-stage-i-service.service';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
-  selector: 'app-dg-stage-i',
-  templateUrl: './dg-stage-i.component.html',
-  styleUrl: './dg-stage-i.component.scss',
+    selector: 'app-dg-stage-i',
+    templateUrl: './dg-stage-i.component.html',
+    styleUrl: './dg-stage-i.component.scss',
+    standalone: false
 })
 export class DgStageIComponent implements OnInit {
   userId: string = '';

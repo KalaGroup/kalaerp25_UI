@@ -6,9 +6,10 @@ export interface Transaction {
 }
 
 @Component({
-  selector: 'app-sticky-footer-table',
-  templateUrl: './sticky-footer-table.component.html',
-  styleUrls: ['./sticky-footer-table.component.scss']
+    selector: 'app-sticky-footer-table',
+    templateUrl: './sticky-footer-table.component.html',
+    styleUrls: ['./sticky-footer-table.component.scss'],
+    standalone: false
 })
 export class StickyFooterTableComponent implements OnInit {
 

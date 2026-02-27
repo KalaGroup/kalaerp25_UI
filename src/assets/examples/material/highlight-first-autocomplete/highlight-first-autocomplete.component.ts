@@ -4,9 +4,10 @@ import {Observable} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 
 @Component({
-  selector: 'app-highlight-first-autocomplete',
-  templateUrl: './highlight-first-autocomplete.component.html',
-  styleUrls: ['./highlight-first-autocomplete.component.scss']
+    selector: 'app-highlight-first-autocomplete',
+    templateUrl: './highlight-first-autocomplete.component.html',
+    styleUrls: ['./highlight-first-autocomplete.component.scss'],
+    standalone: false
 })
 export class HighlightFirstAutocompleteComponent implements OnInit {
 

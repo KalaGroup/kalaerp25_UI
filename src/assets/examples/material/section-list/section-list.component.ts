@@ -6,9 +6,10 @@ export interface Section {
 }
 
 @Component({
-  selector: 'app-section-list',
-  templateUrl: './section-list.component.html',
-  styleUrls: ['./section-list.component.scss']
+    selector: 'app-section-list',
+    templateUrl: './section-list.component.html',
+    styleUrls: ['./section-list.component.scss'],
+    standalone: false
 })
 export class SectionListComponent implements OnInit {
 

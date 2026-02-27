@@ -10,9 +10,10 @@ export interface Dessert {
 }
 
 @Component({
-  selector: 'app-basic-sort-header',
-  templateUrl: './basic-sort-header.component.html',
-  styleUrls: ['./basic-sort-header.component.scss']
+    selector: 'app-basic-sort-header',
+    templateUrl: './basic-sort-header.component.html',
+    styleUrls: ['./basic-sort-header.component.scss'],
+    standalone: false
 })
 export class BasicSortHeaderComponent{
 

@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-echart-radar',
-  templateUrl: './echart-radar.component.html',
-  styleUrls: ['./echart-radar.component.scss']
+    selector: 'app-echart-radar',
+    templateUrl: './echart-radar.component.html',
+    styleUrls: ['./echart-radar.component.scss'],
+    standalone: false
 })
 export class EchartRadarComponent implements OnInit {
 

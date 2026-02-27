@@ -8,9 +8,10 @@ export interface User {
 }
 
 @Component({
-  selector: 'app-display-value-autocomplete',
-  templateUrl: './display-value-autocomplete.component.html',
-  styleUrls: ['./display-value-autocomplete.component.scss']
+    selector: 'app-display-value-autocomplete',
+    templateUrl: './display-value-autocomplete.component.html',
+    styleUrls: ['./display-value-autocomplete.component.scss'],
+    standalone: false
 })
 export class DisplayValueAutocompleteComponent implements OnInit {
   

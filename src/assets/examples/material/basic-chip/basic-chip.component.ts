@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-basic-chip',
-  templateUrl: './basic-chip.component.html',
-  styleUrls: ['./basic-chip.component.scss']
+    selector: 'app-basic-chip',
+    templateUrl: './basic-chip.component.html',
+    styleUrls: ['./basic-chip.component.scss'],
+    standalone: false
 })
 export class BasicChipComponent implements OnInit {
 

@@ -24,9 +24,10 @@ interface SiteVisit {
 }
 
 @Component({
-  selector: 'app-service-site-visit',
-  templateUrl: './service-site-visit.component.html',
-  styleUrl: './service-site-visit.component.scss',
+    selector: 'app-service-site-visit',
+    templateUrl: './service-site-visit.component.html',
+    styleUrl: './service-site-visit.component.scss',
+    standalone: false
 })
 export class ServiceSiteVisitComponent {
   searchSerialNo: string = '';

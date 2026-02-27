@@ -4,8 +4,9 @@ import { AppLoaderService } from '../../shared/services/app-loader/app-loader.se
 import { LayoutService } from 'app/shared/services/layout.service';
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html'
+    selector: 'app-home',
+    templateUrl: './home.component.html',
+    standalone: false
 })
 export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   public mainVersion;

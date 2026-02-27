@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-configurable-toggle',
-  templateUrl: './configurable-toggle.component.html',
-  styleUrls: ['./configurable-toggle.component.scss']
+    selector: 'app-configurable-toggle',
+    templateUrl: './configurable-toggle.component.html',
+    styleUrls: ['./configurable-toggle.component.scss'],
+    standalone: false
 })
 export class ConfigurableToggleComponent implements OnInit {
   color;

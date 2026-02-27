@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-trigger-select',
-  templateUrl: './trigger-select.component.html',
-  styleUrls: ['./trigger-select.component.scss']
+    selector: 'app-trigger-select',
+    templateUrl: './trigger-select.component.html',
+    styleUrls: ['./trigger-select.component.scss'],
+    standalone: false
 })
 export class TriggerSelectComponent implements OnInit {
 

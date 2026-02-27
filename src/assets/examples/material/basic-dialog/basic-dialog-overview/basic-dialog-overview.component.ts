@@ -3,9 +3,10 @@ import { MatDialogRef as MatDialogRef, MAT_DIALOG_DATA as MAT_DIALOG_DATA } from
 // import { any } from '../basic-dialog.component';
 
 @Component({
-  selector: 'app-basic-dialog-overview',
-  templateUrl: './basic-dialog-overview.component.html',
-  styleUrls: ['./basic-dialog-overview.component.scss']
+    selector: 'app-basic-dialog-overview',
+    templateUrl: './basic-dialog-overview.component.html',
+    styleUrls: ['./basic-dialog-overview.component.scss'],
+    standalone: false
 })
 export class BasicDialogOverviewComponent{
 

@@ -3,12 +3,13 @@ import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {STEPPER_GLOBAL_OPTIONS} from '@angular/cdk/stepper';
 
 @Component({
-  selector: 'app-error-stepper',
-  templateUrl: './error-stepper.component.html',
-  styleUrls: ['./error-stepper.component.scss'],
-  providers: [{
-    provide: STEPPER_GLOBAL_OPTIONS, useValue: {showError: true}
-  }]
+    selector: 'app-error-stepper',
+    templateUrl: './error-stepper.component.html',
+    styleUrls: ['./error-stepper.component.scss'],
+    providers: [{
+            provide: STEPPER_GLOBAL_OPTIONS, useValue: { showError: true }
+        }],
+    standalone: false
 })
 export class ErrorStepperComponent implements OnInit {
 

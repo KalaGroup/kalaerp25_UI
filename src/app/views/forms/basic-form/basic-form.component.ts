@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { UntypedFormGroup, UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'app-basic-form',
-  templateUrl: './basic-form.component.html',
-  styleUrls: ['./basic-form.component.css']
+    selector: 'app-basic-form',
+    templateUrl: './basic-form.component.html',
+    styleUrls: ['./basic-form.component.css'],
+    standalone: false
 })
 export class BasicFormComponent implements OnInit {
   formData = {}

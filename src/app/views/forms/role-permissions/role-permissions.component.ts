@@ -4,11 +4,12 @@ import { ApiResponse } from 'app/shared/models/api-response';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'app-role-permissions',
-  //standalone: true,
-  //imports: [],
-  templateUrl: './role-permissions.component.html',
-  styleUrl: './role-permissions.component.scss'
+    selector: 'app-role-permissions',
+    //standalone: true,
+    //imports: [],
+    templateUrl: './role-permissions.component.html',
+    styleUrl: './role-permissions.component.scss',
+    standalone: false
 })
 export class RolePermissionsComponent {
    selectedRole: string = '';

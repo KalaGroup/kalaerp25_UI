@@ -3,8 +3,9 @@ import { MatSidenav } from '@angular/material/sidenav';
 import { Router, NavigationEnd } from '@angular/router';
 
 @Component({
-  selector: 'app-notifications',
-  templateUrl: './notifications.component.html'
+    selector: 'app-notifications',
+    templateUrl: './notifications.component.html',
+    standalone: false
 })
 export class NotificationsComponent implements OnInit {
   @Input() notificPanel;

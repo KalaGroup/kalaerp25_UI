@@ -17,11 +17,12 @@ import { Subject } from "rxjs";
 import { takeUntil } from "rxjs/operators";
 
 @Directive({
-  host: {
-    "[class.hljs]": "true",
-    "[innerHTML]": "highlightedCode"
-  },
-  selector: "[egretHighlight]"
+    host: {
+        "[class.hljs]": "true",
+        "[innerHTML]": "highlightedCode"
+    },
+    selector: "[egretHighlight]",
+    standalone: false
 })
 export class EgretHighlightDirective implements OnInit, OnChanges, OnDestroy {
   constructor(

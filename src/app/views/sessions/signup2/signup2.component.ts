@@ -4,9 +4,10 @@ import { UntypedFormBuilder } from "@angular/forms";
 import { Component, OnInit } from "@angular/core";
 
 @Component({
-  selector: "app-signup2",
-  templateUrl: "./signup2.component.html",
-  styleUrls: ["./signup2.component.scss"]
+    selector: "app-signup2",
+    templateUrl: "./signup2.component.html",
+    styleUrls: ["./signup2.component.scss"],
+    standalone: false
 })
 export class Signup2Component implements OnInit {
   signupForm: UntypedFormGroup;

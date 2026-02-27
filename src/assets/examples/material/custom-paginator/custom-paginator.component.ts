@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 
 @Component({
-  selector: 'app-custom-paginator',
-  templateUrl: './custom-paginator.component.html',
-  styleUrls: ['./custom-paginator.component.scss']
+    selector: 'app-custom-paginator',
+    templateUrl: './custom-paginator.component.html',
+    styleUrls: ['./custom-paginator.component.scss'],
+    standalone: false
 })
 export class CustomPaginatorComponent implements OnInit {
 

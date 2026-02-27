@@ -47,9 +47,10 @@ interface ExampleFlatNode {
 }
 
 @Component({
-  selector: 'app-flat-tree',
-  templateUrl: './flat-tree.component.html',
-  styleUrls: ['./flat-tree.component.scss']
+    selector: 'app-flat-tree',
+    templateUrl: './flat-tree.component.html',
+    styleUrls: ['./flat-tree.component.scss'],
+    standalone: false
 })
 export class FlatTreeComponent {
 

@@ -30,9 +30,10 @@ interface MTFSrNoDtsDTO {
 }
 
 @Component({
-  selector: 'app-service-site-visit',
-  templateUrl: './mtf-scan.component.html',
-  styleUrl: './mtf-scan.component.scss',
+    selector: 'app-service-site-visit',
+    templateUrl: './mtf-scan.component.html',
+    styleUrl: './mtf-scan.component.scss',
+    standalone: false
 })
 export class MtfScanComponent {
   profitcenter: string = '';

@@ -113,10 +113,11 @@ export class DynamicDataSource {
 }
 
 @Component({
-  selector: 'app-dynamic-data-tree',
-  templateUrl: './dynamic-data-tree.component.html',
-  styleUrls: ['./dynamic-data-tree.component.scss'],
-  providers: [DynamicDatabase]
+    selector: 'app-dynamic-data-tree',
+    templateUrl: './dynamic-data-tree.component.html',
+    styleUrls: ['./dynamic-data-tree.component.scss'],
+    providers: [DynamicDatabase],
+    standalone: false
 })
 export class DynamicDataTreeComponent implements OnInit {
 

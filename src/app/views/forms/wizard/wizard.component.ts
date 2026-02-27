@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'app-wizard',
-  templateUrl: './wizard.component.html',
-  styleUrls: ['./wizard.component.css']
+    selector: 'app-wizard',
+    templateUrl: './wizard.component.html',
+    styleUrls: ['./wizard.component.css'],
+    standalone: false
 })
 export class WizardComponent implements OnInit {
   firstFormGroup: UntypedFormGroup;

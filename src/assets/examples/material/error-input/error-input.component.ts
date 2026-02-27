@@ -11,9 +11,10 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
 }
 
 @Component({
-  selector: 'app-error-input',
-  templateUrl: './error-input.component.html',
-  styleUrls: ['./error-input.component.scss']
+    selector: 'app-error-input',
+    templateUrl: './error-input.component.html',
+    styleUrls: ['./error-input.component.scss'],
+    standalone: false
 })
 export class ErrorInputComponent implements OnInit {
 

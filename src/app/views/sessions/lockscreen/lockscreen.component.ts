@@ -3,9 +3,10 @@ import { MatButton as MatButton } from '@angular/material/button';
 import { MatProgressBar as MatProgressBar } from '@angular/material/progress-bar';
 
 @Component({
-  selector: 'app-lockscreen',
-  templateUrl: './lockscreen.component.html',
-  styleUrls: ['./lockscreen.component.css']
+    selector: 'app-lockscreen',
+    templateUrl: './lockscreen.component.html',
+    styleUrls: ['./lockscreen.component.css'],
+    standalone: false
 })
 export class LockscreenComponent implements OnInit {
   @ViewChild(MatProgressBar) progressBar: MatProgressBar;

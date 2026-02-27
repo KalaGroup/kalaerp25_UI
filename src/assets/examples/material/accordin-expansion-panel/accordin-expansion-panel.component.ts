@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-accordin-expansion-panel',
-  templateUrl: './accordin-expansion-panel.component.html',
-  styleUrls: ['./accordin-expansion-panel.component.scss']
+    selector: 'app-accordin-expansion-panel',
+    templateUrl: './accordin-expansion-panel.component.html',
+    styleUrls: ['./accordin-expansion-panel.component.scss'],
+    standalone: false
 })
 export class AccordinExpansionPanelComponent implements OnInit {
 

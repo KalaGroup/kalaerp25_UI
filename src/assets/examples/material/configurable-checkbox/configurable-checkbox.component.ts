@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-configurable-checkbox',
-  templateUrl: './configurable-checkbox.component.html',
-  styleUrls: ['./configurable-checkbox.component.scss']
+    selector: 'app-configurable-checkbox',
+    templateUrl: './configurable-checkbox.component.html',
+    styleUrls: ['./configurable-checkbox.component.scss'],
+    standalone: false
 })
 export class ConfigurableCheckboxComponent implements OnInit {
 

@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-reset-select',
-  templateUrl: './reset-select.component.html',
-  styleUrls: ['./reset-select.component.scss']
+    selector: 'app-reset-select',
+    templateUrl: './reset-select.component.html',
+    styleUrls: ['./reset-select.component.scss'],
+    standalone: false
 })
 export class ResetSelectComponent implements OnInit {
 

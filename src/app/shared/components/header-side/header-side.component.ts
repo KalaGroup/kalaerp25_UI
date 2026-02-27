@@ -6,8 +6,9 @@ import { JwtAuthService } from '../../services/auth/jwt-auth.service';
 import { EgretNotifications2Component } from '../egret-notifications2/egret-notifications2.component';
 
 @Component({
-  selector: 'app-header-side',
-  templateUrl: './header-side.template.html'
+    selector: 'app-header-side',
+    templateUrl: './header-side.template.html',
+    standalone: false
 })
 export class HeaderSideComponent implements OnInit {
   @Input() notificPanel;

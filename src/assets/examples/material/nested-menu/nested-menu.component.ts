@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-nested-menu',
-  templateUrl: './nested-menu.component.html',
-  styleUrls: ['./nested-menu.component.scss']
+    selector: 'app-nested-menu',
+    templateUrl: './nested-menu.component.html',
+    styleUrls: ['./nested-menu.component.scss'],
+    standalone: false
 })
 export class NestedMenuComponent implements OnInit {
 

@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-min-max-datepicker',
-  templateUrl: './min-max-datepicker.component.html',
-  styleUrls: ['./min-max-datepicker.component.scss']
+    selector: 'app-min-max-datepicker',
+    templateUrl: './min-max-datepicker.component.html',
+    styleUrls: ['./min-max-datepicker.component.scss'],
+    standalone: false
 })
 export class MinMaxDatepickerComponent implements OnInit {
 

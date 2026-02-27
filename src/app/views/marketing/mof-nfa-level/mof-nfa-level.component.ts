@@ -38,9 +38,10 @@ export interface MOFData {
 }
 
 @Component({
-  selector: 'app-mof-nfa-level',
-  templateUrl: './mof-nfa-level.component.html',
-  styleUrl: './mof-nfa-level.component.scss',
+    selector: 'app-mof-nfa-level',
+    templateUrl: './mof-nfa-level.component.html',
+    styleUrl: './mof-nfa-level.component.scss',
+    standalone: false
 })
 export class MofNfaLevelComponent implements OnInit {
   mofList: MOFData[] = [];

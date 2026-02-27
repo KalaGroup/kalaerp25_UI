@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 
 @Component({
-  selector: 'app-auth-layout',
-  templateUrl: './auth-layout.component.html'
+    selector: 'app-auth-layout',
+    templateUrl: './auth-layout.component.html',
+    standalone: false
 })
 export class AuthLayoutComponent implements OnInit {
 

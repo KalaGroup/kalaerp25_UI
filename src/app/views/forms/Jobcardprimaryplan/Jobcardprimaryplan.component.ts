@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { JobcardService } from '../jobcard.service';
 
 @Component({
-  selector: 'app-Jobcardprimaryplan',
-  templateUrl: './Jobcardprimaryplan.component.html',
-  styleUrl: './Jobcardprimaryplan.component.scss',
+    selector: 'app-Jobcardprimaryplan',
+    templateUrl: './Jobcardprimaryplan.component.html',
+    styleUrl: './Jobcardprimaryplan.component.scss',
+    standalone: false
 })
 export class JobcardPrimaryPlanComponent {
    // Inside your component.ts

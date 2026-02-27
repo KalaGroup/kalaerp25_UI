@@ -7,9 +7,10 @@ import {Observable} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 
 @Component({
-  selector: 'app-autocomplete-chip',
-  templateUrl: './autocomplete-chip.component.html',
-  styleUrls: ['./autocomplete-chip.component.scss']
+    selector: 'app-autocomplete-chip',
+    templateUrl: './autocomplete-chip.component.html',
+    styleUrls: ['./autocomplete-chip.component.scss'],
+    standalone: false
 })
 export class AutocompleteChipComponent{
   visible = true;

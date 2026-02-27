@@ -84,9 +84,10 @@ export interface QualityCheckpoint {
 }
 
 @Component({
-  selector: 'app-dg-stage-i-checker',
-  templateUrl: './dg-stage-i-checker.component.html',
-  styleUrls: ['./dg-stage-i-checker.component.scss'],
+    selector: 'app-dg-stage-i-checker',
+    templateUrl: './dg-stage-i-checker.component.html',
+    styleUrls: ['./dg-stage-i-checker.component.scss'],
+    standalone: false
 })
 export class DgStageICheckerComponent implements OnInit {
   profitcenterName = '';

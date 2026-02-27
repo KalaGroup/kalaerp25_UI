@@ -2,9 +2,10 @@ import { Component, OnInit } from "@angular/core";
 import { UntypedFormControl, Validators } from "@angular/forms";
 
 @Component({
-  selector: "app-error-form-field",
-  templateUrl: "./error-form-field.component.html",
-  styleUrls: ["./error-form-field.component.scss"]
+    selector: "app-error-form-field",
+    templateUrl: "./error-form-field.component.html",
+    styleUrls: ["./error-form-field.component.scss"],
+    standalone: false
 })
 export class ErrorFormFieldComponent implements OnInit {
   email = new UntypedFormControl("", [Validators.required, Validators.email]);

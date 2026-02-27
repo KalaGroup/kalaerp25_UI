@@ -7,9 +7,10 @@ export interface ChipColor {
 }
 
 @Component({
-  selector: 'app-stacked-chip',
-  templateUrl: './stacked-chip.component.html',
-  styleUrls: ['./stacked-chip.component.scss']
+    selector: 'app-stacked-chip',
+    templateUrl: './stacked-chip.component.html',
+    styleUrls: ['./stacked-chip.component.scss'],
+    standalone: false
 })
 export class StackedChipComponent{
 

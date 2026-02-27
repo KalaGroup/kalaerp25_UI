@@ -2,9 +2,10 @@ import {Component} from '@angular/core';
 import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 
 @Component({
-  selector: 'app-label-form-field',
-  templateUrl: './label-form-field.component.html',
-  styleUrls: ['./label-form-field.component.scss']
+    selector: 'app-label-form-field',
+    templateUrl: './label-form-field.component.html',
+    styleUrls: ['./label-form-field.component.scss'],
+    standalone: false
 })
 export class LabelFormFieldComponent {
 

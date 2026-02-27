@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 
 @Component({
-  selector: 'app-delay-tooltip',
-  templateUrl: './delay-tooltip.component.html',
-  styleUrls: ['./delay-tooltip.component.scss']
+    selector: 'app-delay-tooltip',
+    templateUrl: './delay-tooltip.component.html',
+    styleUrls: ['./delay-tooltip.component.scss'],
+    standalone: false
 })
 export class DelayTooltipComponent implements OnInit {
 

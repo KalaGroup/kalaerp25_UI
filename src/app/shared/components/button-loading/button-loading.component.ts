@@ -1,9 +1,10 @@
 import { Component, OnInit, Input } from '@angular/core';
 
 @Component({
-  selector: 'button-loading',
-  templateUrl: './button-loading.component.html',
-  styleUrls: ['./button-loading.component.scss']
+    selector: 'button-loading',
+    templateUrl: './button-loading.component.html',
+    styleUrls: ['./button-loading.component.scss'],
+    standalone: false
 })
 export class ButtonLoadingComponent implements OnInit {
 

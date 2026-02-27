@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 
 @Component({
-  selector: 'app-bottom-sheet-share',
-  templateUrl: './bottom-sheet-share.component.html',
-  styleUrls: ['./bottom-sheet-share.component.scss'],
+    selector: 'app-bottom-sheet-share',
+    templateUrl: './bottom-sheet-share.component.html',
+    styleUrls: ['./bottom-sheet-share.component.scss'],
+    standalone: false
 })
 export class BottomSheetShareComponent implements OnInit {
   constructor(private bottomSheetRef: MatBottomSheetRef<BottomSheetShareComponent>) {}

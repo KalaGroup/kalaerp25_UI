@@ -5,7 +5,8 @@ import { MatSidenav } from '@angular/material/sidenav';
 
 
 @Directive({
-  selector: '[EgretSideNavToggle]'
+    selector: '[EgretSideNavToggle]',
+    standalone: false
 })
 export class EgretSideNavToggleDirective implements OnInit, OnDestroy {
   isMobile;
