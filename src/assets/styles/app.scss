@@ -5,7 +5,7 @@
  *
 */
 
-// Import Tailwind 
+// Import Tailwind
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,7 +16,9 @@
 
 // // Flag icon
 // @import 'flag-icon-css/css/flag-icon.min.css';
-@import 'flag-icons/css/flag-icons.min.css';
+//@import 'flag-icons/css/flag-icons.min.css';
+$flag-icons-path: '/assets/flags' !default;
+@import 'flag-icons/sass/flag-icons';
 
 // // Rich Text Editor
 @import 'quill/dist/quill.core.css';

@@ -2,6 +2,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "module": "es2020",
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "outDir": "./dist/out-tsc",
     "esModuleInterop": true,
     "baseUrl": "src",

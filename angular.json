@@ -17,6 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
+
             "allowedCommonJsDependencies": [
               "rxjs",
               "rxjs-compat",
@@ -43,18 +44,11 @@
               "base": "dist"
             },
             "index": "src/index.html",
-            "polyfills": [
-              "src/polyfills.ts"
-            ],
+            "polyfills": ["src/polyfills.ts"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": [
-              "src/favicon.ico",
-              "src/assets"
-            ],
-            "styles": [
-              "src/assets/styles/app.scss"
-            ],
+            "assets": ["src/favicon.ico", "src/assets"],
+            "styles": ["src/assets/styles/app.scss"],
             "scripts": [],
             "browser": "src/main.ts"
           },
@@ -117,11 +111,19 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*.svg",
+                "input": "node_modules/flag-icons/flags/4x3",
+                "output": "/assets/flags/4x3"
+              },
+              {
+                "glob": "**/*.svg",
+                "input": "node_modules/flag-icons/flags/1x1",
+                "output": "/assets/flags/1x1"
+              }
             ],
-            "styles": [
-              "src/styles.scss"
-            ],
+            "styles": ["src/styles.scss"],
             "scripts": []
           }
         }
