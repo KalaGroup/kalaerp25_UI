@@ -61,22 +61,15 @@ export class MofNfaLevelComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadMOFData();
-    // this.authservice.credentials$.subscribe((credentials) => {
-    //   if (credentials) {
-    //     this.userId = credentials.userid;
-    //     console.log('From MOF - NFA Level', this.userId);
-    //   }
-    // });
-    debugger
     const storedUser = localStorage.getItem('EGRET_USER');
     if (storedUser) {
       const user = JSON.parse(storedUser);
       this.userId = user.EmpCode || '';
-      console.log('From MOF - NFA Level', this.userId);
     }
   }
 
   loadMOFData(): void {
+    debugger;
     this.isLoading = true;
     this.marketingService.getPendingMOFNFA().subscribe({
       next: (response: MOFAPIResponse[]) => {
@@ -84,9 +77,24 @@ export class MofNfaLevelComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading MOF data:', error);
-        this.isLoading = false;
-      },
+      console.error('Error loading MOF data:', error);
+      this.isLoading = false;
+
+      const apiError = error?.error;
+      const isNoDataFound =
+        error.status === 404 &&
+        (apiError === 'No data found.' ||
+          (typeof apiError === 'string' &&
+            apiError.toLowerCase().includes('no data')));
+
+      if (isNoDataFound) {
+        this.successMessage =
+          '✅ All Clear — No pending MOF NFA records are awaiting authorization at this time.';
+      } else {
+        this.errorMessage =
+          'Unable to load MOF NFA data. Please try again or contact support.';
+      }
+    },
     });
   }
 
@@ -151,7 +159,6 @@ export class MofNfaLevelComponent implements OnInit {
     this.selectedMof = mof;
     this.showDetail = true;
     this.nfaRemark = '';
-    console.log('Card clicked:', mof);
   }
 
   onHold(): void {

@@ -6,7 +6,7 @@ import { DgTestReport } from './dg-test-report/dg-test-report.component';
 import { DgPackingSlip } from './dg-packing-slip/dg-packing-slip.component';
 import {DgVideoUploadComponent} from'./dg-video-upload/dg-video-upload.component';
 import { UserRoleGuard } from 'app/shared/guards/user-role.guard';
-import { config } from 'config';
+// import { config } from 'config';
 import { title } from 'process';
 
 export const DashboardRoutes: Routes = [

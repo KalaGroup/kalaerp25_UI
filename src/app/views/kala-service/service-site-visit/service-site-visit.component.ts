@@ -40,16 +40,54 @@ export class ServiceSiteVisitComponent {
 
   constructor(private router: Router, private kalaService: KalaService) {}
 
-  ngOnInit(): void {
-    const employeeCode = localStorage.getItem('employeeCode');
-    this.loadSiteVisits(employeeCode);
-    this.filteredSiteVisits = [...this.siteVisits];
+  // ngOnInit(): void {
+  //   // const employeeCode = localStorage.getItem('employeeCode');
+  //   // this.loadSiteVisits(employeeCode);
+  //   // this.filteredSiteVisits = [...this.siteVisits];
 
-    const navigation = history.state;
-    if (navigation && navigation.refresh) {
+  //   // const navigation = history.state;
+  //   // if (navigation && navigation.refresh) {
+  //   //   this.loadSiteVisits(employeeCode);
+  //   // }
+  //    const employeeCode = localStorage.getItem('employeeCode');
+  //   const navigation = history.state;
+
+  //   if (navigation && navigation.refresh) {
+  //     // Submit was done — fetch fresh data
+  //     this.kalaService.clearCache();
+  //     this.loadSiteVisits(employeeCode);
+  //   } else {
+  //     // No changes — use cache if available
+  //     const cached = this.kalaService.getCachedSiteVisits();
+  //     if (cached) {
+  //       this.siteVisits = this.mapApiResponseToSiteVisits(cached);
+  //       this.filteredSiteVisits = [...this.siteVisits];
+  //     } else {
+  //       // First time load
+  //       this.loadSiteVisits(employeeCode);
+  //     }
+  //   }
+  // }
+
+  ngOnInit(): void {
+  const employeeCode = localStorage.getItem('employeeCode');
+  const navigation = history.state;
+
+  if (navigation && navigation.refresh) {
+    this.kalaService.clearCache();
+    this.loadSiteVisits(employeeCode);
+  } else {
+    const cached = this.kalaService.getCachedSiteVisits(employeeCode);
+    if (cached) {
+      this.siteVisits = this.mapApiResponseToSiteVisits(cached);
+      this.filteredSiteVisits = [...this.siteVisits];
+    } else {
+      // Different user or first time — hit API
+      this.kalaService.clearCache();
       this.loadSiteVisits(employeeCode);
     }
   }
+}
 
   loadSiteVisits(employeeCode): void {
     this.isLoading = true;
@@ -57,8 +95,8 @@ export class ServiceSiteVisitComponent {
 
     this.kalaService.getKalaServiceData(employeeCode).subscribe({
       next: (response) => {
+        this.kalaService.setCachedSiteVisits(response, employeeCode);
         this.siteVisits = this.mapApiResponseToSiteVisits(response);
-        console.log('Loaded site visits:', this.siteVisits);
         this.filteredSiteVisits = [...this.siteVisits];
         this.isLoading = false;
       },
@@ -93,19 +131,33 @@ export class ServiceSiteVisitComponent {
     }));
   }
 
+  // onSearch(): void {
+  //   if (!this.searchSerialNo.trim()) {
+  //     this.filteredSiteVisits = [...this.siteVisits];
+  //     return;
+  //   }
+
+  //   const searchTerm = this.searchSerialNo.toLowerCase().trim();
+  //   this.filteredSiteVisits = this.siteVisits.filter(
+  //     (visit) =>
+  //       visit.serialNo.toLowerCase().includes(searchTerm) ||
+  //       visit.siteName.toLowerCase().includes(searchTerm)
+  //   );
+  // }
+
   onSearch(): void {
     if (!this.searchSerialNo.trim()) {
       this.filteredSiteVisits = [...this.siteVisits];
       return;
     }
 
-    const searchTerm = this.searchSerialNo.toLowerCase().trim();
+    const searchTerm = this.searchSerialNo.trim().toLowerCase();
     this.filteredSiteVisits = this.siteVisits.filter(
       (visit) =>
-        visit.serialNo.toLowerCase().includes(searchTerm) ||
-        visit.siteName.toLowerCase().includes(searchTerm)
+        (visit.serialNo || '').toString().trim().toLowerCase().includes(searchTerm) ||
+        (visit.siteName || '').toString().trim().toLowerCase().includes(searchTerm)
     );
-  }
+}
 
   onSearchInputChange(): void {
     this.onSearch();

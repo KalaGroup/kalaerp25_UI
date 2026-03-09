@@ -1,5 +1,5 @@
-// import { Injectable } from '@angular/core';
-// import { BehaviorSubject } from 'rxjs';
+//  import { Injectable } from '@angular/core';
+//  import { BehaviorSubject } from 'rxjs';
 // import { JwtAuthService } from './auth/jwt-auth.service';
 
 // interface IMenuItem {
@@ -140,6 +140,17 @@
 //       ],
 //     },
 
+//     {
+//       name: 'Canopy Process',
+//       type: 'dropDown',
+//       tooltip: 'Canopy Process',
+//       icon: 'factory',
+//       sub: [
+//         { name: 'Canopy Plan', state: 'canopy-process/canopy-plan' },
+//         // Add more items here if needed in future
+//       ],
+//     }
+
 //   ];
 
 //   separatorMenu: IMenuItem[] = [
@@ -227,6 +238,16 @@
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
 //             {name:'Kaizen',state:'quality/kaizen'}
+//       ],
+//     },
+//     {
+//       name: 'Canopy Process',
+//       type: 'dropDown',
+//       tooltip: 'Canopy Process',
+//       icon: 'factory',
+//       sub: [
+//         { name: 'Canopy Plan', state: 'canopy-process/canopy-plan' },
+//         // Add more items here if needed in future
 //       ],
 //     },
 
@@ -424,6 +445,17 @@
 //             {name:'Kaizen',state:'quality/kaizen'}
 //       ],
 //     },
+
+//     {
+//       name: 'Canopy Process',
+//       type: 'dropDown',
+//       tooltip: 'Canopy Process',
+//       icon: 'factory',
+//       sub: [
+//         { name: 'Canopy Plan', state: 'canopy-process/canopy-plan' },
+//         // Add more items here if needed in future
+//       ],
+//     }
 
 //   ];
 
