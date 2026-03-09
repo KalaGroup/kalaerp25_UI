@@ -8,8 +8,30 @@ import { environment } from 'environments/environment';
 })
 export class KalaService {
   private baseUrl = environment.apiURL;
-  constructor(private http: HttpClient) {}
+  private cachedSiteVisits: any[] | null = null;
+  private cachedData: any[] | null = null;
+  private cachedEmployeeCode: string | null = null;
 
+  constructor(private http: HttpClient) {}
+  // Cache management methods
+  clearCache(): void {
+    this.cachedData = null;
+    this.cachedEmployeeCode = null;
+  }
+
+  getCachedSiteVisits(employeeCode: string): any[] | null {
+    // Return cache ONLY if it belongs to the same user
+    if (this.cachedData && this.cachedEmployeeCode === employeeCode) {
+      return this.cachedData;
+    }
+    return null;
+  }
+
+  setCachedSiteVisits(data: any[], ecode: string): void {
+    this.cachedSiteVisits = data;
+    this.cachedEmployeeCode = ecode;
+  }
+  // API methods
   getKalaServiceData(ecode: string): Observable<any> {
     const url = `${this.baseUrl}KalaService/GetPendingSiteVisits?Ecode=${ecode}`;
     return this.http.get<any>(url);

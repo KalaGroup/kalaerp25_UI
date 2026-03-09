@@ -34,19 +34,20 @@
 
   <div class="user-info">
     <span class="welcome-text">Welcome, {{ userName }}</span>
-    <span class="profit-center">{{ profitCenterName }}</span>
-    <span class="company-name">{{ companyname }}</span>
+    <!-- <span class="profit-center">{{ profitCenterName }}</span>
+    <span class="company-name">{{ companyname }}</span> -->
+     <span class="sub-info">{{ profitCenterName }} &nbsp;|&nbsp; {{ companyname }}</span>
   </div>
 
-  <button mat-icon-button [matMenuTriggerFor]="accountMenu" class="">
-    <img src="assets/images/vs.jpg" alt="" class="!w-6 !h-6 rounded-full" />
+  <button mat-icon-button [matMenuTriggerFor]="accountMenu" class="" (click)="jwtAuth.signout()">
+    <img src="assets/images/logout.png" alt="" class="!w-6 !h-6 rounded-full" />
   </button>
 
   <mat-menu #accountMenu="matMenu">
-    <button mat-menu-item [routerLink]="['/profile/overview']">
+    <!-- <button mat-menu-item [routerLink]="['/profile/overview']">
       <mat-icon>account_box</mat-icon>
       <span>Profile</span>
-    </button>
+    </button> -->
     <!-- <button mat-menu-item [routerLink]="['/profile/settings']">
       <mat-icon>settings</mat-icon>
       <span>Account Settings</span>
@@ -55,9 +56,9 @@
       <mat-icon>notifications_off</mat-icon>
       <span>Disable alerts</span>
     </button> -->
-    <button mat-menu-item (click)="jwtAuth.signout()">
+    <!-- <button mat-menu-item (click)="jwtAuth.signout()">
       <mat-icon>exit_to_app</mat-icon>
       <span>{{ "SIGNOUT" | translate }}</span>
-    </button>
+    </button> -->
   </mat-menu>
 </mat-toolbar>

@@ -1,6 +1,7 @@
-import { config } from "config";
+// import { config } from "config";
 
 export const environment = {
   production: true,
-  apiURL: config.apiUrl
+ // apiURL: 'https://localhost:5001/api/',
+    apiURL: 'https://www.kalapms.com/ERPAngularApiNew26/api/'
 };

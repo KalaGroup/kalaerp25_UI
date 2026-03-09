@@ -1,0 +1,218 @@
+<!-- ════════════════════════════════════════════════════
+     Canopy Plan — Primary Plan
+     ════════════════════════════════════════════════════ -->
+<div class="jc-card">
+
+  <!-- ── Error Modal ──────────────────────────────────── -->
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- ── Success Modal ─────────────────────────────────── -->
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="onSuccessOk()">OK</button>
+    </div>
+  </div>
+
+  <!-- ── Warning Modal ─────────────────────────────────── -->
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- ── Header ──────────────────────────────────────── -->
+  <div class="jc-header">
+    <div class="jc-title">
+      <span class="icon-box">🏭</span>
+      Canopy — Primary Plan
+    </div>
+  </div>
+
+  <!-- ── Body ────────────────────────────────────────── -->
+  <div class="jc-body">
+
+    <form #JobCard_Cpy="ngForm" (ngSubmit)="onFormSubmit(JobCard_Cpy)">
+
+      <!-- Field row -->
+      <div class="field-row">
+
+        <div class="f-wrap">
+          <label>JobCard Code (Primary Plan)</label>
+          <input type="text" name="txtJOBNo" ngModel readonly placeholder="Auto-generated on save" />
+        </div>
+
+        <div class="f-wrap">
+          <label>JobCard Date</label>
+          <input type="text" name="txtJBDt" [(ngModel)]="today" readonly />
+        </div>
+
+        <div class="f-wrap">
+          <label>Profit Center</label>
+          <input type="text" name="txtPC" [(ngModel)]="PC" readonly />
+        </div>
+
+        <div class="btn-wrap">
+          <button type="button" class="btn-search"
+                  (click)="onClickSearch()" [disabled]="isLoading">
+            <span class="btn-spinner" *ngIf="isLoading"></span>
+            <span *ngIf="!isLoading">Search</span>
+            <span *ngIf="isLoading">Loading…</span>
+          </button>
+        </div>
+
+      </div>
+      <!-- /field-row -->
+
+      <!-- Stats bar -->
+      <div class="stats-bar" *ngIf="planList.length">
+        <span class="pill pill-total">📋 {{ totalRows }} Records</span>
+        <span class="pill pill-today">📅 {{ todayRows }} Today</span>
+        <span class="pill pill-selected">✅ {{ selectedCount }} Selected</span>
+      </div>
+
+      <!-- Section title -->
+      <div class="sec-title">DG PartCode Details</div>
+
+      <!-- Table -->
+      <div class="tbl-wrap">
+
+        <!-- Inline spinner overlay -->
+        <div class="tbl-spinner" *ngIf="isLoading">
+          <div class="spinner-ring"></div>
+          <span>Loading data…</span>
+        </div>
+
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>
+                  <input type="checkbox"
+                         [checked]="allChecked"
+                         [disabled]="!planList.length"
+                         (change)="toggleAll($any($event.target).checked)" />
+                </th>
+                <th>KVA</th>
+                <th>Model</th>
+                <th class="hdr-plan">Plan Date</th>
+                <th class="hdr-plan">Day Plan Qty</th>
+                <th>F.Norm</th>
+                <th>Tot.Stk</th>
+                <th>WIP Stk</th>
+                <th>Pen.Plan</th>
+                <th>P.Req</th>
+                <th class="hdr-qty">Plan Qty</th>
+                <th>Batch Qty</th>
+                <th>BOM Code</th>
+                <th>Part Code</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- Empty state -->
+              <tr *ngIf="!planList.length">
+                <td colspan="15">
+                  <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <p>No records found. Click <strong>Search</strong> to load canopy plan data.</p>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Data rows -->
+              <tr *ngFor="let row of planList; let i = index"
+                  [class.row-today]="row.TodayFlag === 'TODAY'">
+
+                <td class="td-idx">{{ i + 1 }}</td>
+
+                <td class="td-check">
+                  <input type="checkbox"
+                         [(ngModel)]="row.SelectR"
+                         [name]="'chk_' + i"
+                         autocomplete="off" />
+                </td>
+
+                <td>
+                  <span class="kva-badge">{{ row.KVA }}</span>
+                </td>
+
+                <td class="td-left">{{ row.Model }}</td>
+
+                <!-- Plan Date -->
+                <td class="col-plan">
+                  <div class="plan-date" [class.is-today]="row.TodayFlag === 'TODAY'">
+                    {{ row.PlanDate | date:'dd-MMM-yyyy' }}
+                    <span class="badge-today" *ngIf="row.TodayFlag === 'TODAY'">TODAY</span>
+                  </div>
+                  <div class="plan-dayname">{{ row.DayName }}</div>
+                </td>
+
+                <!-- Day Plan Qty -->
+                <td class="col-plan">
+                  <span class="dqty"
+                        [class.dqty--pos]="row.DayPlanQty > 0"
+                        [class.dqty--zero]="row.DayPlanQty === 0">
+                    {{ row.DayPlanQty }}
+                  </span>
+                </td>
+
+                <td>{{ row.FNorm }}</td>
+                <td>{{ row.TotStk }}</td>
+                <td [class.wip-neg]="row.WIPStk < 0">{{ row.WIPStk }}</td>
+                <td>{{ row.PenPlanQty }}</td>
+                <td>{{ row.PReq }}</td>
+
+                <td class="col-qty">
+                  <span class="planqty">{{ row.PlanQty }}</span>
+                </td>
+
+                <td>{{ row.BatchQty }}</td>
+                <td class="td-mono">{{ row.Bomcode }}</td>
+                <td class="td-mono">{{ row.Partcode }}</td>
+
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /tbl-scroll -->
+      </div>
+      <!-- /tbl-wrap -->
+
+      <!-- Remark + Submit -->
+      <div class="remark-row">
+
+        <label for="txtRemark">Remark</label>
+
+        <div class="remark-wrap">
+          <input type="text" id="txtRemark" name="txtRemark"
+                 ngModel required #RemarkCtrl="ngModel"
+                 placeholder="Enter remark before submitting…" />
+          <div class="remark-err" *ngIf="RemarkCtrl.invalid && RemarkCtrl.touched">
+            Remark is required.
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit"
+                [disabled]="isLoading || !planList.length">
+          <span class="btn-spinner" *ngIf="isLoading"></span>
+          <span *ngIf="!isLoading">✔ Submit</span>
+          <span *ngIf="isLoading">Saving…</span>
+        </button>
+
+      </div>
+
+    </form>
+  </div>
+  <!-- /jc-body -->
+
+</div>
+<!-- /jc-card -->
