@@ -47,7 +47,7 @@
             "polyfills": ["src/polyfills.ts"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.ico", "src/assets"],
+            "assets": ["src/favicon.ico", "src/assets", "src/.htaccess"  ],
             "styles": ["src/assets/styles/app.scss"],
             "scripts": [],
             "browser": "src/main.ts"
@@ -112,6 +112,7 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
+               "src/.htaccess"  ,
               {
                 "glob": "**/*.svg",
                 "input": "node_modules/flag-icons/flags/4x3",

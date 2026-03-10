@@ -26,6 +26,7 @@ export interface MOFAPIResponse {
   TotBOMAmt: number;
   NFANo: string;
   Qty: number;
+  NfaQty: number;
   NfaBalQty: number;
   NFAKoel: number;
   NFAKala: number;
