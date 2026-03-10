@@ -18,6 +18,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { PpcMarketingRoutes } from './marketing.routing';
+import { MatToolbar } from "@angular/material/toolbar";
 
 
 
@@ -26,23 +27,24 @@ import { PpcMarketingRoutes } from './marketing.routing';
     MofNfaLevelComponent
   ],
   imports: [
-  CommonModule,
-      MatInputModule,
-      FormsModule,
-      MatIconModule,
-      MatCardModule,
-      MatMenuModule,
-      MatProgressBarModule,
-      MatExpansionModule,
-      MatRadioModule,
-      MatButtonModule,
-      MatChipsModule,
-      MatListModule,
-      MatTabsModule,
-      MatTableModule,
-      MatGridListModule,
-      MatFormFieldModule,
-      RouterModule.forChild(PpcMarketingRoutes)
+    CommonModule,
+    MatInputModule,
+    FormsModule,
+    MatIconModule,
+    MatCardModule,
+    MatMenuModule,
+    MatProgressBarModule,
+    MatExpansionModule,
+    MatRadioModule,
+    MatButtonModule,
+    MatChipsModule,
+    MatListModule,
+    MatTabsModule,
+    MatTableModule,
+    MatGridListModule,
+    MatFormFieldModule,
+    RouterModule.forChild(PpcMarketingRoutes),
+    MatToolbar
 ]
 })
 export class PpcMarketingModule { }

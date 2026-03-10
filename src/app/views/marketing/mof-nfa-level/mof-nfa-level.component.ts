@@ -27,6 +27,7 @@ export interface MOFData {
   totalBomAmt?: string;
   nfaNo?: string;
   qty?: string;
+  nfaQty?: string;      // <-- Added: NFA Quantity (mapped from NfaQty)
   balQty?: string;
   koelAmt?: string;
   kalaAmt?: string;
@@ -69,7 +70,6 @@ export class MofNfaLevelComponent implements OnInit {
   }
 
   loadMOFData(): void {
-    debugger;
     this.isLoading = true;
     this.marketingService.getPendingMOFNFA().subscribe({
       next: (response: MOFAPIResponse[]) => {
@@ -77,24 +77,24 @@ export class MofNfaLevelComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-      console.error('Error loading MOF data:', error);
-      this.isLoading = false;
+        console.error('Error loading MOF data:', error);
+        this.isLoading = false;
 
-      const apiError = error?.error;
-      const isNoDataFound =
-        error.status === 404 &&
-        (apiError === 'No data found.' ||
-          (typeof apiError === 'string' &&
-            apiError.toLowerCase().includes('no data')));
+        const apiError = error?.error;
+        const isNoDataFound =
+          error.status === 404 &&
+          (apiError === 'No data found.' ||
+            (typeof apiError === 'string' &&
+              apiError.toLowerCase().includes('no data')));
 
-      if (isNoDataFound) {
-        this.successMessage =
-          '✅ All Clear — No pending MOF NFA records are awaiting authorization at this time.';
-      } else {
-        this.errorMessage =
-          'Unable to load MOF NFA data. Please try again or contact support.';
-      }
-    },
+        if (isNoDataFound) {
+          this.successMessage =
+            '✅ All Clear — No pending MOF NFA records are awaiting authorization at this time.';
+        } else {
+          this.errorMessage =
+            'Unable to load MOF NFA data. Please try again or contact support.';
+        }
+      },
     });
   }
 
@@ -124,6 +124,7 @@ export class MofNfaLevelComponent implements OnInit {
       totalBomAmt: item.TotBOMAmt.toString(),
       nfaNo: item.NFANo,
       qty: item.Qty.toString(),
+      nfaQty: item.NfaQty.toString(),       // <-- Maps to NfaQty from API
       balQty: item.NfaBalQty.toString(),
       koelAmt: item.NFAKoel.toString(),
       kalaAmt: item.NFAKala.toString(),
@@ -140,7 +141,6 @@ export class MofNfaLevelComponent implements OnInit {
       this.showDetail = false;
       this.selectedMof = null;
     } else {
-      // Implement navigation logic
       console.log('Navigate back');
     }
   }
@@ -167,7 +167,7 @@ export class MofNfaLevelComponent implements OnInit {
       return;
     }
 
-     if (!this.nfaRemark || this.nfaRemark.trim() === '') {
+    if (!this.nfaRemark || this.nfaRemark.trim() === '') {
       this.warningMessage = 'Please enter NFA Level Remark before holding.';
       return;
     }
@@ -205,7 +205,7 @@ export class MofNfaLevelComponent implements OnInit {
 
     const payload = {
       MOFNo: this.selectedMof.mofNo,
-      SaveType: 'Auth', // A for Auth
+      SaveType: 'Auth',
       UserID: this.userId,
       AuthRemark: this.nfaRemark,
     };
@@ -213,7 +213,7 @@ export class MofNfaLevelComponent implements OnInit {
     this.marketingService.authorizeMOF(payload).subscribe({
       next: (response) => {
         console.log('Authorization successful:', response);
-       this.successMessage = `MOF: ${this.selectedMof.mofNo} authorized successfully.`;
+        this.successMessage = `MOF: ${this.selectedMof.mofNo} authorized successfully.`;
         this.goBack();
         this.refresh();
       },

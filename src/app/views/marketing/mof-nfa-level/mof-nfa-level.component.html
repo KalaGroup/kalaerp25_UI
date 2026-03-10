@@ -1,125 +1,79 @@
 <div class="mof-container">
   <!-- Header -->
-  <div class="header">
-    <button mat-icon-button class="back-button" (click)="goBack()" *ngIf="showDetail">
+  <mat-toolbar class="header">
+    <button mat-icon-button class="back-button" (click)="goBack()">
       <mat-icon>arrow_back</mat-icon>
     </button>
-    <h2 class="header-title">{{ showDetail ? 'MOF NFA Level Authorization' : 'Pending MOF NFA Level (' + mofList.length + ')' }}</h2>
+    <h1 class="header-title">MOF NFA Level Authorization</h1>
     <button mat-icon-button class="refresh-button" (click)="refresh()" *ngIf="!showDetail">
       <mat-icon>refresh</mat-icon>
     </button>
-  </div>
+  </mat-toolbar>
 
-  <!-- Loading Indicator -->
-  <div class="loading-container" *ngIf="isLoading && !showDetail">
-    <mat-spinner></mat-spinner>
-  </div>
-
-   <div *ngIf="errorMessage" class="errorModal">
-    <div class="errorModal-content">
-      <h2>Alert</h2>
-      <p>
-        {{ errorMessage }}
-      </p>
-      <button class="error-ok-button" (click)="clearMessages()">OK</button>
-    </div>
-  </div>
-
-  <div *ngIf="successMessage" class="successModal">
-    <div class="successModal_content">
-      <p>{{ successMessage }}</p>
-      <button class="success-ok-button" (click)="clearMessages()">OK</button>
-    </div>
-  </div>
-
-   <div *ngIf="warningMessage" class="warningModal">
-    <div class="warningModal_content">
-      <p>{{ warningMessage }}</p>
-      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
-    </div>
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <!-- MOF List View -->
-   <div class="mof-list" *ngIf="!showDetail && !isLoading">
+  <div *ngIf="!showDetail && !isLoading" class="mof-list">
     <mat-card *ngFor="let mof of mofList; let i = index" class="mof-card" (click)="onCardClick(mof)">
+      <span class="card-number">{{ i + 1 }}</span>
       <mat-card-content>
-        <!-- Card Number -->
-        <div class="card-number">{{ i + 1 }}</div>
-
-        <!-- Row 1: MOF NO and DATE -->
+        <!-- Row 1: MOF No, Branch, Ordered By -->
         <div class="mof-row">
           <div class="mof-field-group">
-            <span class="field-label">MOF NO</span>
+            <span class="field-label">MOF No</span>
             <span class="field-value field-value-bold">{{ mof.mofNo }}</span>
           </div>
           <div class="mof-field-group">
-            <span class="field-label">DATE</span>
-            <span class="field-value">{{ mof.date }}</span>
-          </div>
-        </div>
-
-        <!-- Row 2: BRANCH and Branch Name -->
-        <div class="mof-row">
-          <div class="mof-field-group">
-            <span class="field-label">BRANCH</span>
-            <!-- <span class="field-value branch-number">{{ mof.branchNumber }}</span> -->
-          </div>
-          <div class="mof-field-group">
+            <span class="field-label">Branch</span>
             <span class="field-value">{{ mof.branch }}</span>
           </div>
+          <div class="mof-field-group">
+            <span class="field-label">Ordered By</span>
+            <span class="field-value">{{ mof.orderedBy }}</span>
+          </div>
         </div>
-
-        <!-- Row 3: KVA and PH -->
+        <!-- Row 2: Indentor, Customer -->
+        <div class="mof-row">
+          <div class="mof-field-group">
+            <span class="field-label">Indentor Name</span>
+            <span class="field-value">{{ mof.indentorName }}</span>
+          </div>
+          <div class="mof-field-group">
+            <span class="field-label">Customer Name</span>
+            <span class="field-value">{{ mof.customerName }}</span>
+          </div>
+        </div>
+        <!-- Row 3: KVA, Ph, Model, Panel -->
         <div class="mof-row">
           <div class="mof-field-group">
             <span class="field-label">KVA</span>
             <span class="field-value">{{ mof.kva }}</span>
           </div>
           <div class="mof-field-group">
-            <span class="field-label">PH</span>
+            <span class="field-label">Ph</span>
             <span class="field-value">{{ mof.ph }}</span>
           </div>
-        </div>
-
-        <!-- Row 4: MODEL and PANEL -->
-        <div class="mof-row">
           <div class="mof-field-group">
-            <span class="field-label">MODEL</span>
+            <span class="field-label">Model</span>
             <span class="field-value">{{ mof.model }}</span>
           </div>
           <div class="mof-field-group">
-            <span class="field-label">PANEL</span>
+            <span class="field-label">Panel</span>
             <span class="field-value">{{ mof.panel }}</span>
-          </div>
-        </div>
-
-        <!-- Row 5: INDENTOR NAME and CUSTOMER NAME -->
-        <div class="mof-row">
-          <div class="mof-field-group">
-            <span class="field-label">INDENTOR NAME</span>
-            <span class="field-value">{{ mof.indentorName }}</span>
-          </div>
-          <div class="mof-field-group">
-            <span class="field-label">CUSTOMER NAME</span>
-            <span class="field-value">{{ mof.customerName }}</span>
-          </div>
-        </div>
-
-        <!-- Row 6: ORDERBY (Full Width) -->
-        <div class="mof-row">
-          <div class="mof-field-group mof-field-full">
-            <span class="field-label">ORDERBY</span>
-            <span class="field-value">{{ mof.orderedBy }}</span>
           </div>
         </div>
       </mat-card-content>
     </mat-card>
   </div>
 
-  <!-- MOF Detail View -->
-  <div class="mof-detail" *ngIf="showDetail && selectedMof">
+  <!-- Detail View -->
+  <div *ngIf="showDetail && selectedMof" class="mof-detail">
     <div class="detail-content">
-      <!-- Three Column Header -->
+
+      <!-- Row 1: MOF No, Branch, OrderTaken By -->
       <div class="detail-row three-col">
         <div class="detail-field">
           <span class="detail-label">MOF No</span>
@@ -135,7 +89,7 @@
         </div>
       </div>
 
-      <!-- Two Column Row -->
+      <!-- Row 2: Indentor Name, Customer Name -->
       <div class="detail-row two-col">
         <div class="detail-field">
           <span class="detail-label">Indentor Name</span>
@@ -147,14 +101,18 @@
         </div>
       </div>
 
-      <!-- Three Column Row -->
-      <div class="detail-row three-col">
+      <!-- Row 3: KVA, Ph, Model, Panel -->
+      <div class="detail-row four-col">
         <div class="detail-field">
           <span class="detail-label">KVA</span>
           <span class="detail-value">{{ selectedMof.kva }}</span>
         </div>
         <div class="detail-field">
-          <span class="detail-label">GIA Model</span>
+          <span class="detail-label">Ph</span>
+          <span class="detail-value">{{ selectedMof.ph }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Model</span>
           <span class="detail-value">{{ selectedMof.gia }}</span>
         </div>
         <div class="detail-field">
@@ -163,14 +121,18 @@
         </div>
       </div>
 
-      <!-- Four Column Row -->
-      <div class="detail-row four-col">
+      <!-- Row 4: Qty, Basic Amt, Mkt PList, Actual Amt, Diff -->
+      <div class="detail-row five-col">
         <div class="detail-field">
-          <span class="detail-label">Basic Rate</span>
+          <span class="detail-label">Qty</span>
+          <span class="detail-value">{{ selectedMof.qty }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Basic Amt</span>
           <span class="detail-value">{{ selectedMof.basicRate }}</span>
         </div>
         <div class="detail-field">
-          <span class="detail-label">Mkt PLust</span>
+          <span class="detail-label">Mkt PList</span>
           <span class="detail-value">{{ selectedMof.mktPLust }}</span>
         </div>
         <div class="detail-field">
@@ -183,19 +145,19 @@
         </div>
       </div>
 
-      <!-- BOM Section -->
-      <div class="detail-row two-col">
+      <!-- Row 5: BOM -->
+      <div class="detail-row full-width">
         <div class="detail-field">
-          <span class="detail-label">BOM</span>
-          <span class="detail-value">{{ selectedMof.bomDg }}</span>
+          <span class="bom-label">BOM <span class="bom-code">DG: {{ selectedMof.bomDg }}</span></span>
         </div>
+      </div>
+
+      <!-- Row 6: DG BOM Amt, CP BOM Amt, Total BOM Amt -->
+      <div class="detail-row three-col">
         <div class="detail-field">
           <span class="detail-label">DG BOM Amt</span>
           <span class="detail-value">{{ selectedMof.dgBomAmt }}</span>
         </div>
-      </div>
-
-      <div class="detail-row two-col">
         <div class="detail-field">
           <span class="detail-label">CP BOM Amt</span>
           <span class="detail-value">{{ selectedMof.cpBomAmt }}</span>
@@ -206,19 +168,20 @@
         </div>
       </div>
 
-      <!-- NFA Section -->
-      <div class="detail-row two-col">
+      <!-- Row 7: NFA No -->
+      <div class="detail-row full-width">
         <div class="detail-field">
           <span class="detail-label">NFA No</span>
           <span class="detail-value">{{ selectedMof.nfaNo }}</span>
         </div>
       </div>
 
-      <!-- Five Column Row -->
+      <!-- Row 8: NFA Qty, BalQty, KOELAmt, KALAAmt, OtherAmt -->
+      <!-- FIXED: Changed from "Qty" to "NFA Qty" mapped to nfaQty (API: NfaQty) -->
       <div class="detail-row five-col">
         <div class="detail-field">
-          <span class="detail-label">Qty</span>
-          <span class="detail-value">{{ selectedMof.qty }}</span>
+          <span class="detail-label">NFA Qty</span>
+          <span class="detail-value">{{ selectedMof.nfaQty }}</span>
         </div>
         <div class="detail-field">
           <span class="detail-label">BalQty</span>
@@ -238,7 +201,7 @@
         </div>
       </div>
 
-      <!-- Remarks Section -->
+      <!-- Row 9: MOF Remark -->
       <div class="detail-row full-width">
         <div class="detail-field">
           <span class="detail-label">MOF Remark</span>
@@ -246,6 +209,7 @@
         </div>
       </div>
 
+      <!-- Row 10: HOD Level Remark -->
       <div class="detail-row full-width">
         <div class="detail-field">
           <span class="detail-label">HOD Level Remark</span>
@@ -253,19 +217,15 @@
         </div>
       </div>
 
+      <!-- Row 11: CIA Level Remark -->
       <div class="detail-row full-width">
         <div class="detail-field">
-          <span class="detail-label">QIA Level Remark</span>
+          <span class="detail-label">CIA Level Remark</span>
           <span class="detail-value remark-text">{{ selectedMof.qiaLevelRemark }}</span>
         </div>
       </div>
 
-      <!-- <div class="detail-row full-width">
-        <div class="detail-field">
-          <span class="detail-label">NFA Level Remark</span>
-          <span class="detail-value remark-text">{{ selectedMof.nfaLevelRemark }}</span>
-        </div>
-      </div> -->
+      <!-- Row 12: NFA Level Remark (Editable) -->
       <div class="detail-row full-width">
         <div class="detail-field">
           <span class="detail-label">NFA Level Remark</span>
@@ -273,16 +233,42 @@
             class="remark-input"
             [(ngModel)]="nfaRemark"
             placeholder="Enter NFA Level Remark..."
-            rows="2">
+            rows="3">
           </textarea>
         </div>
       </div>
+
     </div>
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-      <button mat-raised-button class="btn-hold" (click)="onHold()">HOLD</button>
-      <button mat-raised-button class="btn-auth" (click)="onAuth()">AUTH</button>
+      <button mat-flat-button class="btn-hold" (click)="onHold()">HOLD</button>
+      <button mat-flat-button class="btn-auth" (click)="onAuth()">AUTH</button>
     </div>
   </div>
+
+  <!-- Error Modal -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Warning Modal -->
+  <div class="warningModal" *ngIf="warningMessage">
+    <div class="warningModal_content">
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
 </div>
