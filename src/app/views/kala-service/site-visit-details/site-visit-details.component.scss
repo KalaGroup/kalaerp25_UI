@@ -109,7 +109,16 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .photo-edit-preview {
-  flex: 1;
+  // flex: 1;
+  // display: flex;
+  // align-items: center;
+  // justify-content: center;
+  // background-color: $preview-gray;
+  // position: relative;
+  // overflow: hidden;
+  flex: 0 0 auto;
+  max-height: 50vh;
+  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,7 +128,7 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 
   .preview-placeholder {
     width: 100%;
-    height: 100%;
+    height: 200px;
     background-color: $preview-gray;
   }
 
@@ -193,21 +202,32 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
   }
 }
 
+.photo-edit-spacer {
+  flex: 0 0 auto; // ← don't grow
+  background-color: $preview-gray;
+  height: 20px;
+}
+
 // Bottom Sheet in Photo Edit View
 .photo-edit-view .bottom-sheet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  // position: absolute;
+  //left: 0;
+  // right: 0;
+  // bottom: 0;
   background-color: $surface-white;
   border-radius: 24px 24px 0 0;
   z-index: 100;
-  transform: translateY(100%);
-  transition: transform 0.3s ease-out;
+  //transform: translateY(100%);
+  //transition: transform 0.3s ease-out;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  max-height: 0; // ← ADD this
+  overflow: hidden; // ← ADD this
+  transition: max-height 0.3s ease-out; // ← ADD this
 
   &.open {
-    transform: translateY(0);
+    // transform: translateY(0);
+    max-height: 300px;
+    overflow: visible;
   }
 
   .bottom-sheet-content {
@@ -328,33 +348,33 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
   //   }
   // }
   .save-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: $text-white;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 8px 24px;
-  border-radius: 24px;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: $text-white;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 8px 24px;
+    border-radius: 24px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
 
-  mat-icon {
-    margin-right: 6px;
-    font-size: 20px;
-    height: 20px;
-    width: 20px;
-  }
+    mat-icon {
+      margin-right: 6px;
+      font-size: 20px;
+      height: 20px;
+      width: 20px;
+    }
 
-  &:hover {
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    transform: translateY(-2px);
-  }
+    &:hover {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      transform: translateY(-2px);
+    }
 
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+    }
   }
-}
 }
 
 // Tab Group Styling
@@ -479,6 +499,7 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
             .mdc-radio__outer-circle {
               border-color: $accent-blue;
             }
+
             .mdc-radio__inner-circle {
               background-color: $accent-blue;
             }
@@ -1146,9 +1167,11 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
       0% {
         transform: translateX(-50%) scale(0);
       }
+
       50% {
         transform: translateX(-50%) scale(1.2);
       }
+
       100% {
         transform: translateX(-50%) scale(1);
       }
@@ -1158,7 +1181,7 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
       position: absolute;
       opacity: 0;
 
-      &:checked + .radio-circle {
+      &:checked+.radio-circle {
         border-color: #2196F3;
 
         &::after {
@@ -1267,6 +1290,7 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
       from {
         transform: translateY(100%);
       }
+
       to {
         transform: translateY(0);
       }
@@ -1365,100 +1389,100 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 
 
 .errorModal {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
 
-  .successModal{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-  }
+.successModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
 
-  .warningModal{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-  }
+.warningModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
 
-  .errorModal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 350px;
-    text-align: center;
-  }
+.errorModal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+}
 
-  .successModal_content{
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 350px;
-    text-align: center;
-  }
+.successModal_content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+}
 
-   .warningModal_content{
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 350px;
-    text-align: center;
-  }
+.warningModal_content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  text-align: center;
+}
 
-   .error-ok-button {
-    padding: 8px 16px;
-    background:#f51202;
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
+.error-ok-button {
+  padding: 8px 16px;
+  background: #f51202;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
 
-  .success-ok-button{
-    padding: 8px 16px;
-    background:rgb(17, 243, 5);
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
+.success-ok-button {
+  padding: 8px 16px;
+  background: rgb(17, 243, 5);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
 
-  .warning-ok-button{
-    padding: 8px 16px;
-    background:rgb(222, 2, 2);
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
+.warning-ok-button {
+  padding: 8px 16px;
+  background: rgb(222, 2, 2);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}

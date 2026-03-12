@@ -121,3 +121,17 @@
 
 }
 
+@media (max-width: 768px) {
+  .user-info {
+    max-width: 200px;
+    overflow: hidden;
+
+    .welcome-text,
+    .sub-info {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+  }
+}

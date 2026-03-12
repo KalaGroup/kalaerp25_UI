@@ -7,6 +7,6 @@
 
 export const environment = {
   production: false,
-  //apiURL: 'https://localhost:5001/api/'
-  apiURL: 'https://www.kalapms.com/ERPAngularApiNew26/api/'
+  apiURL: 'https://localhost:5001/api/'
+ // apiURL: 'https://www.kalapms.com/ERPAngularApiNew26/api/'
 }
