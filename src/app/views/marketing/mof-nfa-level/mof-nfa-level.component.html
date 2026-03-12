@@ -69,6 +69,17 @@
     </mat-card>
   </div>
 
+  <!-- Empty State - When no pending MOFs -->
+  <div class="empty-state" *ngIf="!isLoading && !showDetail && mofList.length === 0">
+    <mat-icon class="empty-icon">check_circle_outline</mat-icon>
+    <p class="empty-text">No Pending Authorizations</p>
+    <p class="empty-subtext">All MOF NFA records have been processed.</p>
+    <button mat-stroked-button class="refresh-btn" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
   <!-- Detail View -->
   <div *ngIf="showDetail && selectedMof" class="mof-detail">
     <div class="detail-content">

@@ -428,11 +428,24 @@ export class KaizenComponent implements OnInit {
     return `${dd}/${mm}/${yyyy}`;
   }
 
+  // openPreview(): void {
+  //   this.previewRecord = null;
+  //   this.previewSheetNo = '';
+  //   this.showPreview = true;
+  // }
+
   openPreview(): void {
-    this.previewRecord = null;
-    this.previewSheetNo = '';
+    if (this.editingId && this.editingRow) {
+        // Editing existing record — bind its sheet number and data
+        this.previewSheetNo = this.editingRow.KaizenSheetNo || '';
+        this.previewRecord = this.editingRow;
+    } else {
+        // New record — no sheet number yet
+        this.previewSheetNo = 'Auto-generated on save';
+        this.previewRecord = null;
+    }
     this.showPreview = true;
-  }
+}
 
   closePreview(): void {
     this.showPreview = false;
@@ -477,6 +490,10 @@ export class KaizenComponent implements OnInit {
   buildFormData(): FormData {
     const fd = new FormData();
     const v = this.kaizenForm.value;
+
+    var companyId = localStorage.getItem('companyId') || '';
+
+    fd.append('CompanyId', companyId);
 
     fd.append('DivisionId', v.divisionId || '');
     fd.append('DivisionName', this.getSelectedDivisionName());
