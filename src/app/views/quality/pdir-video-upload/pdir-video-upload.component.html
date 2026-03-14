@@ -3,12 +3,12 @@
 <div class="upload-container">
   <!-- Header -->
   <div class="header">
-    <h1 class="header-title">DG Assembly :: Upload Test Report Video/PDF</h1>
+    <h1 class="header-title">DG Assembly :: Upload PDIR Video/PDF</h1>
   </div>
 
   <!-- Form Card -->
   <div class="form-card">
-    <h2 class="form-title">Upload Test Report Video/PDF</h2>
+    <h2 class="form-title">Upload PDIR Video/PDF</h2>
 
     <!-- Engine Sr No Section -->
     <div class="form-group">
@@ -91,6 +91,7 @@
   </div>
 </div>
 
+
 <!-- Hidden File Inputs -->
 <input type="file" #cameraInput accept="image/*" capture="environment" (change)="onFileSelected($event)"
   style="display: none;">
@@ -100,10 +101,13 @@
 
 <input type="file" #fileInput [accept]="acceptedFileTypes" (change)="onFileSelected($event)" style="display: none;">
 
+
 <div *ngIf="errorMessage" class="errorModal">
   <div class="errorModal-content">
     <h2>Alert</h2>
-    <p>{{ errorMessage }}</p>
+    <p>
+      {{ errorMessage }}
+    </p>
     <button class="error-ok-button" (click)="clearMessages()">OK</button>
   </div>
 </div>

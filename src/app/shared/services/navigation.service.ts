@@ -136,7 +136,8 @@
 //             { name: 'Quality Check List', state: 'quality/dg-quality-master' },
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
-//             {name:'Kaizen Sheet',state:'quality/kaizen'}
+//             {name:'Kaizen Sheet',state:'quality/kaizen'},
+//             {name:'PDIR Video Upload',state:'quality/pdir-video-upload'}
 //       ],
 //     },
 
@@ -237,7 +238,8 @@
 //              { name: 'Quality Check List', state: 'quality/dg-quality-master' },
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
-//             {name:'Kaizen Sheet',state:'quality/kaizen'}
+//             {name:'Kaizen Sheet',state:'quality/kaizen'},
+//             {name:'PDIR Video Upload',state:'quality/pdir-video-upload'}
 //       ],
 //     },
 //     {
@@ -442,7 +444,8 @@
 //             { name: 'Quality Check List', state: 'quality/dg-quality-master' },
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
-//             {name:'Kaizen Sheet',state:'quality/kaizen'}
+//             {name:'Kaizen Sheet',state:'quality/kaizen'},
+//             {name:'PDIR Video Upload',state:'quality/pdir-video-upload'}
 //       ],
 //     },
 

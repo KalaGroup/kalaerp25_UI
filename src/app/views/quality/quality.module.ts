@@ -30,6 +30,7 @@ import { DgStageICheckerComponent } from './dg-stage-i-checker/dg-stage-i-checke
 import { QualityMasterCheckerComponent } from './quality-master-checker/quality-master-checker.component';
 import { CalibrationMasterComponent } from './calibration-master/calibration-master.component';
 import { KaizenComponent } from './kaizen/kaizen.component';
+import { PdirVideoUploadComponent } from './pdir-video-upload/pdir-video-upload.component';
 
 @NgModule({
   declarations: [
@@ -37,7 +38,8 @@ import { KaizenComponent } from './kaizen/kaizen.component';
     DgQualityMasterComponent,
     QualityMasterCheckerComponent,
     CalibrationMasterComponent,
-    KaizenComponent
+    KaizenComponent,
+    PdirVideoUploadComponent
   ],
   imports: [
     CommonModule,
