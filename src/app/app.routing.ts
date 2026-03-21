@@ -66,6 +66,12 @@ export const rootRouterConfig: Routes = [
         loadChildren: () => import('./views/forms/forms.module').then(m => m.AppFormsModule),
         data: { title: 'Forms', breadcrumb: 'FORMS'}
       },
+      {
+        path: 'account',
+        loadChildren: () => import('./views/account/account.module').then(m => m.AccountModule),
+        data: { title: 'Account', breadcrumb: 'ACCOUNT'}
+      }
+
     ]
   },
   {

@@ -162,7 +162,7 @@
             </div>
           </div>
 
-          <div class="scan-section">
+          <div class="scan-section" *ngIf="isControlPanel1Visible('Start')">
             <div class="scan-section-header">
               <button class="scan-header" (click)="onScanControlPanel1Click('Start')">SCAN CONTROL PANEL 1</button>
             </div>
@@ -186,7 +186,7 @@
             </div>
           </div>
 
-          <div class="scan-section">
+          <div class="scan-section" *ngIf="isControlPanel2Visible('Start')">
             <div class="scan-section-header">
               <button class="scan-header" (click)="onScanControlPanel2Click('Start')">SCAN CONTROL PANEL 2(IF
                 ANY)</button>
@@ -465,7 +465,7 @@
             </div>
           </div>
 
-          <div class="scan-section">
+          <div class="scan-section" *ngIf="isControlPanel1Visible('End')">
             <div class="scan-section-header">
               <button class="scan-header" (click)="onScanControlPanel1Click('End')">SCAN CONTROL PANEL 1</button>
             </div>
@@ -489,7 +489,7 @@
             </div>
           </div>
 
-          <div class="scan-section">
+          <div class="scan-section" *ngIf="isControlPanel2Visible('End')">
             <div class="scan-section-header">
               <button class="scan-header" (click)="onScanControlPanel2Click('End')">SCAN CONTROL PANEL 2(IF
                 ANY)</button>

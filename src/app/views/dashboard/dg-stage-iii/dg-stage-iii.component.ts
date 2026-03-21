@@ -1177,6 +1177,16 @@ export class DgStageIIIComponent implements OnInit {
     return true; // Completely ignored for save validation
   }
 
+  isControlPanel1Visible(stage: 'Start' | 'End'): boolean {
+    const cp = this.scanDetails[stage].controlPanel1;
+    return !!cp.qrSrNo && cp.qrSrNo !== '0';
+  }
+
+  isControlPanel2Visible(stage: 'Start' | 'End'): boolean {
+    const cp = this.scanDetails[stage].controlPanel2;
+    return !!cp.qrSrNo && cp.qrSrNo !== '0';
+  }
+
   // KRM - REQUIRED (must be green)
   isKRMValidEnd(): boolean {
     return (

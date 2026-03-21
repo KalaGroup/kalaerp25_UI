@@ -1,19 +1,17 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { environment } from 'environments/environment';
 import { HttpClient } from '@angular/common/http';
-
 @Component({
-    selector: 'app-dg-video-upload',
-    templateUrl: './dg-video-upload.component.html',
-    styleUrl: './dg-video-upload.component.scss',
-    standalone: false
+  selector: 'app-pdir-video-upload',
+  standalone: false,
+  templateUrl: './pdir-video-upload.component.html',
+  styleUrl: './pdir-video-upload.component.scss'
 })
-export class DgVideoUploadComponent {
-  private baseUrl = environment.apiURL;
-
+export class PdirVideoUploadComponent {
+private baseUrl = environment.apiURL;
   // Form fields
-  uploadFor: string = 'TestReport';
+  uploadFor: string = 'PDIR';
   engineSrNo: string = '';
   selectedFile: File | null = null;
   selectedFileName: string = '';
@@ -29,8 +27,8 @@ export class DgVideoUploadComponent {
   acceptedFileTypes: string =
     'image/jpg,image/jpeg,image/png,audio/mp3,audio/mpeg,video/mp4,video/quicktime,application/pdf';
 
-  // File size limit (100MB)
-  maxFileSize: number = 100 * 1024 * 1024;
+  // File size limit (500MB)
+  maxFileSize: number = 500 * 1024 * 1024;
 
   // ViewChild references for file inputs
   @ViewChild('cameraInput') cameraInput!: ElementRef<HTMLInputElement>;
@@ -99,7 +97,7 @@ export class DgVideoUploadComponent {
       // Validate file size
       if (file.size > this.maxFileSize) {
         this.errorMessage =
-          'File size exceeds 100MB limit. Please select a smaller file.';
+          'File size exceeds 500MB limit. Please select a smaller file.';
         this.resetFileInputs();
         return;
       }

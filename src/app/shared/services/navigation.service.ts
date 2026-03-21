@@ -109,7 +109,8 @@
 //             { name: 'DG Stage-III', state: 'dashboard/dg-stage-III' },
 //             { name: 'Dg Test Report', state: 'dashboard/dg-test-report' },
 //             { name: 'DG Packing Slip', state: 'dashboard/dg-packing-slip' },
-//             {name:'DG Video Upload',state:'dashboard/dg-video-upload'}
+//             {name:'DG Video Upload',state:'dashboard/dg-video-upload'},
+//             {name:'Job Card 1',state:'dashboard/jobcard1'}
 //           ],
 //         },
 //       ],
@@ -136,7 +137,24 @@
 //             { name: 'Quality Check List', state: 'quality/dg-quality-master' },
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
-//             {name:'Kaizen Sheet',state:'quality/kaizen'}
+//             {name:'Kaizen Sheet',state:'quality/kaizen'},
+//             {name:'PDIR Video Upload',state:'quality/pdir-video-upload'}
+//       ],
+//     },
+
+//     {
+//       name: 'Account',
+//       type: 'dropDown',
+//       tooltip: 'Account',
+//       icon: 'account_balance',
+//       sub: [
+//         {
+//           name: 'Transaction',
+//           type: 'dropDown',
+//           sub: [
+//             { name: 'Scan Invoice', state: 'account/scan-invoice' },
+//           ],
+//         },
 //       ],
 //     },
 
@@ -237,9 +255,26 @@
 //              { name: 'Quality Check List', state: 'quality/dg-quality-master' },
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
-//             {name:'Kaizen Sheet',state:'quality/kaizen'}
+//             {name:'Kaizen Sheet',state:'quality/kaizen'},
+//             {name:'PDIR Video Upload',state:'quality/pdir-video-upload'}
 //       ],
 //     },
+//     {
+//       name: 'Account',
+//       type: 'dropDown',
+//       tooltip: 'Account',
+//       icon: 'account_balance',
+//       sub: [
+//         {
+//           name: 'Transaction',
+//           type: 'dropDown',
+//           sub: [
+//             { name: 'Scan Invoice', state: 'account/scan-invoice' },
+//           ],
+//         },
+//       ],
+//     },
+
 //     {
 //       name: 'Canopy Process',
 //       type: 'dropDown',
@@ -298,7 +333,8 @@
 //             { name: 'DG Stage-III', state: 'dashboard/dg-stage-III' },
 //             { name: 'Dg Test Report', state: 'dashboard/dg-test-report' },
 //             { name: 'DG Packing Slip', state: 'dashboard/dg-packing-slip' },
-//             {name:'DG Video Upload',state:'dashboard/dg-video-upload'}
+//             {name:'DG Video Upload',state:'dashboard/dg-video-upload'},
+//             {name:'Job Card 1',state:'dashboard/jobcard1'}
 //           ],
 //         },
 //       ],
@@ -415,7 +451,8 @@
 //             { name: 'DG Stage-III', state: 'dashboard/dg-stage-III' },
 //             { name: 'Dg Test Report', state: 'dashboard/dg-test-report' },
 //             { name: 'DG Packing Slip', state: 'dashboard/dg-packing-slip' },
-//             {name:'DG Video Upload',state:'dashboard/dg-video-upload'}
+//             {name:'DG Video Upload',state:'dashboard/dg-video-upload'},
+//             {name:'Job Card 1',state:'dashboard/jobcard1'}
 //           ],
 //         },
 //       ],
@@ -442,7 +479,24 @@
 //             { name: 'Quality Check List', state: 'quality/dg-quality-master' },
 //             { name: 'Quality Check List Checker1', state: 'quality/quality-master-checker' },
 //             {name:'Calibration Master',state:'quality/calibration-master'},
-//             {name:'Kaizen Sheet',state:'quality/kaizen'}
+//             {name:'Kaizen Sheet',state:'quality/kaizen'},
+//             {name:'PDIR Video Upload',state:'quality/pdir-video-upload'}
+//       ],
+//     },
+
+//     {
+//       name: 'Account',
+//       type: 'dropDown',
+//       tooltip: 'Account',
+//       icon: 'account_balance',
+//       sub: [
+//         {
+//           name: 'Transaction',
+//           type: 'dropDown',
+//           sub: [
+//             { name: 'Scan Invoice', state: 'account/scan-invoice' },
+//           ],
+//         },
 //       ],
 //     },
 

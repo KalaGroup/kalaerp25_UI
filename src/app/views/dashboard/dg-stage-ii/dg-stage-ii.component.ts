@@ -468,9 +468,8 @@ export class DgStageIIComponent implements OnInit {
       formData.append(partCodeKey, battery.batteryPart || '');
     });
 
-    if (this.selectedSixMItem) {
-      formData.append('QA6M', this.selectedSixMItem);
-    }
+      formData.append('QA6M', this.selectedSixMItem || '0');
+
     if (this.selectedOption) {
       formData.append('PrcStatus', this.selectedOption);
     }

@@ -4,6 +4,7 @@ import{DgQualityMasterComponent} from './dg-quality-master/dg-quality-master.com
 import{QualityMasterCheckerComponent} from './quality-master-checker/quality-master-checker.component';
 import { CalibrationMasterComponent } from './calibration-master/calibration-master.component';
 import { KaizenComponent } from './kaizen/kaizen.component';
+import { PdirVideoUploadComponent } from './pdir-video-upload/pdir-video-upload.component';
 
 export const QualityRoutes: Routes = [
     {
@@ -30,5 +31,10 @@ export const QualityRoutes: Routes = [
          path: 'kaizen',
          component: KaizenComponent,
          data: { title: 'Kaizen', breadcrumb: 'Kaizen' }
+    },
+    {
+      path: 'pdir-video-upload',
+      component: PdirVideoUploadComponent,
+      data: { title: 'PDIR Video Upload', breadcrumb: 'PDIR Video Upload' }
     }
 ];

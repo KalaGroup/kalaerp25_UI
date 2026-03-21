@@ -754,7 +754,8 @@ export class KaizenComponent implements OnInit {
         this.loadKaizenRecords();
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Failed to authorize.';
+        console.error('Authorize error:', err);
+        this.errorMessage = (typeof err.error === 'string' ? err.error : err.error?.message) || 'Failed to authorize.';
       },
     });
   }
