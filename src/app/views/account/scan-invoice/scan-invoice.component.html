@@ -1,0 +1,104 @@
+<div class="scan-invoice-container">
+
+  <!-- Header -->
+  <div class="header-container">
+    <h6 class="header-title">Invoice Scan</h6>
+    <button class="save-button" disabled>SAVE</button>
+  </div>
+
+  <!-- Error Modal -->
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Error</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Warning Modal -->
+  <div *ngIf="warningMessage" class="warningModal">
+    <div class="warningModal_content">
+      <h2>Warning</h2>
+      <p>{{ warningMessage }}</p>
+      <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- Scan Button -->
+  <div class="scan-section">
+    <button class="scan-button" (click)="onScanClick()">
+      SCAN INVOICE
+    </button>
+  </div>
+
+  <!-- QR Scanner -->
+  <div *ngIf="showQrScanner" class="qr-scanner-container">
+    <div class="qr-scanner-wrapper">
+      <div class="qr-scan-header">Scan QR Code</div>
+      <zxing-scanner
+        [formats]="allowedFormats"
+        (scanSuccess)="handleQrCodeResult($event)">
+      </zxing-scanner>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <i class="fas fa-circle-notch fa-spin"></i> Loading...
+  </div>
+
+  <!-- Invoice Details -->
+  <div class="invoice-details" *ngIf="invoiceData">
+
+    <div class="detail-row">
+      <label>Inv No:</label>
+      <span>{{ invoiceData.INVID }}</span>
+    </div>
+
+    <div class="detail-row">
+      <label>Customer:</label>
+      <span>{{ invoiceData.CustName }}</span>
+    </div>
+
+    <div class="detail-row">
+      <label>Address:</label>
+      <span>{{ invoiceData.CustAddress }}</span>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="detail-row">
+      <label>Indentor:</label>
+      <span>{{ invoiceData.IndName }}</span>
+    </div>
+
+    <div class="detail-row">
+      <label>Address:</label>
+      <span>{{ invoiceData.IndAddress }}</span>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="detail-row">
+      <label>Part Desc:</label>
+      <span>{{ invoiceData.PartDesc }}</span>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="detail-row">
+      <label>Inv Qty:</label>
+      <span>{{ invoiceData.Qty }} {{ invoiceData.UOM }}</span>
+    </div>
+
+  </div>
+
+</div>

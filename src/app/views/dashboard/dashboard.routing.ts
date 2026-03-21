@@ -5,6 +5,7 @@ import { DgStageIIIComponent } from './dg-stage-iii/dg-stage-iii.component';
 import { DgTestReport } from './dg-test-report/dg-test-report.component';
 import { DgPackingSlip } from './dg-packing-slip/dg-packing-slip.component';
 import {DgVideoUploadComponent} from'./dg-video-upload/dg-video-upload.component';
+import { Jobcard1Component } from './jobcard1/jobcard1.component';
 import { UserRoleGuard } from 'app/shared/guards/user-role.guard';
 // import { config } from 'config';
 import { title } from 'process';
@@ -40,4 +41,9 @@ export const DashboardRoutes: Routes = [
     component: DgVideoUploadComponent,
     data:{title: 'DG Video Uplaod', breadcrumb: 'DG Video Uplaod'}
   },
+  {
+    path:'jobcard1',
+    component: Jobcard1Component,
+    data:{title: 'Job Card 1', breadcrumb: 'Job Card 1'},
+  }
  ];

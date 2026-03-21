@@ -1,0 +1,271 @@
+<div class="jc-page">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <div class="jc-header">
+    <div class="jc-header-left">
+      <div class="jc-header-icon">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      <div>
+        <h1 class="jc-title">Job Card</h1>
+        <p class="jc-subtitle">Primary Plan — DG Assembly</p>
+      </div>
+    </div>
+    <div class="jc-header-meta">
+      <span class="jc-badge-pc">
+        <i class="fas fa-building"></i> {{ pcDisplay }}
+      </span>
+      <span class="jc-badge-date">
+        <i class="fas fa-calendar-alt"></i> {{ today }}
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Alerts ─────────────────────────────────────────────── -->
+  <div *ngIf="successMessage" class="jc-alert jc-alert-success">
+    <i class="fas fa-check-circle"></i>
+    <span>{{ successMessage }}</span>
+    <button class="jc-alert-close" (click)="clearMessages()">×</button>
+  </div>
+
+  <div *ngIf="errorMessage" class="jc-alert jc-alert-error">
+    <i class="fas fa-times-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button class="jc-alert-close" (click)="clearMessages()">×</button>
+  </div>
+
+  <div *ngIf="warningMessage" class="jc-alert jc-alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>{{ warningMessage }}</span>
+    <button class="jc-alert-close" (click)="clearMessages()">×</button>
+  </div>
+
+  <!-- ── Form ───────────────────────────────────────────────── -->
+  <form #jobCardForm="ngForm" (ngSubmit)="onSubmit(jobCardForm)" autocomplete="off">
+
+    <!-- ── Search / Control Bar ───────────────────────────── -->
+    <div class="jc-card">
+      <div class="jc-search-bar">
+
+        <div class="jc-field-group">
+          <label class="jc-label">Profit Center</label>
+          <input type="text"
+                 class="jc-input jc-input-readonly"
+                 [value]="pcDisplay"
+                 readonly />
+        </div>
+
+        <div class="jc-field-group">
+          <label class="jc-label">Job Card Date</label>
+          <input type="text"
+                 class="jc-input jc-input-readonly"
+                 [value]="today"
+                 readonly />
+        </div>
+
+        <div class="jc-field-group jc-field-remark">
+          <label class="jc-label">
+            Remark <span class="jc-required">*</span>
+          </label>
+          <input type="text"
+                 class="jc-input"
+                 name="remark"
+                 ngModel
+                 required
+                 #remarkCtrl="ngModel"
+                 placeholder="Enter remark..."
+                 [class.jc-input-error]="remarkCtrl.invalid && remarkCtrl.touched" />
+          <span class="jc-error-text"
+                *ngIf="remarkCtrl.invalid && remarkCtrl.touched">
+            Remark is required
+          </span>
+        </div>
+
+        <div class="jc-actions">
+          <button type="button"
+                  class="jc-btn jc-btn-search"
+                  (click)="onSearch()"
+                  [disabled]="isLoading">
+            <span *ngIf="!isLoading">
+              <i class="fas fa-search"></i> Search
+            </span>
+            <span *ngIf="isLoading">
+              <i class="fas fa-circle-notch fa-spin"></i> Loading...
+            </span>
+          </button>
+
+          <button type="submit"
+                  class="jc-btn jc-btn-submit"
+                  [disabled]="isSubmitting || jobCardList.length === 0">
+            <span *ngIf="!isSubmitting">
+              <i class="fas fa-paper-plane"></i> Submit
+            </span>
+            <span *ngIf="isSubmitting">
+              <i class="fas fa-circle-notch fa-spin"></i> Saving...
+            </span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Table Card ──────────────────────────────────────── -->
+    <div class="jc-card jc-card-table">
+
+      <!-- Legend + row count -->
+      <div class="jc-legend" *ngIf="jobCardList.length > 0">
+        <span class="jc-legend-item">
+          <span class="jc-dot jc-dot-today"></span> Today's plan
+        </span>
+        <span class="jc-legend-item">
+          <span class="jc-dot jc-dot-low"></span> Low / missing stock
+        </span>
+        <span class="jc-count">{{ jobCardList.length }} rows</span>
+      </div>
+
+      <div class="jc-table-wrapper">
+        <table class="jc-table">
+
+          <thead>
+            <tr>
+              <th class="jc-th-center" style="width:42px">#</th>
+              <th style="width:72px">Qty</th>
+              <th>KVA</th>
+              <th>Ph</th>
+              <th>Model</th>
+
+              <!-- Monthly plan columns -->
+              <th *ngIf="showPlanCode" class="jc-th-plan">Plan Code</th>
+              <th class="jc-th-plan">Plan Date</th>
+              <th class="jc-th-plan">Day Plan</th>
+              <th class="jc-th-plan" title="Maximum Qty you can enter equals this Pending value">
+                Pending
+                <small class="jc-th-limit-hint">(Qty Limit)</small>
+              </th>
+
+              <!-- Production metrics -->
+              <th>DG Panel</th>
+              <th>F.Norm</th>
+              <th>D.Stk</th>
+              <th>P.Plan</th>
+              <th>Pl.Req</th>
+
+              <!-- Stock counts -->
+              <th class="jc-th-stock">Eng</th>
+              <th class="jc-th-stock">Alt</th>
+              <th class="jc-th-stock">Cpy</th>
+              <th class="jc-th-log">CpyLog</th>
+              <th class="jc-th-stock">Bat</th>
+              <th class="jc-th-log">BatLog</th>
+
+              <!-- Reference -->
+              <th>BOM Code</th>
+              <th>Part Code</th>
+              <th class="jc-th-desc">Part Desc</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            <!-- Empty — before search -->
+            <tr *ngIf="jobCardList.length === 0 && !isLoading">
+              <td colspan="23" class="jc-empty">
+                <i class="fas fa-search"></i>
+                <p>Click Search to load job card details</p>
+              </td>
+            </tr>
+
+            <!-- Loading -->
+            <tr *ngIf="isLoading">
+              <td colspan="23" class="jc-empty">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading...</p>
+              </td>
+            </tr>
+
+            <!-- Data rows -->
+            <tr *ngFor="let row of jobCardList; let i = index"
+                [style.background-color]="getRowBackground(row)"
+                [class.jc-row-today]="row.TodayFlag === 'TODAY'">
+
+              <!-- Serial number -->
+              <td class="jc-td-center jc-srno">{{ i + 1 }}</td>
+
+              <!-- Qty input — auto-caps at PenPQty -->
+              <td>
+                <input type="number"
+                       class="jc-qty-input"
+                       [name]="'qty_' + i"
+                       [(ngModel)]="row.Qty"
+                       (ngModelChange)="onQtyChange(row)"
+                       min="0"
+                       [max]="row.PenPQty ?? 9999"
+                       [class.jc-qty-over]="row.Qty > (row.PenPQty ?? 9999)" />
+              </td>
+
+              <td class="jc-td-center">{{ row.KVA }}</td>
+              <td class="jc-td-center">{{ row.Phase }}</td>
+              <td>{{ row.Model }}</td>
+
+              <!-- Plan columns -->
+              <td *ngIf="showPlanCode" class="jc-td-plan">
+                {{ row.PlanCode || '—' }}
+              </td>
+
+              <td class="jc-td-plan">
+                <span *ngIf="row.PlanDate"
+                      [class.jc-today-text]="row.TodayFlag === 'TODAY'">
+                  {{ row.PlanDate | date:'dd-MMM-yyyy' }}
+                </span>
+                <small class="jc-day-name" *ngIf="row.DayName">
+                  {{ row.DayName }}
+                </small>
+                <span *ngIf="!row.PlanDate" class="jc-dash">—</span>
+              </td>
+
+              <td class="jc-td-plan jc-td-center">
+                <ng-container *ngIf="row.DayPlanQty && row.DayPlanQty > 0; else noDayPlan">
+                  <span [class.jc-today-text]="row.TodayFlag === 'TODAY'">
+                    {{ row.DayPlanQty }}
+                  </span>
+                  <span *ngIf="row.TodayFlag === 'TODAY'"
+                        class="jc-badge-today">TODAY</span>
+                </ng-container>
+                <ng-template #noDayPlan>
+                  <span class="jc-dash">0</span>
+                </ng-template>
+              </td>
+
+              <td class="jc-td-plan jc-td-center jc-pending-qty">
+                {{ row.PenPQty ?? 0 }}
+              </td>
+
+              <!-- Production metrics -->
+              <td>{{ row.DGPanel }}</td>
+              <td class="jc-td-right" [class.jc-negative]="row.FNorm < 0">{{ row.FNorm }}</td>
+              <td class="jc-td-right" [class.jc-negative]="row.DStk < 0">{{ row.DStk }}</td>
+              <td class="jc-td-right" [class.jc-negative]="row.PPlanQty < 0">{{ row.PPlanQty }}</td>
+              <td class="jc-td-right" [class.jc-negative]="row.PlReq < 0">{{ row.PlReq }}</td>
+
+              <!-- Stock counts -->
+              <td class="jc-td-center jc-td-stock" [class.jc-negative]="row.Eng < 0">{{ row.Eng }}</td>
+              <td class="jc-td-center jc-td-stock" [class.jc-negative]="row.Alt < 0">{{ row.Alt }}</td>
+              <td class="jc-td-center jc-td-stock" [class.jc-negative]="row.Cpy < 0">{{ row.Cpy }}</td>
+              <td class="jc-td-center jc-td-log"   [class.jc-negative]="row.CpyLog < 0">{{ row.CpyLog }}</td>
+              <td class="jc-td-center jc-td-stock" [class.jc-negative]="row.Bat < 0">{{ row.Bat }}</td>
+              <td class="jc-td-center jc-td-log"   [class.jc-negative]="row.BatLog < 0">{{ row.BatLog }}</td>
+
+              <!-- Reference -->
+              <td class="jc-td-mono">{{ row.BOMCode }}</td>
+              <td class="jc-td-mono">{{ row.PartCode }}</td>
+              <td class="jc-td-desc" [title]="row.PartDesc">{{ row.PartDesc }}</td>
+
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </form>
+</div>

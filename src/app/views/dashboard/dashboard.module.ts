@@ -31,6 +31,7 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { MatRadioModule } from '@angular/material/radio';
 import { from } from 'rxjs';
 import { DgVideoUploadComponent } from './dg-video-upload/dg-video-upload.component';
+import { Jobcard1Component } from './jobcard1/jobcard1.component';
 
 
 @NgModule({
@@ -67,6 +68,7 @@ import { DgVideoUploadComponent } from './dg-video-upload/dg-video-upload.compon
     DgTestReport,
     DgPackingSlip,
     DgVideoUploadComponent,
+    Jobcard1Component,
   ],
 
 })
