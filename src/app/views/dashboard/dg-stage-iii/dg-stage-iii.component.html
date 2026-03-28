@@ -215,22 +215,30 @@
             <div class="scan-section-header">
               <button class="scan-header" (click)="onScanKRMClick('Start')">SCAN KRM(IF ANY)</button>
             </div>
-            <div class="qr-scanner-container">
-              <div *ngIf="showQRScannerKRMStart" class="qr-scanner-wrapper">
-                <div class="qr-scan-header">Scan QR Code</div>
-                <zxing-scanner [formats]="allowedFormats"
-                  (scanSuccess)="handleQrCodeResult($event, 'krm','Start')"></zxing-scanner>
+            <ng-container *ngIf="isKRMVisible('Start'); else krmNotFoundStart">
+              <div class="qr-scanner-container">
+                <div *ngIf="showQRScannerKRMStart" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'krm','Start')"></zxing-scanner>
+                </div>
               </div>
-            </div>
-            <div class="scan-section-details">
-              <div class="scan-details">
-                <div>QR SrNo: <span
-                    [ngClass]="{'green-text': scannedQrResultKRMStart === scanDetails.Start.krm?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultKRMStart !== scanDetails.Start.krm?.qrSrNo}">{{
-                    scanDetails.Start.krm?.qrSrNo }}</span></div>
-                <div>KRM Desc: {{ scanDetails.Start.krm?.krmDesc }}</div>
-                <div>KRM Part: {{ scanDetails.Start.krm?.krmPart }}</div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultKRMStart === scanDetails.Start.krm?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultKRMStart !== scanDetails.Start.krm?.qrSrNo}">{{
+                      scanDetails.Start.krm?.qrSrNo }}</span></div>
+                  <div>KRM Desc: {{ scanDetails.Start.krm?.krmDesc }}</div>
+                  <div>KRM Part: {{ scanDetails.Start.krm?.krmPart }}</div>
+                </div>
               </div>
-            </div>
+            </ng-container>
+            <ng-template #krmNotFoundStart>
+              <div class="krm-not-found" *ngIf="isEngineScanned('Start')">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>KRM details not found. BOM not authorized.</span>
+              </div>
+            </ng-template>
           </div>
 
           <!-- Process Checkpoints Section -->
@@ -518,22 +526,30 @@
             <div class="scan-section-header">
               <button class="scan-header" (click)="onScanKRMClick('End')">SCAN KRM(IF ANY)</button>
             </div>
-            <div class="qr-scanner-container">
-              <div *ngIf="showQRScannerKRMEnd" class="qr-scanner-wrapper">
-                <div class="qr-scan-header">Scan QR Code</div>
-                <zxing-scanner [formats]="allowedFormats"
-                  (scanSuccess)="handleQrCodeResult($event, 'krm', 'End')"></zxing-scanner>
+            <ng-container *ngIf="isKRMVisible('End'); else krmNotFoundEnd">
+              <div class="qr-scanner-container">
+                <div *ngIf="showQRScannerKRMEnd" class="qr-scanner-wrapper">
+                  <div class="qr-scan-header">Scan QR Code</div>
+                  <zxing-scanner [formats]="allowedFormats"
+                    (scanSuccess)="handleQrCodeResult($event, 'krm', 'End')"></zxing-scanner>
+                </div>
               </div>
-            </div>
-            <div class="scan-section-details">
-              <div class="scan-details">
-                <div>QR SrNo: <span
-                    [ngClass]="{'green-text': scannedQrResultKRMEnd === scanDetails.End.krm?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultKRMEnd !== scanDetails.End.krm?.qrSrNo}">{{
-                    scanDetails.End.krm?.qrSrNo }}</span></div>
-                <div>KRM Desc: {{ scanDetails.End.krm?.krmDesc }}</div>
-                <div>KRM Part: {{ scanDetails.End.krm?.krmPart }}</div>
+              <div class="scan-section-details">
+                <div class="scan-details">
+                  <div>QR SrNo: <span
+                      [ngClass]="{'green-text': scannedQrResultKRMEnd === scanDetails.End.krm?.qrSrNo, 'Alt-qr-sr-no': scannedQrResultKRMEnd !== scanDetails.End.krm?.qrSrNo}">{{
+                      scanDetails.End.krm?.qrSrNo }}</span></div>
+                  <div>KRM Desc: {{ scanDetails.End.krm?.krmDesc }}</div>
+                  <div>KRM Part: {{ scanDetails.End.krm?.krmPart }}</div>
+                </div>
               </div>
-            </div>
+            </ng-container>
+            <ng-template #krmNotFoundEnd>
+              <div class="krm-not-found" *ngIf="isEngineScanned('End')">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>KRM details not found. BOM not authorized.</span>
+              </div>
+            </ng-template>
           </div>
 
           <!-- Process Checkpoints Section -->

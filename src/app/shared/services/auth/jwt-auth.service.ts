@@ -74,8 +74,9 @@ export class JwtAuthService {
       .post(`${this.baseUrl}LoginUser`, payload, { headers })
       .pipe(
         map((res: any) => {
-         // console.log('API call success:', res); // Log the response for debugging
+          console.log('API call success:', res); // Log the response for debugging
           localStorage.setItem('ProfitCenter', res.pccode);
+          localStorage.setItem('ProfitCenter_old', res.pccode_old);
           localStorage.setItem('companyName', res.companyName);
           localStorage.setItem('companyId', res.companyId);
           localStorage.setItem('userName', res.username);
