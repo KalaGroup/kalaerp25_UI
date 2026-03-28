@@ -1,0 +1,293 @@
+<div class="ck-page">
+
+  <!-- Header -->
+  <div class="ck-header">
+    <div class="ck-header-inner">
+      <div class="ck-header-icon">
+        <i class="fas fa-clipboard-check"></i>
+      </div>
+      <div>
+        <h1 class="ck-title">Jobcard1 Checker</h1>
+        <p class="ck-subtitle">Primary Plan</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="successMessage" class="ck-alert ck-alert--success">
+    <i class="fas fa-check-circle"></i>
+    <span>{{ successMessage }}</span>
+    <button (click)="clearMessages()">&times;</button>
+  </div>
+  <div *ngIf="errorMessage" class="ck-alert ck-alert--error">
+    <i class="fas fa-times-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button (click)="clearMessages()">&times;</button>
+  </div>
+  <div *ngIf="warningMessage" class="ck-alert ck-alert--warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>{{ warningMessage }}</span>
+    <button (click)="clearMessages()">&times;</button>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="ck-card">
+    <div class="ck-filters">
+
+      <div class="ck-field">
+        <label>JobCard Date</label>
+        <div class="ck-value">{{ today }}</div>
+      </div>
+
+      <div class="ck-field">
+        <label>Profitcenter</label>
+        <div class="ck-value">{{ pcCode }}</div>
+      </div>
+
+      <div class="ck-field">
+        <label>Shift Type</label>
+        <select [(ngModel)]="shiftType">
+          <option value="" disabled hidden>Select Shift</option>
+          <option value="Day">Day</option>
+          <option value="Night">Night</option>
+        </select>
+      </div>
+
+      <div class="ck-field">
+        <label>JobCard</label>
+        <select [(ngModel)]="selectedJobCard">
+          <option value="" disabled hidden>{{ isLoadingJobCards ? 'Loading...' : 'Select JobCard' }}</option>
+          <option *ngFor="let jc of jobCardNumbers" [value]="jc">{{ jc }}</option>
+        </select>
+      </div>
+
+      <div class="ck-field ck-field--action">
+        <button class="ck-btn" (click)="onSearch()" [disabled]="isLoading">
+          <i class="fas fa-search" *ngIf="!isLoading"></i>
+          <i class="fas fa-circle-notch fa-spin" *ngIf="isLoading"></i>
+          {{ isLoading ? 'Searching...' : 'Search' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="ck-card ck-card--table">
+    <div class="ck-table-header">
+      <span class="ck-table-title">JobCard Details</span>
+      <span class="ck-row-count" *ngIf="checkerList.length > 0">
+        {{ checkerList.length }} record{{ checkerList.length > 1 ? 's' : '' }}
+      </span>
+    </div>
+
+    <div class="ck-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-narrow">Sr</th>
+            <th>JobCode</th>
+            <th>Date</th>
+            <th>PartCode</th>
+            <th>KVA</th>
+            <th>Phase</th>
+            <th>Model</th>
+            <th>Plan Qty</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Empty -->
+          <tr *ngIf="checkerList.length === 0 && !isLoading">
+            <td colspan="9" class="ck-empty">
+              <div class="ck-empty-inner">
+                <i class="fas fa-inbox"></i>
+                <p>Select a JobCard and click Search</p>
+              </div>
+            </td>
+          </tr>
+          <!-- Loading -->
+          <tr *ngIf="isLoading">
+            <td colspan="9" class="ck-empty">
+              <div class="ck-empty-inner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading data...</p>
+              </div>
+            </td>
+          </tr>
+          <!-- Data -->
+          <tr *ngFor="let row of checkerList; let i = index">
+            <td class="td-narrow">{{ i + 1 }}</td>
+            <td>
+              <a class="td-jobcode" (click)="openCheckerModal(row.JobCode)">
+                {{ row.JobCode }}
+              </a>
+            </td>
+            <td>{{ row.Dt | date:'dd-MMM-yyyy' }}</td>
+            <td class="td-mono">{{ row.PartCode }}</td>
+            <td>{{ row.KVA }}</td>
+            <td>{{ row.Phase }}</td>
+            <td>{{ row.Model }}</td>
+            <td>{{ row.PlanQty }}</td>
+            <td>
+              <button class="action-btn" (click)="onViewPlan(row)" title="View Plan">
+                <i class="fas fa-eye"></i> View Plan
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Plan Details Table -->
+  <div class="ck-card ck-card--table" *ngIf="showPlanDetails">
+    <div class="ck-table-header">
+      <span class="ck-table-title">
+        <i class="fas fa-clipboard-list"></i> Plan Details — {{ selectedPlanJobCode }}
+      </span>
+      <button class="plan-close-btn" (click)="closePlanDetails()">
+        <i class="fas fa-times"></i> Close
+      </button>
+    </div>
+
+    <div class="ck-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-narrow">Sr</th>
+            <th>BOM Code</th>
+            <th>Plan Code</th>
+            <th>Plan Date</th>
+            <th>Part Code</th>
+            <th>Engine</th>
+            <th>Alternator</th>
+            <th>Battery</th>
+            <th>Canopy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoadingPlan">
+            <td colspan="9" class="ck-empty">
+              <div class="ck-empty-inner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading plan details...</p>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingPlan && planDetailsList.length === 0">
+            <td colspan="9" class="ck-empty">
+              <div class="ck-empty-inner">
+                <i class="fas fa-inbox"></i>
+                <p>No plan details found.</p>
+              </div>
+            </td>
+          </tr>
+          <tr *ngFor="let plan of planDetailsList; let i = index">
+            <td class="td-narrow">{{ i + 1 }}</td>
+            <td class="td-mono">{{ plan.BOMCode }}</td>
+            <td class="td-mono">{{ plan.PlanCode }}</td>
+            <td>{{ plan.PlanDate | date:'dd-MMM-yyyy' }}</td>
+            <td class="td-mono">{{ plan.PartCode }}</td>
+            <td>{{ plan.Engine }}</td>
+            <td>{{ plan.Alternator }}</td>
+            <td>{{ plan.Battery }}</td>
+            <td>{{ plan.Canopy }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Checker Modal ─────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation(); assignDropdownOpen = -1">
+
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2 class="modal-title">Jobcard1 Checker Details</h2>
+      </div>
+      <div class="modal-header-right">
+        <span class="modal-badge">Selected: {{ selectedCount }}</span>
+        <button class="modal-close" (click)="closeModal()">&times;</button>
+      </div>
+    </div>
+
+    <!-- JobCode bar -->
+    <div class="modal-jobcode-bar">
+      <span class="modal-jobcode-label">JobCode:</span>
+      <span class="modal-jobcode-value">{{ selectedJobCode }}</span>
+    </div>
+
+    <!-- Modal Error -->
+    <div class="modal-error" *ngIf="modalErrorMessage">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>{{ modalErrorMessage }}</span>
+      <button (click)="modalErrorMessage = ''">&times;</button>
+    </div>
+
+    <!-- Modal Table -->
+    <div class="modal-body">
+      <table class="modal-table">
+        <thead>
+          <tr>
+            <th class="mth-narrow">Sr.No</th>
+            <th class="mth-check"></th>
+            <th>6M</th>
+            <th class="mth-desc">Description</th>
+            <th class="mth-assign">Assign To</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of checkerRows; let i = index">
+            <td class="mtd-center">{{ row.id }}</td>
+            <td class="mtd-center">
+              <input type="checkbox" [(ngModel)]="row.selected" class="modal-checkbox" />
+            </td>
+            <td class="mtd-6m">{{ row.sixM }}</td>
+            <td>
+              <input type="text"
+                     class="modal-input"
+                     [(ngModel)]="row.description"
+                     placeholder="Enter description..." />
+            </td>
+            <td class="assign-cell">
+              <div class="assign-dropdown" (click)="$event.stopPropagation()">
+                <input type="text"
+                       class="assign-search"
+                       [(ngModel)]="assignSearchText[i]"
+                       (focus)="assignDropdownOpen = i"
+                       (input)="assignDropdownOpen = i"
+                       placeholder="Search employee name..." />
+                <button *ngIf="assignSearchText[i]" class="assign-clear" (click)="clearAssign(i)">&times;</button>
+                <div class="assign-list" *ngIf="assignDropdownOpen === i && filteredEmployees(i).length > 0">
+                  <div class="assign-option"
+                       *ngFor="let emp of filteredEmployees(i)"
+                       (mousedown)="selectEmployee(i, emp)">
+                    <span class="assign-name">{{ emp.EmployeeName }}</span>
+                    <span class="assign-code">{{ emp.ECode }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn--close" (click)="closeModal()" [disabled]="isSubmitting">Close</button>
+      <button class="modal-btn modal-btn--auth" (click)="onAuth()" [disabled]="!canAuth || isSubmitting">
+        <i class="fas fa-circle-notch fa-spin" *ngIf="isSubmitting"></i> Auth
+      </button>
+      <button class="modal-btn modal-btn--reject" (click)="onReject()" [disabled]="!canReject || isSubmitting">
+        <i class="fas fa-circle-notch fa-spin" *ngIf="isSubmitting"></i> Reject
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -6,6 +6,7 @@ import { DgTestReport } from './dg-test-report/dg-test-report.component';
 import { DgPackingSlip } from './dg-packing-slip/dg-packing-slip.component';
 import {DgVideoUploadComponent} from'./dg-video-upload/dg-video-upload.component';
 import { Jobcard1Component } from './jobcard1/jobcard1.component';
+import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.component';
 import { UserRoleGuard } from 'app/shared/guards/user-role.guard';
 // import { config } from 'config';
 import { title } from 'process';
@@ -45,5 +46,10 @@ export const DashboardRoutes: Routes = [
     path:'jobcard1',
     component: Jobcard1Component,
     data:{title: 'Job Card 1', breadcrumb: 'Job Card 1'},
+  },
+  {
+    path:'jobcard1-checker',
+    component: Jobcard1CheckerComponent,
+    data:{title: 'Jobcard Checker', breadcrumb: 'Jobcard Checker'},
   }
  ];

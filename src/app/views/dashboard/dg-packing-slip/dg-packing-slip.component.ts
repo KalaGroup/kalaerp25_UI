@@ -1041,6 +1041,17 @@ export class DgPackingSlip implements OnInit {
     return true; // Always valid - ignored for save validation
   }
 
+  // Control Panel visibility — hide section when qrSrNo is empty or '0'
+  isControlPanel1Visible(stage: 'PSStart' | 'PSEnd'): boolean {
+    const cp = this.scanDetails[stage].controlPanel1;
+    return !!cp.qrSrNo && cp.qrSrNo !== '0';
+  }
+
+  isControlPanel2Visible(stage: 'PSStart' | 'PSEnd'): boolean {
+    const cp = this.scanDetails[stage].controlPanel2;
+    return !!cp.qrSrNo && cp.qrSrNo !== '0';
+  }
+
   // KRM - REQUIRED (must be green)
   isKRMValidPSEnd(): boolean {
     return (

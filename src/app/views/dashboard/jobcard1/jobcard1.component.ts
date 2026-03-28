@@ -19,7 +19,8 @@ export class Jobcard1Component implements OnInit {
   // ── State ──────────────────────────────────────────────────────
   today:          string          = '';
   pcDisplay:      string          = '';
-  pcCode:         string          = '';
+  pcCode_Act:     string          = '';
+  pcCode_Old:     string          = '';
   compCode:       string          = '';
   empCode:        string          = '';
   jobCardList:    JobCardDtsRow[] = [];
@@ -29,6 +30,7 @@ export class Jobcard1Component implements OnInit {
   successMessage: string          = '';
   errorMessage:   string          = '';
   warningMessage: string          = '';
+  remarkMissing:  boolean         = false;
 
   constructor(
     private jobcardService: Jobcard1Service,
@@ -45,9 +47,10 @@ export class Jobcard1Component implements OnInit {
 
   // ── Set profit center label and code from logged-in employee ──
   private setPCByCompany(): void {
-    this.pcCode    = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    this.pcCode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    this.pcCode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
     const pcName   = localStorage.getItem('profitCenterName')?.trim() ?? '';
-    this.pcDisplay = pcName && this.pcCode ? `${pcName} --> ${this.pcCode}` : pcName || this.pcCode;
+    this.pcDisplay = pcName && this.pcCode_Act ? `${pcName} --> ${this.pcCode_Act}` : pcName || this.pcCode_Act;
   }
 
   // ── Search ────────────────────────────────────────────────────
@@ -78,7 +81,13 @@ export class Jobcard1Component implements OnInit {
 
   // ── Submit ────────────────────────────────────────────────────
   onSubmit(form: NgForm): void {
-    if (!form.valid) return;
+    const remark = (form.value.remark || '').trim();
+    if (!remark) {
+      this.remarkMissing = true;
+      this.warningMessage = 'Please fill remark before submitting.';
+      return;
+    }
+    this.remarkMissing = false;
 
     if (!this.jobCardList || this.jobCardList.length === 0) {
       this.warningMessage = 'Please search for job card details first.';
@@ -102,10 +111,11 @@ export class Jobcard1Component implements OnInit {
     }
 
     const request: JobCardSubmitRequest = {
-      pcCode:  this.pcCode,
+      pcCode_Act:  this.pcCode_Act,
+      pcCode_Old:  this.pcCode_Old,
       remark:  form.value.remark?.trim() ?? '',
       empCode: this.empCode,
-      rows:    selectedRows
+      plans:   selectedRows
     };
 
     console.log('Submitting Job Card with request:', request);

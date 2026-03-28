@@ -71,12 +71,11 @@
                  class="jc-input"
                  name="remark"
                  ngModel
-                 required
                  #remarkCtrl="ngModel"
                  placeholder="Enter remark..."
-                 [class.jc-input-error]="remarkCtrl.invalid && remarkCtrl.touched" />
+                 [class.jc-input-error]="remarkMissing" />
           <span class="jc-error-text"
-                *ngIf="remarkCtrl.invalid && remarkCtrl.touched">
+                *ngIf="remarkMissing">
             Remark is required
           </span>
         </div>

@@ -1184,7 +1184,6 @@ export class SiteVisitDetailsComponent implements OnInit, AfterViewInit {
   }
 
   saveFeedback(): void {
-    debugger;
     this.clearMessages();
 
     // Validate that all ratings are selected

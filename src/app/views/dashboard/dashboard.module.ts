@@ -32,6 +32,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { from } from 'rxjs';
 import { DgVideoUploadComponent } from './dg-video-upload/dg-video-upload.component';
 import { Jobcard1Component } from './jobcard1/jobcard1.component';
+import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.component';
 
 
 @NgModule({
@@ -69,6 +70,7 @@ import { Jobcard1Component } from './jobcard1/jobcard1.component';
     DgPackingSlip,
     DgVideoUploadComponent,
     Jobcard1Component,
+    Jobcard1CheckerComponent,
   ],
 
 })

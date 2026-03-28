@@ -53,6 +53,8 @@ export class DgStageIIIComponent implements OnInit {
   scannedQrResultCP2End: string = '';
   scannedQrResultKRMEnd: string = '';
   scannedBatteryQrResultsEnd: string[] = ['', '', '', ''];
+  engineScannedStart: boolean = false;
+  engineScannedEnd: boolean = false;
 
   allowedFormats = [BarcodeFormat.QR_CODE];
   scannerType:
@@ -578,6 +580,9 @@ export class DgStageIIIComponent implements OnInit {
       this.dgAssemblyService.getAssemblyDetails(payload).subscribe(
         (response) => {
           console.log('Stage-III Api response', response);
+
+          if (stage === 'Start') this.engineScannedStart = true;
+          if (stage === 'End') this.engineScannedEnd = true;
 
           // Assign values to the common object
           this.scanDetails[stage].engine = {
@@ -1185,6 +1190,15 @@ export class DgStageIIIComponent implements OnInit {
   isControlPanel2Visible(stage: 'Start' | 'End'): boolean {
     const cp = this.scanDetails[stage].controlPanel2;
     return !!cp.qrSrNo && cp.qrSrNo !== '0';
+  }
+
+  isEngineScanned(stage: 'Start' | 'End'): boolean {
+    return stage === 'Start' ? this.engineScannedStart : this.engineScannedEnd;
+  }
+
+  isKRMVisible(stage: 'Start' | 'End'): boolean {
+    const krm = this.scanDetails[stage].krm;
+    return !!krm.qrSrNo && krm.qrSrNo !== '0';
   }
 
   // KRM - REQUIRED (must be green)
