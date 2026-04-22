@@ -13,7 +13,8 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 export class DgStageIComponent implements OnInit {
   userId: string = '';
   password: string = '';
-  profitcenter: string = '';
+  profitcenter_act: string = '';
+  profitcenter_old: string = '';
 
   selectedOption: string = '';
   selectedSixMItem: string | null = null;
@@ -39,9 +40,11 @@ export class DgStageIComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSixMData();
-    const pccode = localStorage.getItem('ProfitCenter');
-    if (pccode) {
-      this.profitcenter = pccode;
+    const pccode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    const pccode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    if (pccode_Act) {
+      this.profitcenter_act = pccode_Act;
+      this.profitcenter_old = pccode_Old;
     }
   }
 
@@ -129,6 +132,8 @@ export class DgStageIComponent implements OnInit {
   dgPartCodeDesc: string = '';
   jobCardPriority: string = '';
   Dgstk: string = '';
+  oldEngStk: string = '';
+  oldAltStk: string = '';
 
   planNo_stageEnd: string = '';
   date_stageEnd: string = '';
@@ -199,20 +204,25 @@ export class DgStageIComponent implements OnInit {
         Category: '001',
         Stage: '0',
         //PCCode: '01.004',
-         PCCode: this.profitcenter,
+         PCCode_Old: this.profitcenter_old,
+         PCCode_Act: this.profitcenter_act,
       };
       // Make the API call with the payload
       this.dgAssemblyService.getAssemblyDetails(payload).subscribe(
         (response) => {
-          // Assigning the response values to scanDetails
+          console.log('API Response:', response);
+          const data = response.MakerCheckerResult || response;
+          const oldData = response.OldResult || response;
+
+          // Assigning the response values to scanDetails from MakerCheckerResult
           this.scanDetails = {
             qrSrNo: result,
-            engDesc: response.EngPartDesc,
-            engCode: response.EngPartCode,
-            stk: response.EngStk,
+            engDesc: data.EngPartDesc,
+            engCode: data.EngPartCode,
+            stk: data.EngStk,
           };
 
-          const altDetails = response.AltDts.split('-->');
+          const altDetails = data.AltDts.split('-->');
           this.scanDetails1 = {
             qrSrNo: altDetails[0],
             altPart: altDetails[1],
@@ -221,12 +231,16 @@ export class DgStageIComponent implements OnInit {
             stk: altDetails[4],
           };
 
-          this.planNo = response.JobCode || '';
-          this.date = response.JobDt || '';
+          // Old stk values from OldResult
+          this.oldEngStk = oldData.EngStk || '';
+          const oldAltDetails = oldData.AltDts ? oldData.AltDts.split('-->') : [];
+          this.oldAltStk = oldAltDetails[4] || '';
+
+          this.planNo = data.JobCode || '';
+          this.date = data.JobDt || '';
           this.dgPartCodeDesc =
-            `${response.DgProductCode} & ${response.DgProductDesc}` || '';
-          this.jobCardPriority = response.JPriority || '';
-          console.log('API Response:', response);
+            `${data.DgProductCode} & ${data.DgProductDesc}` || '';
+          this.jobCardPriority = data.JPriority || '';
           this.showQrScannerEngineStart = false;
         },
         (error) => {
@@ -254,7 +268,8 @@ export class DgStageIComponent implements OnInit {
         Category: '001',
         Stage: '1',
         //PCCode: "01.004"
-        PCCode: this.profitcenter,
+        PCCode_Old: this.profitcenter_old,
+        PCCode_Act: this.profitcenter_act,
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -266,15 +281,18 @@ export class DgStageIComponent implements OnInit {
       this.scannedQrResult = '';
       this.dgAssemblyService.getAssemblyDetails(payload).subscribe(
         (response) => {
-          // Assigning the response values to scanDetails
+          console.log('API Response (Scan End):', response);
+          const data = response.MakerCheckerResult || response;
+
+          // Assigning the response values to scanDetails from MakerCheckerResult
           this.scanDetails2 = {
             qrSrNo: result,
-            engDesc: response.EngPartDesc,
-            engCode: response.EngPartCode,
-            // stk: response.DGS1Stk
+            engDesc: data.EngPartDesc,
+            engCode: data.EngPartCode,
+            // stk: data.DGS1Stk
           };
 
-          const altDetails = response.AltDts.split('-->');
+          const altDetails = data.AltDts.split('-->');
           this.scanDetails3 = {
             qrSrNo: altDetails[0],
             altPart: altDetails[1],
@@ -283,12 +301,12 @@ export class DgStageIComponent implements OnInit {
             // stk: altDetails[4]
           };
 
-          this.planNo_stageEnd = response.JobCode || '';
-          this.date_stageEnd = response.JobDt || '';
+          this.planNo_stageEnd = data.JobCode || '';
+          this.date_stageEnd = data.JobDt || '';
           this.dgPartCodeDesc_stageEnd =
-            `${response.DgProductCode} & ${response.DgProductDesc}` || '';
-          this.jobCardPriority_stageEnd = response.JPriority || '';
-          this.Dgstk_stageEnd = response.DGS1Stk;
+            `${data.DgProductCode} & ${data.DgProductDesc}` || '';
+          this.jobCardPriority_stageEnd = data.JPriority || '';
+          this.Dgstk_stageEnd = data.DGS1Stk;
 
           this.showQrScannerEngineEnd = false;
         },
@@ -442,12 +460,16 @@ export class DgStageIComponent implements OnInit {
   isSaveDisabled(): boolean {
     if (this.selectedTabIndex === 0) {
       // Stage I Scan Start validation
+      const engStkMismatch = this.oldEngStk && this.scanDetails.stk != this.oldEngStk;
+      const altStkMismatch = this.oldAltStk && this.scanDetails1.stk != this.oldAltStk;
       return (
         this.stkAsNumber === 0 ||
         !this.scanDetails?.qrSrNo ||
         !this.scanDetails1?.qrSrNo ||
         !this.isEngineScannedSuccessfully() ||
-        !this.isAlternatorScannedSuccessfully()
+        !this.isAlternatorScannedSuccessfully() ||
+        !!engStkMismatch ||
+        !!altStkMismatch
       );
     } else if (this.selectedTabIndex === 1) {
       // Stage I Scan End validation
@@ -504,7 +526,8 @@ export class DgStageIComponent implements OnInit {
     formData.append('AltSrno', this.scanDetails1.qrSrNo); // Alternator Serial Number
     formData.append('StageNo', '0'); // Convert number to string
     formData.append('ProductCode', dgProductCode);
-    formData.append('PCCode', this.profitcenter);
+    formData.append('PCCode_Act', this.profitcenter_act);//Actual pccode
+    formData.append('PCCode_Old', this.profitcenter_old);
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -557,7 +580,8 @@ export class DgStageIComponent implements OnInit {
     formData.append('AltSrno', this.scanDetails3.qrSrNo);
     formData.append('StageNo', '1');
     formData.append('ProductCode', dgProductCode);
-    formData.append('PCCode', this.profitcenter);
+    formData.append('PCCode_Act', this.profitcenter_act);//Actual pccode
+    formData.append('PCCode_Old', this.profitcenter_old);
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {

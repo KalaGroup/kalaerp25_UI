@@ -1,8 +1,8 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
 import { DgStageIIIService } from './dg-stage-iii-service.service';
-import { Inject } from '@angular/core';
+
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
@@ -12,8 +12,10 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
     standalone: false
 })
 export class DgStageIIIComponent implements OnInit {
+  [key: string]: any;
   userId: string = '';
-  profitcenter: string = '';
+  profitcenter_old: string = '';
+  profitcenter_act: string = '';
 
   selectedTab: string = 'Start';
   selectedOption: string = '';
@@ -167,6 +169,7 @@ export class DgStageIIIComponent implements OnInit {
   DgstkStart: string = '';
   dgCPtypeStart: string = '';
   dgKRMStart: string = '';
+  krmFoundStart: boolean = false;
 
   //for End Section
   planNoEnd: string = '';
@@ -177,6 +180,7 @@ export class DgStageIIIComponent implements OnInit {
   DgstkEnd: string = '';
   dgCPtypeEnd: string = '';
   dgKRMEnd: string = '';
+  krmFoundEnd: boolean = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -203,9 +207,11 @@ export class DgStageIIIComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSixMData();
-    const pccode = localStorage.getItem('ProfitCenter');
-    if (pccode) {
-      this.profitcenter = pccode;
+      const pccode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+     const pccode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    if (pccode_Act) {
+      this.profitcenter_act = pccode_Act;
+      this.profitcenter_old = pccode_Old;
     }
   }
 
@@ -567,7 +573,8 @@ export class DgStageIIIComponent implements OnInit {
         Category: '001',
         // Stage: "4",
         Stage: stage === 'Start' ? '4' : '5',
-        PCCode: this.profitcenter,
+        PCCode_Old: this.profitcenter_old,
+        PCCode_Act: this.profitcenter_act,
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -580,18 +587,19 @@ export class DgStageIIIComponent implements OnInit {
       this.dgAssemblyService.getAssemblyDetails(payload).subscribe(
         (response) => {
           console.log('Stage-III Api response', response);
+          const data = response.MakerCheckerResult || response;
 
           if (stage === 'Start') this.engineScannedStart = true;
           if (stage === 'End') this.engineScannedEnd = true;
 
-          // Assign values to the common object
+          // Assign values from MakerCheckerResult
           this.scanDetails[stage].engine = {
             qrSrNo: result,
-            engDesc: response.EngPartDesc,
-            engCode: response.EngPartCode,
+            engDesc: data.EngPartDesc,
+            engCode: data.EngPartCode,
           };
 
-          const altDetails = response.AltDts.split('-->');
+          const altDetails = data.AltDts.split('-->');
           this.scanDetails[stage].alternator = {
             qrSrNo: altDetails[0],
             altPart: altDetails[1],
@@ -599,7 +607,7 @@ export class DgStageIIIComponent implements OnInit {
             trStatus: altDetails[3],
           };
 
-          const cpyDetails = response.Cpydts.split('-->');
+          const cpyDetails = data.Cpydts.split('-->');
           this.scanDetails[stage].canopy = {
             qrSrNo: cpyDetails[0],
             cpyPart: cpyDetails[1],
@@ -607,13 +615,13 @@ export class DgStageIIIComponent implements OnInit {
             cpyStk: cpyDetails[3],
           };
 
-          if (response.BatCnt > 0 && response.BatDts) {
+          if (data.BatCnt > 0 && data.BatDts) {
             this.scanDetails[stage].battery = Array.from(
-              { length: response.BatCnt },
+              { length: data.BatCnt },
               (_, index) => {
                 const key = index === 0 ? 'BatDts' : `Bat${index + 1}Dts`;
-                const batDetails = response[key]
-                  ? response[key].split('-->')
+                const batDetails = data[key]
+                  ? data[key].split('-->')
                   : [];
                 return {
                   showQrScanner: false,
@@ -636,7 +644,7 @@ export class DgStageIIIComponent implements OnInit {
             }
           }
 
-          const cpDetails = response.CPdts.split('-->');
+          const cpDetails = data.CPdts.split('-->');
           this.scanDetails[stage].controlPanel1 = {
             qrSrNo: cpDetails[0],
             cp1Part: cpDetails[1],
@@ -645,7 +653,7 @@ export class DgStageIIIComponent implements OnInit {
             cp1Stk: cpDetails[4],
           };
 
-          const cp2Details = response.CP2dts.split('-->');
+          const cp2Details = data.CP2dts.split('-->');
           this.scanDetails[stage].controlPanel2 = {
             qrSrNo: cp2Details[0],
             cp2Part: cp2Details[1],
@@ -654,36 +662,40 @@ export class DgStageIIIComponent implements OnInit {
             cp2Stk: cp2Details[4],
           };
 
-          const krmDetails = response.KRMdts.split('-->');
+          const krmDetails = data.KRMdts ? data.KRMdts.split('-->') : [];
           this.scanDetails[stage].krm = {
-            qrSrNo: krmDetails[0],
-            krmPart: krmDetails[1],
-            krmDesc: krmDetails[2],
+            qrSrNo: krmDetails[0] || '',
+            krmPart: krmDetails[1] || '',
+            krmDesc: krmDetails[2] || '',
           };
 
-          this.pFbCode = response.PFBCode;
-          this.panelType = response.PanelType;
+          this.pFbCode = data.PFBCode;
+          this.panelType = data.PanelType;
 
-          this.splitPanelType = response.PanelType.split('-->');
+          this.splitPanelType = data.PanelType.split('-->');
 
           if (stage === 'Start') {
-            this.planNoStart = response.JobCode || '';
-            this.dateStart = response.JobDt || '';
-            this.dgDescStart = response.DgProductDesc || '';
-            this.dgPartcodeStart = response.DgProductCode || '';
-            this.dgKVAStart = response.KVA || '';
-            this.DgstkStart = response.DGS4Stk ?? '';
+            this.planNoStart = data.JobCode || '';
+            this.dateStart = data.JobDt || '';
+            this.dgDescStart = data.DgProductDesc || '';
+            this.dgPartcodeStart = data.DgProductCode || '';
+            this.dgKVAStart = data.KVA || '';
+            this.DgstkStart = data.DGS4Stk ?? '';
             this.dgCPtypeStart = this.splitPanelType[0];
-            this.dgKRMStart = response.KRM || '';
+            this.dgKRMStart = data.KRM || '';
+            const krmSrNo = this.scanDetails.Start.krm.qrSrNo;
+            this.krmFoundStart = !!data.KRM && data.KRM !== 'NO' && !!krmSrNo && krmSrNo !== '0';
           } else if (stage === 'End') {
-            this.planNoEnd = response.JobCode || '';
-            this.dateEnd = response.JobDt || '';
-            this.dgDescEnd = response.DgProductDesc || '';
-            this.dgPartcodeEnd = response.DgProductCode || '';
-            this.dgKVAEnd = response.KVA || '';
-            this.DgstkEnd = response.DGS4Stk ?? '';
+            this.planNoEnd = data.JobCode || '';
+            this.dateEnd = data.JobDt || '';
+            this.dgDescEnd = data.DgProductDesc || '';
+            this.dgPartcodeEnd = data.DgProductCode || '';
+            this.dgKVAEnd = data.KVA || '';
+            this.DgstkEnd = data.DGS4Stk ?? '';
             this.dgCPtypeEnd = this.splitPanelType[0];
-            this.dgKRMEnd = response.KRM || '';
+            this.dgKRMEnd = data.KRM || '';
+            const krmSrNoEnd = this.scanDetails.End.krm.qrSrNo;
+            this.krmFoundEnd = !!data.KRM && data.KRM !== 'NO' && !!krmSrNoEnd && krmSrNoEnd !== '0';
           }
 
           this.fetchDGkitDetails(this.dgPartcodeStart);
@@ -697,7 +709,6 @@ export class DgStageIIIComponent implements OnInit {
       this.showQrScannerEngineEnd = false;
     } else if (type === 'alternator') {
       if (stage === 'Start') {
-        debugger;
         this.scannedQrResultAlternatorStart = result;
         this.showQrScannerAlternatorStart = false;
         const storedQrSrNo = this.scanDetails[stage]?.alternator?.qrSrNo;
@@ -738,6 +749,7 @@ export class DgStageIIIComponent implements OnInit {
       }
     } else if (type === 'controlPanel1') {
       if (stage === 'Start') {
+
         this.scannedQrResultCP1Start = result;
         this.showQrScannerControlPanel1Start = false;
         const storedQrSrNo = this.scanDetails[stage]?.controlPanel1?.qrSrNo;
@@ -810,9 +822,7 @@ export class DgStageIIIComponent implements OnInit {
   }
 
   fetchDGkitDetails(PrdPartCode: string) {
-   // const PCCode = '01.004';
-    const PCCode = this.profitcenter;
-    this.dgAssemblyService.getDGKitDetails(PrdPartCode, PCCode).subscribe(
+    this.dgAssemblyService.getDGKitDetails(PrdPartCode, this.profitcenter_old, this.profitcenter_act).subscribe(
       (response) => {
         console.log('DGKitDetails API Response:', response);
         if (response && response.length > 0) {
@@ -844,7 +854,8 @@ export class DgStageIIIComponent implements OnInit {
     formData.append('Remark', 'Start');
     formData.append('StageNo', '4');
     formData.append('ProductCode', this.dgPartcodeStart);
-    formData.append('PCCode', this.profitcenter);
+     formData.append('PCCode_Old', this.profitcenter_old);
+    formData.append('PCCode_Act', this.profitcenter_act);
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -952,10 +963,10 @@ export class DgStageIIIComponent implements OnInit {
     if (this.selectedOption) {
       formdata.append('PrcStatus', this.selectedOption);
     }
-    if (this.recordedAudioFile) {
+    if (this.recordedAudioFileEnd) {
       formdata.append('RecordedAudioFile', this.recordedAudioFileEnd);
     }
-    if (this.recordedVideoFile) {
+    if (this.recordedVideoFileEnd) {
       formdata.append('RecordedVideoFile', this.recordedVideoFileEnd);
     }
 
@@ -999,12 +1010,11 @@ export class DgStageIIIComponent implements OnInit {
     const canopyValid = this.isCanopyValidStart();
     const batteriesValid = this.areBatteriesValidStart();
     const cp1Valid = this.isControlPanel1ValidStart();
-    const cp2Valid = this.isControlPanel2ValidStart(); // Optional - IGNORED
-    const krmValid = this.isKRMValidStart(); // REQUIRED
+    const cp2Valid = this.isControlPanel2ValidStart();
+    const krmValid = this.isKRMValidStart();
 
-    // Required: Engine, Alternator, Canopy, Control Panel 1, KRM
-    // Optional but must be green if scanned: Batteries
-    // Ignored: Control Panel 2
+    console.log('Start Validation:', { engineValid, alternatorValid, canopyValid, batteriesValid, cp1Valid, cp2Valid, krmValid, krmFoundStart: this.krmFoundStart });
+
     return (
       engineValid &&
       alternatorValid &&
@@ -1082,8 +1092,10 @@ export class DgStageIIIComponent implements OnInit {
     return true; // Completely ignored for save validation
   }
 
-  // KRM - REQUIRED (must be green)
+  // KRM - Required only if KRM found AND has valid serial to scan
   isKRMValidStart(): boolean {
+    if (!this.krmFoundStart) return true;
+    if (!this.isKRMVisible('Start')) return true;
     return (
       !!this.scanDetails?.Start?.krm?.qrSrNo &&
       this.scannedQrResultKRMStart === this.scanDetails.Start.krm.qrSrNo
@@ -1201,8 +1213,10 @@ export class DgStageIIIComponent implements OnInit {
     return !!krm.qrSrNo && krm.qrSrNo !== '0';
   }
 
-  // KRM - REQUIRED (must be green)
+  // KRM - Required only if KRM found AND has valid serial to scan
   isKRMValidEnd(): boolean {
+    if (!this.krmFoundEnd) return true;
+    if (!this.isKRMVisible('End')) return true;
     return (
       !!this.scanDetails?.End?.krm?.qrSrNo &&
       this.scannedQrResultKRMEnd === this.scanDetails.End.krm.qrSrNo

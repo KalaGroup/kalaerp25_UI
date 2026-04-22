@@ -169,6 +169,7 @@ $shadow:       0 2px 12px rgba(0,0,0,.08);
   background: $primary-light;
   min-width: 140px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .ck-btn {
@@ -239,6 +240,7 @@ $shadow:       0 2px 12px rgba(0,0,0,.08);
 
 table {
   width: 100%;
+  min-width: 800px;
   border-collapse: collapse;
   font-size: 13px;
 
@@ -257,7 +259,7 @@ table {
     letter-spacing: .6px;
     border-right: 1px solid rgba(255,255,255,.08);
 
-    &:last-child { border-right: none; }
+    &:last-child { border-right: none; text-align: right; }
   }
 
   tbody tr {
@@ -282,6 +284,11 @@ table {
     vertical-align: middle;
     font-size: 13px;
     text-align: center;
+    white-space: nowrap;
+
+    &:last-child {
+      text-align: right;
+    }
   }
 }
 

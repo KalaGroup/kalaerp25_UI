@@ -1,0 +1,139 @@
+<div class="jc2-page">
+
+  <!-- Header -->
+  <div class="jc2-header">
+    <div class="jc2-header-inner">
+      <div class="jc2-header-icon">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      <div>
+        <h1 class="jc2-title">JobCard (With CP Plan)</h1>
+        <p class="jc2-subtitle">DG Assembly</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="successMessage" class="jc2-alert jc2-alert--success">
+    <i class="fas fa-check-circle"></i>
+    <span>{{ successMessage }}</span>
+    <button (click)="clearMessages()">&times;</button>
+  </div>
+  <div *ngIf="errorMessage" class="jc2-alert jc2-alert--error">
+    <i class="fas fa-times-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button (click)="clearMessages()">&times;</button>
+  </div>
+  <div *ngIf="warningMessage" class="jc2-alert jc2-alert--warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>{{ warningMessage }}</span>
+    <button (click)="clearMessages()">&times;</button>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="jc2-card">
+    <div class="jc2-filters">
+
+      <div class="jc2-field">
+        <label>JobCard Code (With CP Plan)</label>
+        <div class="jc2-value">{{ jobCardCode || '-' }}</div>
+      </div>
+
+      <div class="jc2-field">
+        <label>JobCard Date</label>
+        <div class="jc2-value">{{ today }}</div>
+      </div>
+
+      <div class="jc2-field">
+        <label>Profitcenter</label>
+        <div class="jc2-value">{{ pcDisplay }}</div>
+      </div>
+
+      <div class="jc2-field jc2-field--action">
+        <button class="jc2-btn jc2-btn--primary" (click)="onSearch()" [disabled]="isLoading">
+          <i class="fas fa-search" *ngIf="!isLoading"></i>
+          <i class="fas fa-circle-notch fa-spin" *ngIf="isLoading"></i>
+          {{ isLoading ? 'Searching...' : 'Search' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="jc2-card jc2-card--table">
+    <div class="jc2-table-header">
+      <span class="jc2-table-title">DG PartCode Details</span>
+      <span class="jc2-row-count" *ngIf="dataSource.length > 0">
+        {{ dataSource.length }} record{{ dataSource.length > 1 ? 's' : '' }}
+      </span>
+    </div>
+
+    <div class="jc2-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th *ngFor="let col of displayedColumns">{{ col.label }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading -->
+          <tr *ngIf="isLoading">
+            <td [attr.colspan]="displayedColumns.length" class="jc2-empty">
+              <div class="jc2-empty-inner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading data...</p>
+              </div>
+            </td>
+          </tr>
+          <!-- Empty -->
+          <tr *ngIf="dataSource.length === 0 && !isLoading">
+            <td [attr.colspan]="displayedColumns.length" class="jc2-empty">
+              <div class="jc2-empty-inner">
+                <i class="fas fa-inbox"></i>
+                <p>No Record(s) Found</p>
+              </div>
+            </td>
+          </tr>
+          <!-- Data -->
+          <tr *ngFor="let row of dataSource; let i = index">
+            <td *ngFor="let col of displayedColumns">
+              <ng-container *ngIf="col.key === 'SrNo'">{{ i + 1 }}</ng-container>
+              <ng-container *ngIf="col.key === 'jobcard2Qty'">
+                <div class="qty-control">
+                  <button class="qty-btn qty-btn--minus" (click)="decrementQty(row)" [disabled]="!row.jobcard2Qty || row.jobcard2Qty <= 0">−</button>
+                  <input type="number" class="qty-input" [(ngModel)]="row.jobcard2Qty" min="0" [max]="row.Stage3Qty" (input)="validateQty(row)" placeholder="0" />
+                  <button class="qty-btn qty-btn--plus" (click)="incrementQty(row)" [disabled]="row.jobcard2Qty >= row.Stage3Qty">+</button>
+                </div>
+              </ng-container>
+              <ng-container *ngIf="col.key === 'PanelType'">
+                <select class="panel-select" [(ngModel)]="row.PanelType" (change)="onPanelTypeChange(row)">
+                  <option *ngFor="let opt of panelTypeOptions" [value]="opt.PanelTypeCode">{{ opt.PanelTypeName }}</option>
+                </select>
+              </ng-container>
+              <ng-container *ngIf="col.key !== 'SrNo' && col.key !== 'jobcard2Qty' && col.key !== 'PanelType'">
+                {{ row[col.key] }}
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Remark & Submit -->
+  <div class="jc2-card">
+    <div class="jc2-footer">
+      <div class="jc2-remark">
+        <label>Remark</label>
+        <input type="text" [(ngModel)]="remarkText" placeholder="Enter remark..." />
+      </div>
+      <button class="jc2-btn jc2-btn--submit" (click)="onSubmit()" [disabled]="isSubmitting || dataSource.length === 0">
+        <i class="fas fa-paper-plane" *ngIf="!isSubmitting"></i>
+        <i class="fas fa-circle-notch fa-spin" *ngIf="isSubmitting"></i>
+        {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+      </button>
+    </div>
+  </div>
+
+</div>

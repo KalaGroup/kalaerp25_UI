@@ -14,7 +14,8 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 export class DgStageIIComponent implements OnInit {
   userId: string = '';
   password: string = '';
-  profitcenter: string = '';
+  profitcenter_old: string = '';
+  profitcenter_act: string = '';
 
   selectedOption: string = '';
   scannedQrResult: any;
@@ -106,6 +107,8 @@ export class DgStageIIComponent implements OnInit {
   dgPartcode: string = '';
   dgKVA: string = '';
   Dgstk: string = '';
+  oldCpyStk: string = '';
+  oldBatteryStks: string[] = [];
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -125,9 +128,11 @@ export class DgStageIIComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSixMData();
-    const pccode = localStorage.getItem('ProfitCenter');
-    if (pccode) {
-      this.profitcenter = pccode;
+    const pccode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    const pccode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    if (pccode_Act) {
+      this.profitcenter_act = pccode_Act;
+      this.profitcenter_old = pccode_Old;
     }
   }
 
@@ -324,7 +329,8 @@ export class DgStageIIComponent implements OnInit {
         PartCode: '001',
         Category: '001',
         Stage: '3',
-        PCCode: this.profitcenter,
+         PCCode_Old: this.profitcenter_old,
+         PCCode_Act: this.profitcenter_act,
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -335,54 +341,103 @@ export class DgStageIIComponent implements OnInit {
       };
       this.dgAssemblyService.getAssemblyDetails(payload).subscribe(
         (response) => {
-          console.log('Stage 2 ScanDetails', response);
-          this.engineScanDetails = {
-            qrSrNo: result,
-            engDesc: response.EngPartDesc,
-            engCode: response.EngPartCode,
-          };
+          try {
+            console.log('Stage 2 ScanDetails', response);
+            const data = response.MakerCheckerResult || response;
+            const oldData = response.OldResult || response;
 
-          const altDetails = response.AltDts.split('-->');
-          this.alternatorScanDetails = {
-            qrSrNo: altDetails[0],
-            altPart: altDetails[1],
-            altDesc: altDetails[2],
-            trStatus: altDetails[3],
-          };
+            this.engineScanDetails = {
+              qrSrNo: result,
+              engDesc: data.EngPartDesc,
+              engCode: data.EngPartCode,
+            };
 
-          const cpyDetails = response.Cpydts.split('-->');
-          this.canopyScandetails = {
-            qrSrNo: cpyDetails[0],
-            cpyPart: cpyDetails[1],
-            cpyDesc: cpyDetails[2],
-            cpyStk: cpyDetails[3],
-          };
+            const altDetails = data.AltDts.split('-->');
+            this.alternatorScanDetails = {
+              qrSrNo: altDetails[0],
+              altPart: altDetails[1],
+              altDesc: altDetails[2],
+              trStatus: altDetails[3],
+            };
 
-          if (response.BatCnt > 0) {
-            this.batteryScanDetails = Array.from(
-              { length: response.BatCnt },
-              (_, index) => {
-                const key = index === 0 ? 'BatDts' : `Bat${index + 1}Dts`; // Handles 'BatDts' and 'Bat2Dts' format
-                const batDetails = response[key]?.split('-->') || [];
+            const cpyDetails = data.Cpydts.split('-->');
+            this.canopyScandetails = {
+              qrSrNo: cpyDetails[0],
+              cpyPart: cpyDetails[1],
+              cpyDesc: cpyDetails[2],
+              cpyStk: cpyDetails[3],
+            };
 
-                return {
-                  showQrScanner: false,
-                  qrSrNo: batDetails[0] || '',
-                  batteryPart: batDetails[1] || '',
-                  batteryDesc: batDetails[2] || '',
-                  stk: batDetails[3] || '',
-                  trStatus: batDetails[4] || '',
-                };
-              }
-            );
+            // Old canopy stk from OldResult
+            const oldCpyDetails = oldData.Cpydts ? oldData.Cpydts.split('-->') : [];
+            this.oldCpyStk = oldCpyDetails[3] || '';
+
+            if (data.BatCnt > 0) {
+              this.batteryScanDetails = Array.from(
+                { length: data.BatCnt },
+                (_, index) => {
+                  const key = index === 0 ? 'BatDts' : `Bat${index + 1}Dts`;
+                  const batDetails = data[key]?.split('-->') || [];
+
+                  return {
+                    showQrScanner: false,
+                    qrSrNo: batDetails[0] || '',
+                    batteryPart: batDetails[1] || '',
+                    batteryDesc: batDetails[2] || '',
+                    stk: batDetails[3] || '',
+                    trStatus: batDetails[4] || '',
+                  };
+                }
+              );
+
+              // Old battery stks from OldResult
+              this.oldBatteryStks = Array.from(
+                { length: data.BatCnt },
+                (_, index) => {
+                  const key = index === 0 ? 'BatDts' : `Bat${index + 1}Dts`;
+                  const oldBatDetails = oldData[key]?.split('-->') || [];
+                  return oldBatDetails[3] || '';
+                }
+              );
+            }
+
+            this.planNo = data.JobCode || '';
+            this.date = data.JobDt || '';
+            this.dgDesc = data.DgProductDesc || '';
+            this.dgPartcode = data.DgProductCode || '';
+            this.dgKVA = data.KVA || '';
+            this.Dgstk = data.DGS3Stk || '';
+          } catch (e) {
+            console.error('Error parsing Stage 2 response, falling back to flat response:', e);
+            // Fallback: revert to legacy flat-response handling if parsing fails
+            this.engineScanDetails = {
+              qrSrNo: result,
+              engDesc: response.EngPartDesc,
+              engCode: response.EngPartCode,
+            };
+            const altDetails = (response.AltDts || '').split('-->');
+            this.alternatorScanDetails = {
+              qrSrNo: altDetails[0] || '',
+              altPart: altDetails[1] || '',
+              altDesc: altDetails[2] || '',
+              trStatus: altDetails[3] || '',
+            };
+            const cpyDetails = (response.Cpydts || '').split('-->');
+            this.canopyScandetails = {
+              qrSrNo: cpyDetails[0] || '',
+              cpyPart: cpyDetails[1] || '',
+              cpyDesc: cpyDetails[2] || '',
+              cpyStk: cpyDetails[3] || '',
+            };
+            this.oldCpyStk = '';
+            this.oldBatteryStks = [];
+            this.planNo = response.JobCode || '';
+            this.date = response.JobDt || '';
+            this.dgDesc = response.DgProductDesc || '';
+            this.dgPartcode = response.DgProductCode || '';
+            this.dgKVA = response.KVA || '';
+            this.Dgstk = response.DGS3Stk || '';
           }
-
-          this.planNo = response.JobCode || '';
-          this.date = response.JobDt || '';
-          this.dgDesc = response.DgProductDesc || '';
-          this.dgPartcode = response.DgProductCode || '';
-          this.dgKVA = response.KVA || '';
-          this.Dgstk = response.DGS3Stk || '';
         },
         (error) => {
           console.error('Error in API call', error);
@@ -438,7 +493,6 @@ export class DgStageIIComponent implements OnInit {
   }
 
   submitData() {
-    debugger;
     const fetchedCheckPoints = this.fetchCheckPointDataFromUI();
     const formData = new FormData();
     formData.append('JBCode', this.planNo);
@@ -446,7 +500,8 @@ export class DgStageIIComponent implements OnInit {
     formData.append('AltSrno', this.alternatorScanDetails.qrSrNo);
     formData.append('StageNo', '3');
     formData.append('ProductCode', this.dgPartcode);
-    formData.append('PCCode', this.profitcenter);
+    formData.append('PCCode_Old', this.profitcenter_old);
+    formData.append('PCCode_Act', this.profitcenter_act);
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -519,7 +574,13 @@ export class DgStageIIComponent implements OnInit {
     // Battery validation - optional but must be valid if scanned
     const batteryValid = this.areBatteriesValid();
 
-    return !engineValid || !alternatorValid || !canopyValid || !batteryValid;
+    // Stk mismatch checks (only if old stk values are present)
+    const cpyStkMismatch = !!this.oldCpyStk && this.canopyScandetails.cpyStk != this.oldCpyStk;
+    const batStkMismatch = this.batteryScanDetails.some((bat, i) =>
+      this.oldBatteryStks[i] && bat.stk != this.oldBatteryStks[i]
+    );
+
+    return !engineValid || !alternatorValid || !canopyValid || !batteryValid || cpyStkMismatch || batStkMismatch;
   }
 
   // Engine turns green when qrSrNo exists

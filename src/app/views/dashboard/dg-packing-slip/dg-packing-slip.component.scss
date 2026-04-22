@@ -105,6 +105,29 @@
   font-weight: 500;
 }
 
+.krm-not-required {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  margin: 12px auto;
+  width: fit-content;
+  min-width: 300px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1.5px solid #2e7d32;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+
+  i {
+    font-size: 18px;
+    color: #2e7d32;
+  }
+}
+
 
   .scan-section-header {
     background-color: #E0E0E0;

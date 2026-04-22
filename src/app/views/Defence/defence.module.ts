@@ -13,6 +13,7 @@ import { MatProgressBarModule as MatProgressBarModule } from '@angular/material/
 import { MatTableModule as MatTableModule } from '@angular/material/table';
 import { MatTabsModule as MatTabsModule } from '@angular/material/tabs';
 import { MatInputModule as MatInputModule } from '@angular/material/input';
+
 import { RouterModule } from '@angular/router';
 import { NgChartsModule } from 'ng2-charts';
 import { NgxEchartsModule } from 'ngx-echarts';
@@ -20,20 +21,8 @@ import * as echarts from 'echarts';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { SharedPipesModule } from '../../shared/pipes/shared-pipes.module';
 import { MatFormFieldModule } from '@angular/material/form-field';
-
-import { DashboardRoutes } from './dashboard.routing';
-import { DgStageIComponent } from './dg-stage-i/dg-stage-i.component';
-import { DgStageIIComponent } from './dg-stage-ii/dg-stage-ii.component';
-import { DgStageIIIComponent } from './dg-stage-iii/dg-stage-iii.component';
-import { DgTestReport } from './dg-test-report/dg-test-report.component';
-import { DgPackingSlip } from './dg-packing-slip/dg-packing-slip.component';
-import { ZXingScannerModule } from '@zxing/ngx-scanner';
-import { MatRadioModule } from '@angular/material/radio';
-import { from } from 'rxjs';
-import { DgVideoUploadComponent } from './dg-video-upload/dg-video-upload.component';
-import { Jobcard1Component } from './jobcard1/jobcard1.component';
-import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.component';
-import { Jobcard2Component } from './jobcard2/jobcard2.component';
+import { DefenceRoutes } from './defence.routing';
+import { ApplicationMasterComponent } from './application-master/application-master.component';
 
 
 @NgModule({
@@ -46,7 +35,6 @@ import { Jobcard2Component } from './jobcard2/jobcard2.component';
     MatMenuModule,
     MatProgressBarModule,
     MatExpansionModule,
-    MatRadioModule,
     MatButtonModule,
     MatChipsModule,
     MatListModule,
@@ -60,22 +48,10 @@ import { Jobcard2Component } from './jobcard2/jobcard2.component';
     }),
     NgApexchartsModule,
     SharedPipesModule,
-    RouterModule.forChild(DashboardRoutes),
-    ZXingScannerModule,
+    RouterModule.forChild(DefenceRoutes)
   ],
   declarations: [
-    DgStageIComponent,
-    DgStageIIComponent,
-    DgStageIIIComponent,
-    DgTestReport,
-    DgPackingSlip,
-    DgVideoUploadComponent,
-    Jobcard1Component,
-    Jobcard1CheckerComponent,
-    Jobcard2Component,
-  ],
-
+    ApplicationMasterComponent
+  ]
 })
-export class DashboardModule {
-
-}
+export class DefenceModule { }

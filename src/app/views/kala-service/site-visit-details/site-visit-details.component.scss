@@ -1136,7 +1136,7 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 
   .rating-options {
     display: flex;
-    padding: 40px 8px 12px 8px;
+    padding: 12px 8px;
     gap: 4px;
     justify-content: space-around;
     align-items: flex-start;
@@ -1155,12 +1155,8 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
     max-width: 60px;
 
     .emoji-indicator {
-      font-size: 24px;
-      position: absolute;
-      top: -32px;
-      left: 50%;
-      transform: translateX(-50%);
-      animation: emojiPop 0.3s ease-out;
+      font-size: 22px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
     @keyframes emojiPop {
@@ -1216,6 +1212,23 @@ $shadow-2: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
       hyphens: auto;
       width: 100%;
     }
+
+    &.selected {
+      .emoji-indicator {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+
+      .radio-circle {
+        border-color: #2196F3;
+      }
+
+      .rating-label {
+        color: #2196F3;
+        font-weight: 600;
+      }
+    }
+
   }
 }
 

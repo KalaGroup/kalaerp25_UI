@@ -714,7 +714,8 @@ export class DgPackingSlip implements OnInit {
 
   fetchMOFAdditionalPartDetails(strMOFCode: string) {
     const encodedPfbCode = encodeURIComponent(strMOFCode);
-    this.dgAssemblyService.getMOFPartDetails(encodedPfbCode).subscribe(
+    const profitcenter_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    this.dgAssemblyService.getMOFPartDetails(encodedPfbCode, profitcenter_act).subscribe(
       (response) => {
         console.log('MOFAdditionalPartDetails API Response:', response);
         if (response && response.length > 0) {
@@ -750,6 +751,10 @@ export class DgPackingSlip implements OnInit {
 
   submitPSStartData() {
     const formData = new FormData();
+    const pccode_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    const pccode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    formData.append('PCCode_Act', pccode_act);
+    formData.append('PCCode_Old', pccode_old);
     formData.append('PSTime', 'PSStartTime');
     formData.append('PSStartTime', this.psstarttimePSStart);
     formData.append('DGSrNo', this.dgSerialNo);
@@ -819,6 +824,10 @@ export class DgPackingSlip implements OnInit {
 
   submitPSEndData() {
     const formData = new FormData();
+    const pccode_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    const pccode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    formData.append('PCCode_Act', pccode_act);
+    formData.append('PCCode_Old', pccode_old);
     formData.append('PSTime', 'PSEndTime');
     formData.append('PSEndTime', this.psendtimePSEnd);
     formData.append('PSCode', this.psCode);
@@ -852,14 +861,13 @@ export class DgPackingSlip implements OnInit {
     const engineValid = this.isEngineValidPSStart();
     const alternatorValid = this.isAlternatorValidPSStart();
     const canopyValid = this.isCanopyValidPSStart();
-    const batteriesValid = this.areBatteriesValidPSStart(); // OPTIONAL
+    const batteriesValid = this.areBatteriesValidPSStart();
     const cp1Valid = this.isControlPanel1ValidPSStart();
-    const cp2Valid = this.isControlPanel2ValidPSStart(); // OPTIONAL - IGNORED
-    const krmValid = this.isKRMValidPSStart(); // REQUIRED
+    const cp2Valid = this.isControlPanel2ValidPSStart();
+    const krmValid = this.isKRMValidPSStart();
 
-    // Required: Engine, Alternator, Canopy, Control Panel 1, KRM
-    // Optional but must be green if scanned: Batteries
-    // Ignored: Control Panel 2
+    console.log('PSStart Validation:', { engineValid, alternatorValid, canopyValid, batteriesValid, cp1Valid, cp2Valid, krmValid, cp1Visible: this.isControlPanel1Visible('PSStart'), krmVisible: this.isKRMVisible('PSStart') });
+
     return (
       engineValid &&
       alternatorValid &&
@@ -928,8 +936,9 @@ export class DgPackingSlip implements OnInit {
     return true; // All scanned batteries are valid (or no batteries scanned)
   }
 
-  // Control Panel 1 - Required (turns GREEN when matches)
+  // Control Panel 1 - Required only if CP1 has valid serial (not '0' / empty)
   isControlPanel1ValidPSStart(): boolean {
+    if (!this.isControlPanel1Visible('PSStart')) return true;
     return (
       !!this.scanDetails?.PSStart?.controlPanel1?.qrSrNo &&
       this.scannedQrResultCP1PSStart ===
@@ -942,12 +951,18 @@ export class DgPackingSlip implements OnInit {
     return true; // Always valid - ignored for save validation
   }
 
-  // KRM - REQUIRED (must be green)
+  // KRM - Required only if KRM has valid serial (not '0' / empty)
   isKRMValidPSStart(): boolean {
+    if (!this.isKRMVisible('PSStart')) return true;
     return (
       !!this.scanDetails?.PSStart?.krm?.qrSrNo &&
       this.scannedQrResultKRMPSStart === this.scanDetails.PSStart.krm.qrSrNo
     );
+  }
+
+  isKRMVisible(stage: 'PSStart' | 'PSEnd'): boolean {
+    const krm = this.scanDetails[stage]?.krm;
+    return !!krm?.qrSrNo && krm.qrSrNo !== '0';
   }
 
   // ==================== PS END VALIDATIONS ====================
@@ -1027,8 +1042,9 @@ export class DgPackingSlip implements OnInit {
     return true; // All scanned batteries are valid (or no batteries scanned)
   }
 
-  // Control Panel 1 - Required (turns GREEN when matches)
+  // Control Panel 1 - Required only if CP1 has valid serial (not '0' / empty)
   isControlPanel1ValidPSEnd(): boolean {
+    if (!this.isControlPanel1Visible('PSEnd')) return true;
     return (
       !!this.scanDetails?.PSEnd?.controlPanel1?.qrSrNo &&
       this.scannedQrResultCP1PSEnd ===
@@ -1052,8 +1068,9 @@ export class DgPackingSlip implements OnInit {
     return !!cp.qrSrNo && cp.qrSrNo !== '0';
   }
 
-  // KRM - REQUIRED (must be green)
+  // KRM - Required only if KRM has valid serial (not '0' / empty)
   isKRMValidPSEnd(): boolean {
+    if (!this.isKRMVisible('PSEnd')) return true;
     return (
       !!this.scanDetails?.PSEnd?.krm?.qrSrNo &&
       this.scannedQrResultKRMPSEnd === this.scanDetails.PSEnd.krm.qrSrNo

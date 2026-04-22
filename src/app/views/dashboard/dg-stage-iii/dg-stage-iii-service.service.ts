@@ -43,8 +43,8 @@ export class DgStageIIIService {
     return this.http.get(url);
   }
 
-  getDGKitDetails(PrdPartCode: string, PCCode: string): Observable<any> {
-    const url = `${this.apiGetDGKitDetails}/${PrdPartCode}/${PCCode}`;
+  getDGKitDetails(PrdPartCode: string, PCCode_Old: string, PCCode_Act: string): Observable<any> {
+    const url = `${this.apiGetDGKitDetails}/${PrdPartCode}/${PCCode_Old}/${PCCode_Act}`;
     return this.http.get(url);
   }
 }

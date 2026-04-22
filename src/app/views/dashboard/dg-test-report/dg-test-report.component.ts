@@ -14,7 +14,8 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 })
 export class DgTestReport implements OnInit, AfterViewInit {
   userId: string = '';
-  profitcenter: string = '';
+  profitcenter_old: string = '';
+  profitcenter_act: string = '';
 
   selectedTab: string = 'TRStart';
   stage: string = '';
@@ -241,9 +242,11 @@ export class DgTestReport implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.fetchSixMData();
-    const pccode = localStorage.getItem('ProfitCenter');
-    if (pccode) {
-      this.profitcenter = pccode;
+    const pccode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+     const pccode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    if (pccode_Act) {
+      this.profitcenter_act = pccode_Act;
+      this.profitcenter_old = pccode_Old;
     }
   }
 
@@ -629,7 +632,7 @@ export class DgTestReport implements OnInit, AfterViewInit {
         strSrNo: result,
         strDGSrNo: result,
         strCat: '047',
-        strPCCode: this.profitcenter,
+        strPCCode: this.profitcenter_act,
         //   this.userId === '0211'
         //     ? '01.004'
         //     : this.userId === '2236'
