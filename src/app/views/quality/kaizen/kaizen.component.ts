@@ -4,7 +4,6 @@ import {
   QualityService,
   DivisionResponse,
   DepartmentResponse,
-  WorkstationResponse,
 } from '../quality.service';
 
 @Component({
@@ -28,7 +27,6 @@ export class KaizenComponent implements OnInit {
 
   divisions: DivisionResponse[] = [];
   departments: DepartmentResponse[] = [];
-  workstations: WorkstationResponse[] = [];
   kaizenThemes: any[] = [];
   resultOptions: any[] = [];
   pqcdsmOptions: any[] = [];
@@ -68,7 +66,7 @@ export class KaizenComponent implements OnInit {
     this.kaizenForm = this.fb.group({
       divisionId: ['', Validators.required],
       departmentCode: ['', Validators.required],
-      workstationCode: [''],
+      workstationName: [''],
       kaizenTheme: [''],
       // 5W2H Problem Description fields
       what: ['', Validators.required],
@@ -126,7 +124,6 @@ export class KaizenComponent implements OnInit {
     ];
 
     this.loadDivisions();
-    this.loadWorkstations();
     this.loadKaizenRecords();
   }
 
@@ -138,18 +135,6 @@ export class KaizenComponent implements OnInit {
       error: (err) => {
         this.errorMessage = 'Failed to load divisions.';
         console.error('Error loading divisions:', err);
-      },
-    });
-  }
-
-  loadWorkstations(): void {
-    this.qualityService.getWorkstationCodeAndName().subscribe({
-      next: (data) => {
-        this.workstations = data;
-      },
-      error: (err) => {
-        this.errorMessage = 'Failed to load workstations.';
-        console.error('Error loading workstations:', err);
       },
     });
   }
@@ -349,9 +334,7 @@ export class KaizenComponent implements OnInit {
   }
 
   getSelectedWorkstationName(): string {
-    const code = this.kaizenForm.get('workstationCode')?.value;
-    const found = this.workstations.find((w) => w.WorkstationCode === code);
-    return found ? found.WorkstationName : '';
+    return this.kaizenForm.get('workstationName')?.value || '';
   }
 
   getSelectedThemeName(): string {
@@ -499,8 +482,8 @@ export class KaizenComponent implements OnInit {
     fd.append('DivisionName', this.getSelectedDivisionName());
     fd.append('DepartmentCode', v.departmentCode || '');
     fd.append('DepartmentName', this.getSelectedDepartmentName());
-    fd.append('WorkstationCode', v.workstationCode || '');
-    fd.append('WorkstationName', this.getSelectedWorkstationName());
+    fd.append('WorkstationCode', '');
+    fd.append('WorkstationName', v.workstationName || '');
     fd.append('KaizenTheme', v.kaizenTheme || '');
     fd.append('KaizenInitiationDate', v.kaizenInitiationDate || '');
     fd.append('CompletionDate', v.completionDate || '');
@@ -624,7 +607,7 @@ export class KaizenComponent implements OnInit {
     this.kaizenForm.patchValue({
       divisionId: row.DivisionId || '',
       departmentCode: row.DepartmentCode || '',
-      workstationCode: row.WorkstationCode || '',
+      workstationName: row.WorkstationName || '',
       kaizenTheme: themeMatch ? themeMatch.id : '',
       kaizenInitiationDate: row.KaizenInitiationDate || '',
       completionDate: row.CompletionDate || '',
@@ -790,7 +773,7 @@ export class KaizenComponent implements OnInit {
     this.kaizenForm.patchValue({
       divisionId: row.DivisionId || '',
       departmentCode: row.DepartmentCode || '',
-      workstationCode: row.WorkstationCode || '',
+      workstationName: row.WorkstationName || '',
       kaizenTheme: themeMatch ? themeMatch.id : '',
       kaizenInitiationDate: row.KaizenInitiationDate || '',
       completionDate: row.CompletionDate || '',
