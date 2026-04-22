@@ -95,11 +95,13 @@ export class DgStageICheckerComponent implements OnInit {
   cid = '';
   ecode = '';
   selectedStage = '';
+  profitcenter_act: string = '';
+  profitcenter_old: string = '';
+
 
   readonly stages: StageOption[] = [
     { value: 'Stage1', label: 'Stage 1' },
     { value: 'Stage2', label: 'Stage 2' },
-    { value: 'Stage3', label: 'Stage 3' },
   ];
 
   // Stage 1 & 2 Columns
@@ -228,13 +230,15 @@ export class DgStageICheckerComponent implements OnInit {
 
   ngOnInit(): void {
     const profitCenterName = localStorage.getItem('profitCenterName');
-    const pccode = localStorage.getItem('ProfitCenter');
-    this.cid = localStorage.getItem('companyId');
-    this.ecode = localStorage.getItem('employeeCode');
-
-    if (pccode) {
-      this.pccode = pccode;
+    const pccode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    const pccode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    if (pccode_Act) {
+      this.profitcenter_act = pccode_Act;
+      this.profitcenter_old = pccode_Old;
     }
+    this.cid = localStorage.getItem('companyId') ?? '';
+    this.ecode = localStorage.getItem('employeeCode') ?? '';
+
     if (profitCenterName) {
       this.profitcenterName = profitCenterName;
     }
@@ -296,7 +300,7 @@ load6MOptions(): void {
   loadStage1Or2QAPendingList(): void {
     this.stage3DataSource = [];
     this.dgStageICheckerService
-      .getDgStageICheckerData(this.selectedStage, this.pccode)
+      .getDgStageICheckerData(this.selectedStage, this.profitcenter_act)
       .subscribe({
         next: (response: DgStageICheckerResponse[]) => {
           console.log('Stage 1/2 API Response:', response);
@@ -327,7 +331,7 @@ load6MOptions(): void {
   loadStage3QAPendingList(): void {
     this.dataSource = [];
     this.dgStageICheckerService
-      .getDgStage3CheckerData(this.selectedStage, this.pccode)
+      .getDgStage3CheckerData(this.selectedStage, this.profitcenter_act)
       .subscribe({
         next: (response: DgStage3CheckerResponse[]) => {
           console.log('Stage 3 API Response:', response);
@@ -433,7 +437,7 @@ load6MOptions(): void {
       kvaValue = this.selectedStage3JobCardForQuality.kva;
     }
 
-    if (!this.modalSelectedStage || !this.pccode || kvaValue === null) {
+    if (!this.modalSelectedStage || !this.profitcenter_act || kvaValue === null) {
       console.warn('Missing required parameters: Stage, PCCode or KVA');
       this.qualityCheckpointDataSource = [];
       return;
@@ -444,7 +448,7 @@ load6MOptions(): void {
     this.dgStageICheckerService
       .getStageAndKvaWiseCheckpointList(
         this.modalSelectedStage,
-        this.pccode,
+        this.profitcenter_act,
         kvaValue,
       )
       .subscribe({
@@ -457,7 +461,7 @@ load6MOptions(): void {
             specification: item.Specification || '',
             remark: '',
             ok: false,
-            sixM: null,
+            sixM: 0,
             raiseEsp: '',
             stageWiseQcId: item.StageWiseQcid || 0,
           }));
@@ -528,6 +532,51 @@ load6MOptions(): void {
   // ============================================
   // ACTION BUTTONS - Accept, Rework, Reject
   // ============================================
+
+  // Accept enabled: all checkboxes OK and all 6M are None (0)
+  get isAcceptEnabled(): boolean {
+    if (this.qualityCheckpointDataSource.length === 0) return false;
+    return this.qualityCheckpointDataSource.every(item => item.ok) &&
+           this.qualityCheckpointDataSource.every(item => !this.is6MSelected(item));
+  }
+
+  // Rework enabled: at least one row has 6M selected (not None)
+  get isReworkEnabled(): boolean {
+    if (this.qualityCheckpointDataSource.length === 0) return false;
+    return this.qualityCheckpointDataSource.some(item => this.is6MSelected(item));
+  }
+
+  onAcceptClick(): void {
+    if (!this.isAcceptEnabled) {
+      const allOk = this.qualityCheckpointDataSource.every(item => item.ok);
+      const has6M = this.qualityCheckpointDataSource.some(item => this.is6MSelected(item));
+      if (!allOk) {
+        this.warningMessage = 'Please check all OK checkboxes before accepting.';
+      } else if (has6M) {
+        this.warningMessage = 'Cannot accept when 6M is selected. Set all 6M to None or use Rework.';
+      }
+      return;
+    }
+    this.saveQualityData('Accept');
+  }
+
+  onReworkClick(): void {
+    if (!this.isReworkEnabled) {
+      const has6M = this.qualityCheckpointDataSource.some(item => this.is6MSelected(item));
+      if (!has6M) {
+        this.warningMessage = 'Please select at least one 6M option to enable Rework.';
+      } else {
+        const missingEsp = this.qualityCheckpointDataSource.filter(item => this.is6MSelected(item) && !item.raiseEsp);
+        if (missingEsp.length > 0) {
+          this.warningMessage = 'Please select Raise ESP (employee) for all rows where 6M is selected.';
+        }
+      }
+      return;
+    }
+    this.defectActionType = 'Rework';
+    this.openDefectModal();
+  }
+
   onAccept(): void {
     this.saveQualityData('Accept');
   }
@@ -585,7 +634,8 @@ onSaveReworkReject(): void {
   saveQualityData(qualityStatus: string): void {
     // Base data (common for all stages)
     const QPCheckerData: any = {
-      pccode: this.pccode,
+      pccode_act: this.profitcenter_act,
+      pccode_old: this.profitcenter_old,
       cid: this.cid,
       stageName: this.modalSelectedStage,
       qualityStatus: qualityStatus,
@@ -685,6 +735,7 @@ onSaveReworkReject(): void {
     }
 
     // ===== ACTUAL API CALL =====
+    console.log('SaveQAStatusStagewise Payload:', JSON.stringify(payload, null, 2));
     this.dgStageICheckerService.saveQAStatusStagewise(payload).subscribe({
       next: (response) => {
         console.log('API Response:', response);
@@ -733,7 +784,7 @@ onSaveReworkReject(): void {
 
   loadDefectData(): void {
     this.dgStageICheckerService
-      .getDefectData(this.defectModalStage, this.pccode)
+      .getDefectData(this.defectModalStage, this.profitcenter_act)
       .subscribe({
         next: (response: DefectResponse[]) => {
           console.log('Defect Data API Response:', response);

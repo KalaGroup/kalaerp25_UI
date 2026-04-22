@@ -27,8 +27,8 @@ export class DgPackingSlipService {
     return this.http.post(this.apiSubmitPackingSlipDataUrl, formData);
   }
 
-  getMOFPartDetails(strMOFCode: string): Observable<any> {
-    const url = `${this.apiGetMOFPartDetails}/${strMOFCode}`;
+  getMOFPartDetails(strMOFCode: string, AssemblyLine: string): Observable<any> {
+    const url = `${this.apiGetMOFPartDetails}/${strMOFCode}/${AssemblyLine}`;
     return this.http.get(url);
   }
 }

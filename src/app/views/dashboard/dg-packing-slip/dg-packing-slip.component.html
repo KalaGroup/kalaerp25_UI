@@ -291,9 +291,9 @@
               </div>
             </div>
 
-            <div class="scan-section">
+            <div class="scan-section" *ngIf="isKRMVisible('PSStart')">
               <div class="scan-section-header">
-                <button class="scan-header" (click)="onScanKRMClick('PSStart')">SCAN KRM(IF ANY)</button>
+                <button class="scan-header" (click)="onScanKRMClick('PSStart')">SCAN KRM</button>
               </div>
               <div class="qr-scanner-container">
                 <div *ngIf="showQRScannerKRMPSStart" class="qr-scanner-wrapper">
@@ -310,6 +310,12 @@
                   <div>KRM Desc: {{ scanDetails.PSStart.krm?.krmDesc }}</div>
                   <div>KRM Part: {{ scanDetails.PSStart.krm?.krmPart }}</div>
                 </div>
+              </div>
+            </div>
+            <div class="scan-section" *ngIf="!isKRMVisible('PSStart') && !!scanDetails.PSStart.engine?.qrSrNo">
+              <div class="krm-not-required">
+                <i class="fas fa-info-circle"></i>
+                <span>KRM not required</span>
               </div>
             </div>
           </div>
@@ -458,9 +464,9 @@
               </div>
             </div>
 
-            <div class="scan-section">
+            <div class="scan-section" *ngIf="isKRMVisible('PSEnd')">
               <div class="scan-section-header">
-                <button class="scan-header" (click)="onScanKRMClick('PSEnd')">SCAN KRM(IF ANY)</button>
+                <button class="scan-header" (click)="onScanKRMClick('PSEnd')">SCAN KRM</button>
               </div>
               <div class="qr-scanner-container">
                 <div *ngIf="showQRScannerKRMPSEnd" class="qr-scanner-wrapper">
@@ -477,6 +483,12 @@
                   <div>KRM Desc: {{ scanDetails.PSEnd.krm?.krmDesc }}</div>
                   <div>KRM Part: {{ scanDetails.PSEnd.krm?.krmPart }}</div>
                 </div>
+              </div>
+            </div>
+            <div class="scan-section" *ngIf="!isKRMVisible('PSEnd') && !!scanDetails.PSEnd.engine?.qrSrNo">
+              <div class="krm-not-required">
+                <i class="fas fa-info-circle"></i>
+                <span>KRM not required</span>
               </div>
             </div>
           </div>

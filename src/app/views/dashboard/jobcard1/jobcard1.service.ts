@@ -92,6 +92,9 @@ export interface CheckerDetailItem {
 }
 
 export interface CheckerSubmitRequest {
+  empCode: string;
+  pccode_Act: string;
+  pcCode_Old: string;
   jobCode: string;
   status:  string;
   details: CheckerDetailItem[];
@@ -114,9 +117,9 @@ export class Jobcard1Service {
   constructor(private http: HttpClient) {}
 
   // GET — fetch DG list with plan + stock for a company
-  getJobCardDetails(compCode: string): Observable<JobCardDtsRow[]> {
+  getJobCardDetails(compCode: string, pcCode: string): Observable<JobCardDtsRow[]> {
     return this.http
-      .get<JobCardDtsRow[]>(`${this.baseUrl}Jobcard/GetJobCard1?CompId=${compCode}`)
+      .get<JobCardDtsRow[]>(`${this.baseUrl}Jobcard/GetJobCard1?CompId=${compCode}&AssemblyLine=${pcCode}`)
       .pipe(catchError(this.handleError));
   }
 

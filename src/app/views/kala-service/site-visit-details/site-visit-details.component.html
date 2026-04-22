@@ -281,8 +281,9 @@
       </div>
 
       <div class="rating-options">
-        <label class="rating-option" *ngFor="let rating of ratings">
-          <span class="emoji-indicator" *ngIf="feedbackRatings[category.id] === rating.value">
+        <label class="rating-option" [class.selected]="feedbackRatings[category.id] === rating.value"
+          *ngFor="let rating of ratings">
+          <span class="emoji-indicator">
             {{ rating.emoji }}
           </span>
           <input type="radio" [name]="'rating-' + category.id" [value]="rating.value"

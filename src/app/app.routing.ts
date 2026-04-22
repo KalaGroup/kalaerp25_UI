@@ -70,8 +70,12 @@ export const rootRouterConfig: Routes = [
         path: 'account',
         loadChildren: () => import('./views/account/account.module').then(m => m.AccountModule),
         data: { title: 'Account', breadcrumb: 'ACCOUNT'}
+      },
+      {
+        path: 'defence',
+        loadChildren: () => import('./views/Defence/defence.module').then(m => m.DefenceModule),
+        data: { title: 'Defence', breadcrumb: 'DEFENCE'}
       }
-
     ]
   },
   {

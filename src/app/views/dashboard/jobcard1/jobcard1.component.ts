@@ -50,7 +50,7 @@ export class Jobcard1Component implements OnInit {
     this.pcCode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
     this.pcCode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
     const pcName   = localStorage.getItem('profitCenterName')?.trim() ?? '';
-    this.pcDisplay = pcName && this.pcCode_Act ? `${pcName} --> ${this.pcCode_Act}` : pcName || this.pcCode_Act;
+    this.pcDisplay = pcName && this.pcCode_Old ? `${pcName} --> ${this.pcCode_Old}` : pcName || this.pcCode_Old;
   }
 
   // ── Search ────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ export class Jobcard1Component implements OnInit {
     this.jobCardList = [];
     this.clearMessages();
 
-    this.jobcardService.getJobCardDetails(this.compCode).subscribe({
+    this.jobcardService.getJobCardDetails(this.compCode, this.pcCode_Act).subscribe({
       next: (data) => {
         this.jobCardList = data ?? [];
         this.isLoading   = false;

@@ -232,22 +232,22 @@
   <div class="modal-container quality-modal">
     <!-- Modal Header -->
     <div class="modal-header">
-      <span class="modal-title">Quality Process Check</span>
-      <div class="modal-header-actions">
-        <!-- Rework Button -->
-        <button class="btn-rework" (click)="onRework()" [class.active]="defectActionType === 'Rework'">
-          Rework
-          <span *ngIf="defectActionType === 'Rework' && hasDefectData" class="badge">✓</span>
-        </button>
-
-        <!-- Reject Button -->
+      <div class="modal-title-group">
+        <span class="modal-title">Quality Process Check</span>
         <button class="btn-reject" (click)="onReject()" [class.active]="defectActionType === 'Reject'">
           Reject
           <span *ngIf="defectActionType === 'Reject' && hasDefectData" class="badge">✓</span>
         </button>
+      </div>
+      <div class="modal-header-actions">
+        <!-- Rework Button -->
+        <button class="btn-rework" (click)="onReworkClick()" [class.active]="defectActionType === 'Rework'" [class.btn-disabled]="!isReworkEnabled">
+          Rework
+          <span *ngIf="defectActionType === 'Rework' && hasDefectData" class="badge">✓</span>
+        </button>
 
         <!-- Accept Button -->
-        <button class="btn-accept" (click)="onAccept()">Accept</button>
+        <button class="btn-accept" (click)="onAcceptClick()" [class.btn-disabled]="!isAcceptEnabled">Accept</button>
 
         <!-- Save Button - Only shows when defects are added for Rework/Reject -->
         <button class="btn-save-final" *ngIf="hasDefectData" (click)="onSaveReworkReject()">

@@ -19,9 +19,11 @@ interface CheckerRow {
 export class Jobcard1CheckerComponent implements OnInit {
 
   today: string = '';
-  pcCode: string = '';
+  pcCode_old: string = '';
+  pcCode_Act: string = '';
   pcDisplay: string = '';
   compCode: string = '';
+  empCode: string = '';
 
   shiftType: string = '';
   selectedJobCard: string = '';
@@ -57,9 +59,12 @@ export class Jobcard1CheckerComponent implements OnInit {
 
   ngOnInit(): void {
     this.compCode = localStorage.getItem('companyId')?.trim() ?? '';
-    this.pcCode = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    this.empCode  = localStorage.getItem('employeeCode')?.trim() ?? '';
+    this.pcCode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    this.pcCode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
     const pcName = localStorage.getItem('profitCenterName')?.trim() ?? '';
-    this.pcDisplay = pcName && this.pcCode ? `${pcName} --> ${this.pcCode}` : pcName || this.pcCode;
+    console.log('ProfitCenter Name:', pcName, 'ProfitCenter_old:', this.pcCode_old, 'ProfitCenter_Act:', this.pcCode_Act);
+    this.pcDisplay = pcName && this.pcCode_old ? `${pcName} --> ${this.pcCode_old}` : pcName || this.pcCode_old;
     this.today = formatDate(new Date(), 'dd-MM-yyyy hh:mm:ss a', 'en-US', '+0530');
     this.loadJobCardNumbers();
     this.loadSixMData();
@@ -87,6 +92,7 @@ export class Jobcard1CheckerComponent implements OnInit {
     this.isLoadingJobCards = true;
     this.jobcardService.getJobCard1CheckerDetails().subscribe({
       next: (data) => {
+        console.log('JobCard Numbers API response:', data);
         this.jobCardNumbers = data ?? [];
         this.isLoadingJobCards = false;
       },
@@ -110,6 +116,7 @@ export class Jobcard1CheckerComponent implements OnInit {
 
     this.jobcardService.getJobCard1CheckerDetailsByCode(this.selectedJobCard).subscribe({
       next: (data) => {
+        console.log('Checker Details API response:', data);
         this.checkerList = data ?? [];
         this.isLoading = false;
         if (this.checkerList.length === 0) {
@@ -197,6 +204,9 @@ export class Jobcard1CheckerComponent implements OnInit {
 
   onAuth(): void {
     const payload: CheckerSubmitRequest = {
+      empCode: this.empCode,
+      pccode_Act: this.pcCode_Act,
+      pcCode_Old: this.pcCode_old,
       jobCode: this.selectedJobCode,
       status: 'Auth',
       details: this.checkerRows.map((row, i) => ({
@@ -211,6 +221,9 @@ export class Jobcard1CheckerComponent implements OnInit {
 
   onReject(): void {
     const payload: CheckerSubmitRequest = {
+      empCode: this.empCode,
+      pccode_Act: this.pcCode_Act,
+      pcCode_Old: this.pcCode_old,
       jobCode: this.selectedJobCode,
       status: 'Reject',
       details: this.checkerRows.map((row, i) => ({

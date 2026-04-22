@@ -10,6 +10,7 @@ import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.co
 import { UserRoleGuard } from 'app/shared/guards/user-role.guard';
 // import { config } from 'config';
 import { title } from 'process';
+import { Jobcard2Component } from './jobcard2/jobcard2.component';
 
 export const DashboardRoutes: Routes = [
   {
@@ -51,5 +52,10 @@ export const DashboardRoutes: Routes = [
     path:'jobcard1-checker',
     component: Jobcard1CheckerComponent,
     data:{title: 'Jobcard Checker', breadcrumb: 'Jobcard Checker'},
+  },
+  {
+    path: 'jobcard2',
+    component: Jobcard2Component,
+    data: { title: 'Job Card 2', breadcrumb: 'Job Card 2' }
   }
  ];

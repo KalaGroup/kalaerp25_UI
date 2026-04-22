@@ -52,7 +52,11 @@
                 </span></div>
               <div>Eng Desc: {{ scanDetails.engDesc }}</div>
               <div>Eng Code: {{ scanDetails.engCode }}</div>
-              <div>Stk: {{ scanDetails.stk }}</div>
+              <div>Stk: {{ scanDetails.stk }}
+                <span *ngIf="oldEngStk" [style.color]="scanDetails.stk != oldEngStk ? '#c62828' : '#2e7d32'" style="font-weight:700;">
+                  | By old profitcenter engine stock is: {{ oldEngStk }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -81,7 +85,11 @@
               </div>
               <div>Alt Desc: {{ scanDetails1.altDesc }}</div>
               <div>TRStatus: {{ scanDetails1.trStatus }}</div>
-              <div>Stk: {{ scanDetails1.stk }}</div>
+              <div>Stk: {{ scanDetails1.stk }}
+                <span *ngIf="oldAltStk" [style.color]="scanDetails1.stk != oldAltStk ? '#c62828' : '#2e7d32'" style="font-weight:700;">
+                  | By old profitcenter alternator stock is: {{ oldAltStk }}
+                </span>
+              </div>
               <div>Alt Part No: {{ scanDetails1.altPart }}</div>
             </div>
           </div>

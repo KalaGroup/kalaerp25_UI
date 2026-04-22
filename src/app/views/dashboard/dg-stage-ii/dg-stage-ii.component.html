@@ -99,7 +99,11 @@
                   canopyScandetails.qrSrNo }}</span></div>
               <div>Cpy Desc: {{ canopyScandetails.cpyDesc }}</div>
               <div>Cpy Part: {{ canopyScandetails.cpyPart }}</div>
-              <div>Stk: {{canopyScandetails.cpyStk }}</div>
+              <div>Stk: {{ canopyScandetails.cpyStk }}
+                <span *ngIf="oldCpyStk" [style.color]="canopyScandetails.cpyStk != oldCpyStk ? '#c62828' : '#2e7d32'" style="font-weight:700;">
+                  | By old profitcenter canopy stock is: {{ oldCpyStk }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -124,7 +128,11 @@
                   battery.qrSrNo }}</span></div>
               <div>Bat Desc: {{ battery.batteryDesc }}</div>
               <div>Bat Part: {{ battery.batteryPart }}</div>
-              <div>Stk: {{ battery.stk }}</div>
+              <div>Stk: {{ battery.stk }}
+                <span *ngIf="oldBatteryStks[i]" [style.color]="battery.stk != oldBatteryStks[i] ? '#c62828' : '#2e7d32'" style="font-weight:700;">
+                  | By old profitcenter battery stock is: {{ oldBatteryStks[i] }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
