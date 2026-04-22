@@ -29,8 +29,8 @@ export class DgVideoUploadComponent {
   acceptedFileTypes: string =
     'image/jpg,image/jpeg,image/png,audio/mp3,audio/mpeg,video/mp4,video/quicktime,application/pdf';
 
-  // File size limit (100MB)
-  maxFileSize: number = 100 * 1024 * 1024;
+  // File size limit (500MB)
+  maxFileSize: number = 500 * 1024 * 1024;
 
   // ViewChild references for file inputs
   @ViewChild('cameraInput') cameraInput!: ElementRef<HTMLInputElement>;
@@ -99,7 +99,7 @@ export class DgVideoUploadComponent {
       // Validate file size
       if (file.size > this.maxFileSize) {
         this.errorMessage =
-          'File size exceeds 100MB limit. Please select a smaller file.';
+          'File size exceeds 500MB limit. Please select a smaller file.';
         this.resetFileInputs();
         return;
       }
