@@ -165,13 +165,11 @@
       </div>
       <div class="dropdown-row">
         <div class="dropdown-wrapper">
-          <label for="workstationCode">Machine/Station Name</label>
-          <select id="workstationCode" formControlName="workstationCode" class="form-select">
-            <option value="">Select Machine/Station</option>
-            <option *ngFor="let ws of workstations" [value]="ws.WorkstationCode">
-              {{ ws.WorkstationName }}
-            </option>
-          </select>
+          <label for="workstationName">Work Area / Location</label>
+          <input type="text" id="workstationName" formControlName="workstationName"
+            class="form-select"
+            placeholder="e.g., CNC Lathe L-03, DG Assembly Bay 2, Paint Booth, Raw Material Store, QC Bench"
+            maxlength="100" />
         </div>
         <div class="dropdown-wrapper">
           <label for="kaizenTheme">Kaizen Theme</label>

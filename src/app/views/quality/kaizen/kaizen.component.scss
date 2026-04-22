@@ -1872,6 +1872,18 @@ $text-muted: #6c757d;
 
 .kaizen-table-wrapper {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 500px;
+  scrollbar-width: thin;
+  scrollbar-color: #c1c9d2 #f4f6f8;
+
+  &::-webkit-scrollbar { width: 8px; height: 8px; }
+  &::-webkit-scrollbar-track { background: #f4f6f8; }
+  &::-webkit-scrollbar-thumb {
+    background: #c1c9d2;
+    border-radius: 4px;
+    &:hover { background: #9aa5b1; }
+  }
 }
 
 .kaizen-table {
@@ -1881,6 +1893,9 @@ $text-muted: #6c757d;
 
   thead {
     background-color: #f4f6f8;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 
     tr th {
       padding: 10px 12px;
@@ -1892,6 +1907,7 @@ $text-muted: #6c757d;
       font-size: 11.5px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
+      background-color: #f4f6f8;
     }
   }
 
