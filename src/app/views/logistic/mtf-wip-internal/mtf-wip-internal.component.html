@@ -1,0 +1,179 @@
+<div class="mtf-container">
+  <!-- Header strip -->
+  <div class="mtf-header">
+    <h2>MTF DG</h2>
+  </div>
+
+  <!-- Form body -->
+  <div class="mtf-body">
+
+    <!-- Validation / error banner -->
+    <div class="mtf-error" *ngIf="errorMessage">
+      <span class="mtf-error-icon">⚠</span>
+      <span class="mtf-error-text">{{ errorMessage }}</span>
+      <button type="button" class="mtf-error-close" (click)="clearError()" aria-label="Dismiss">✕</button>
+    </div>
+
+    <!-- Success banner -->
+    <div class="mtf-success" *ngIf="successMessage">
+      <span class="mtf-success-icon">✓</span>
+      <span class="mtf-success-text">{{ successMessage }}</span>
+      <button type="button" class="mtf-success-close" (click)="clearSuccess()" aria-label="Dismiss">✕</button>
+    </div>
+
+    <!-- Row 1: MTF No, MTF Date, From PC, To PC -->
+    <div class="form-grid grid-4">
+      <div class="form-field">
+        <label for="mtfNo">MTF No</label>
+        <input id="mtfNo" type="text" [(ngModel)]="mtfNo" class="form-input"
+          placeholder="Auto-generated on save" readonly />
+      </div>
+
+      <div class="form-field">
+        <label for="mtfDate">MTF Date</label>
+        <input id="mtfDate" type="text" [value]="mtfDate" readonly class="form-input readonly" />
+      </div>
+
+      <div class="form-field">
+        <label for="fromPC">From PC</label>
+        <input id="fromPC" type="text" [value]="fromPC" readonly class="form-input readonly" />
+      </div>
+
+      <div class="form-field">
+        <label for="toPC">To PC <span class="req">*</span></label>
+        <div class="select-wrapper">
+          <select id="toPC" [(ngModel)]="toPC" (ngModelChange)="onToPCChange()"
+            class="form-input form-select">
+            <option value="">Select To PC</option>
+            <option *ngFor="let pc of toPCOptions" [value]="pc.PCCode">{{ pc.PCName }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Requisition No (1/3), DG/Cpy/CP Part Desc (2/3) -->
+    <div class="form-grid grid-req">
+      <div class="form-field">
+        <label for="requisitionNo">Requisition No <span class="req">*</span></label>
+        <div class="select-wrapper">
+          <select id="requisitionNo" [(ngModel)]="requisitionNo"
+            (ngModelChange)="onRequisitionChange()"
+            class="form-input form-select" [disabled]="!toPC">
+            <option value="">{{ toPC ? 'Select Requisition' : 'Select To PC first' }}</option>
+            <option *ngFor="let req of requisitionOptions" [value]="req.ReqNo">{{ req.ReqCode }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="partDesc">DG/Cpy/CP Part Desc</label>
+        <input id="partDesc" type="text" [value]="dgCpyCpPartDesc" readonly class="form-input readonly" />
+      </div>
+    </div>
+
+    <!-- Row 3: Req Qty, Req BalQty, MTF Qty, Search -->
+    <div class="form-grid grid-qty">
+      <div class="form-field">
+        <label for="reqQty">Req Qty(Set)</label>
+        <input id="reqQty" type="number" [value]="reqQty" readonly class="form-input readonly" />
+      </div>
+
+      <div class="form-field">
+        <label for="reqBalQty">Req BalQty(Set)</label>
+        <input id="reqBalQty" type="number" [value]="reqBalQty" readonly class="form-input readonly" />
+      </div>
+
+      <div class="form-field">
+        <label for="mtfQty">MTF Qty(Set) <span class="req">*</span></label>
+        <input id="mtfQty" type="number" [(ngModel)]="mtfQty" class="form-input" min="0" placeholder="0" />
+      </div>
+
+      <div class="form-field form-field-action">
+        <button type="button" class="btn btn-search" (click)="onSearch()"
+          [disabled]="!canSearch">
+          <svg *ngIf="!isSearching" class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <svg *ngIf="isSearching" class="btn-icon btn-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span>{{ isSearching ? 'Searching...' : 'Search' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Part Details section -->
+    <div class="part-details-section">
+      <div class="section-header">
+        <span class="section-label">Part Details</span>
+        <span class="section-count" *ngIf="partDetails.length > 0">{{ partDetails.length }} items</span>
+      </div>
+
+      <div class="part-table-wrapper">
+        <table class="part-table">
+          <thead>
+            <tr>
+              <th class="col-sr">SrNo</th>
+              <th>PartDesc</th>
+              <th>PartCode</th>
+              <th>UOM</th>
+              <th class="col-num">KitQty</th>
+              <th class="col-num">StkQty</th>
+              <th class="col-num">MtfQty</th>
+              <th class="col-num">Rate</th>
+              <th class="col-num">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of partDetails; let i = index">
+              <td class="col-sr">{{ i + 1 }}</td>
+              <td>{{ p.PartDesc }}</td>
+              <td class="col-code">{{ p.PartCode }}</td>
+              <td>{{ p.UName }}</td>
+              <td class="col-num">{{ p.KitQty }}</td>
+              <td class="col-num">{{ p.Stk }}</td>
+              <td class="col-num">{{ p.MTFQty }}</td>
+              <td class="col-num">{{ p.Rate }}</td>
+              <td class="col-num">{{ p.Amt }}</td>
+            </tr>
+            <tr *ngIf="partDetails.length === 0" class="empty-row">
+              <td colspan="9">
+                <div class="empty-content">
+                  <svg class="empty-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                  </svg>
+                  <span>No part details. Click <strong>Search</strong> after selecting a Requisition.</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bottom: Remark + Submit -->
+    <div class="form-grid grid-submit">
+      <div class="form-field form-field-remark">
+        <label for="remark">Remark</label>
+        <input id="remark" type="text" [(ngModel)]="remark" class="form-input"
+          placeholder="Optional remark for this MTF" />
+      </div>
+
+      <div class="form-field form-field-action">
+        <button type="button" class="btn btn-submit" (click)="onSubmit()" [disabled]="!canSubmit">
+          <svg *ngIf="!isSubmitting" class="btn-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <svg *ngIf="isSubmitting" class="btn-icon btn-spin" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span>{{ isSubmitting ? 'Submitting...' : 'Submit' }}</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

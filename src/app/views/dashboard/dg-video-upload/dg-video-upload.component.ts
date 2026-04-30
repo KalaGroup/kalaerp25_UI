@@ -1,7 +1,8 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { environment } from 'environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpRequest, HttpResponse } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-dg-video-upload',
@@ -24,6 +25,16 @@ export class DgVideoUploadComponent {
 
   // File chooser state
   showFileChooser: boolean = false;
+
+  // Upload progress state
+  isUploading: boolean = false;
+  uploadProgress: number = 0;          // 0-100
+  uploadedBytes: number = 0;
+  totalBytes: number = 0;
+  uploadSpeed: number = 0;              // bytes/sec
+  uploadETA: number = 0;                // seconds remaining
+  private uploadStartTime: number = 0;
+  private uploadSubscription: Subscription | null = null;
 
   // Accepted file types
   acceptedFileTypes: string =
@@ -194,7 +205,7 @@ export class DgVideoUploadComponent {
     );
   }
 
-  // Upload file
+  // Upload file with progress tracking
   uploadFile(): void {
     if (!this.engineSrNo || this.engineSrNo.length < 10) {
       this.warningMessage = 'Engine Sr No must be at least 10 characters.';
@@ -206,40 +217,100 @@ export class DgVideoUploadComponent {
       return;
     }
 
-    // Create FormData for upload
     const formData = new FormData();
     formData.append('UploadFor', this.uploadFor);
     formData.append('EngSrNo', this.engineSrNo);
     formData.append('File', this.selectedFile as File);
     formData.append('EmpCode', this.currentUser);
 
-    console.log('Uploading file:', {
-      uploadFor: this.uploadFor,
-      engineSrNo: this.engineSrNo,
-      fileName: this.selectedFileName,
-      fileSize: this.getFileSize(),
-    });
+    // Init progress state
+    this.isUploading      = true;
+    this.uploadProgress   = 0;
+    this.uploadedBytes    = 0;
+    this.totalBytes       = this.selectedFile.size;
+    this.uploadSpeed      = 0;
+    this.uploadETA        = 0;
+    this.uploadStartTime  = Date.now();
+    this.clearMessages();
 
-    this.http
-      .post(
-        `${this.baseUrl}DGAssemblly/UploadTestReportAndPDIRVideo`,
-        formData,
-        { responseType: 'text' }
-      )
-      .subscribe({
-        next: (response: string) => {
+    const req = new HttpRequest(
+      'POST',
+      `${this.baseUrl}DGAssemblly/UploadTestReportAndPDIRVideo`,
+      formData,
+      { reportProgress: true, responseType: 'text' }
+    );
+
+    this.uploadSubscription = this.http.request(req).subscribe({
+      next: (event: any) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          const total = event.total || this.totalBytes;
+          this.uploadedBytes  = event.loaded;
+          this.totalBytes     = total;
+          this.uploadProgress = Math.min(100, Math.round((event.loaded / total) * 100));
+
+          const elapsedSec = (Date.now() - this.uploadStartTime) / 1000;
+          if (elapsedSec > 0.2) {
+            this.uploadSpeed = event.loaded / elapsedSec;
+            const remaining  = total - event.loaded;
+            this.uploadETA   = this.uploadSpeed > 0 ? remaining / this.uploadSpeed : 0;
+          }
+        } else if (event instanceof HttpResponse) {
+          this.isUploading = false;
+          this.uploadSubscription = null;
+          const response = (event.body as string) || '';
           if (response.toLowerCase().includes('successfully')) {
             this.successMessage = response;
             this.resetForm();
           } else {
             this.errorMessage = response;
           }
-        },
-        error: (error) => {
-          console.error('Upload error:', error);
-          this.errorMessage = 'Failed to upload file. Please try again.';
-        },
-      });
+        }
+      },
+      error: (error) => {
+        this.isUploading = false;
+        this.uploadSubscription = null;
+        console.error('Upload error:', error);
+        this.errorMessage = 'Failed to upload file. Please check your connection and try again.';
+      },
+    });
+  }
+
+  // Cancel an in-progress upload
+  cancelUpload(): void {
+    if (this.uploadSubscription) {
+      this.uploadSubscription.unsubscribe();
+      this.uploadSubscription = null;
+    }
+    this.isUploading = false;
+    this.uploadProgress = 0;
+    this.warningMessage = 'Upload cancelled.';
+  }
+
+  // Format helpers used by the progress modal
+  formatBytes(bytes: number): string {
+    if (!bytes || bytes < 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  }
+
+  formatSpeed(bytesPerSec: number): string {
+    if (!bytesPerSec || bytesPerSec <= 0) return '...';
+    return this.formatBytes(bytesPerSec) + '/s';
+  }
+
+  formatETA(seconds: number): string {
+    if (!isFinite(seconds) || seconds <= 0) return '...';
+    if (seconds < 60) return Math.round(seconds) + 's';
+    if (seconds < 3600) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.round(seconds % 60);
+      return `${m}m ${s}s`;
+    }
+    const h = Math.floor(seconds / 3600);
+    const m = Math.round((seconds % 3600) / 60);
+    return `${h}h ${m}m`;
   }
 
   // Reset form

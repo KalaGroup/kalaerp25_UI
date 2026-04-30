@@ -71,7 +71,7 @@
 //           type: 'dropDown',
 //           sub: [
 //             { name: 'MTF Scan', state: 'logistic/mtf-scan' },
-//             // Add more items here if needed in future
+//             { name: 'MTF WIP Internal', state: 'logistic/mtf-wip-internal' },
 //           ],
 //         },
 //       ],
@@ -213,7 +213,7 @@
 //           type: 'dropDown',
 //           sub: [
 //             { name: 'MTF Scan', state: 'logistic/mtf-scan' },
-//             // Add more items here if needed in future
+//             { name: 'MTF WIP Internal', state: 'logistic/mtf-wip-internal' },
 //           ],
 //         },
 //       ],
@@ -381,7 +381,7 @@
 //           type: 'dropDown',
 //           sub: [
 //             { name: 'MTF Scan', state: 'logistic/mtf-scan' },
-//             // Add more items here if needed in future
+//             { name: 'MTF WIP Internal', state: 'logistic/mtf-wip-internal' },
 //           ],
 //         },
 //       ],

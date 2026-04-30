@@ -126,7 +126,9 @@ export class Jobcard1Component implements OnInit {
     this.jobcardService.submitJobCard(request).subscribe({
       next: (response) => {
         this.isSubmitting   = false;
-        this.successMessage = response ?? 'Job Card created successfully.';
+        this.successMessage = response
+          ? `Job Card created successfully: ${response}`
+          : 'Job Card created successfully.';
         this.jobCardList    = [];
         form.resetForm();
       },
