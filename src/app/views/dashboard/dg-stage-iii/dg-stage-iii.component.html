@@ -130,7 +130,7 @@
 
           <div *ngFor="let battery of batteryScanDetailsStart; let i = index" class="scan-section">
             <div
-              *ngIf="battery.qrSrNo && battery.batteryPart && battery.batteryDesc && battery.stk && battery.stk !== '0'">
+              *ngIf="battery.qrSrNo && battery.batteryPart && battery.batteryDesc">
               <div class="scan-section-header">
                 <button class="scan-header" (click)="onScanBatteryClick('Start', i)">SCAN BATTERY {{ i + 1 }}</button>
               </div>
@@ -439,7 +439,7 @@
 
           <div *ngFor="let battery of batteryScanDetailsEnd; let i = index" class="scan-section">
             <div
-              *ngIf="battery.qrSrNo && battery.batteryPart && battery.batteryDesc && battery.stk && battery.stk !== '0'">
+              *ngIf="battery.qrSrNo && battery.batteryPart && battery.batteryDesc">
               <div class="scan-section-header">
                 <button class="scan-header" (click)="onScanBatteryClick('End', i)">SCAN BATTERY {{ i + 1 }}</button>
               </div>

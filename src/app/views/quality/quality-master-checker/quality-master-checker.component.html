@@ -1,18 +1,24 @@
 <div class="quality-checkpoint-form">
   <!-- Header -->
   <div class="form-header">
-    <h2 class="form-title">Quality Process Checkpoint</h2>
+    <h2 class="form-title">Quality Process Checkpoint Checker - DG Assemblly</h2>
     <div class="header-actions">
-      <button class="btn btn-save" (click)="onSave()" [disabled]="isLoading">Save</button>
+      <button *ngIf="editingId !== null"
+              class="btn btn-cancel-edit"
+              (click)="cancelEdit()"
+              [disabled]="isSubmitting">Cancel</button>
+      <button class="btn btn-save"
+              (click)="onSave()"
+              [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Saving…' : (editingId !== null ? 'Update' : 'Save') }}
+      </button>
     </div>
   </div>
 
   <div *ngIf="errorMessage" class="errorModal">
     <div class="errorModal-content">
       <h2>Alert</h2>
-      <p>
-        {{ errorMessage }}
-      </p>
+      <p>{{ errorMessage }}</p>
       <button class="error-ok-button" (click)="clearMessages()">OK</button>
     </div>
   </div>
@@ -31,76 +37,51 @@
     </div>
   </div>
 
-
   <!-- Body -->
   <div class="form-body">
-    <!-- Filter Row -->
-    <div class="filter-row">
-      <!-- Profit Center -->
-      <div class="filter-item">
-        <label>Profit Center <span class="required">*</span></label>
-        <select class="form-select" [(ngModel)]="selectedProfitCenter" (change)="onFilterChange()">
-          <option value="">Select Profit Center</option>
-          <option *ngFor="let pc of profitCenters" [value]="pc.Pccode">{{ pc.PCName }}</option>
-        </select>
-      </div>
 
-      <!-- Stage -->
+    <!-- Edit-mode banner -->
+    <div *ngIf="editingId !== null" class="edit-banner">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+      <span class="edit-banner-text">
+        Editing checklist · <strong>{{ editingSummary }}</strong>
+      </span>
+      <button class="edit-banner-cancel" (click)="cancelEdit()">Cancel</button>
+    </div>
+
+    <div class="filter-row">
       <div class="filter-item">
-        <label>Stage <span class="required">*</span></label>
-        <select class="form-select" [(ngModel)]="selectedStage" (change)="onFilterChange()">
+        <label>Stage</label>
+        <select class="form-select" [(ngModel)]="selectedStage" (ngModelChange)="onSelectionChange()" [disabled]="editingId !== null">
           <option value="">Select Stage</option>
           <option *ngFor="let stage of stages" [value]="stage">{{ stage }}</option>
         </select>
       </div>
-
-      <!-- From KVA -->
       <div class="filter-item">
-        <label>From KVA <span class="required">*</span></label>
-        <select class="form-select" [(ngModel)]="selectedFromKVA" (change)="onFilterChange()">
-          <option [ngValue]="null">Select KVA</option>
-          <option *ngFor="let kva of fromKvaOptions" [ngValue]="kva">{{ kva }}</option>
+        <label>From KVA</label>
+        <select class="form-select" [(ngModel)]="selectedFromKVA" (ngModelChange)="onSelectionChange()" [disabled]="editingId !== null">
+          <option value="">Select KVA</option>
+          <option *ngFor="let kva of kvaOptions" [value]="kva.KVA">{{ kva.KVA }}</option>
         </select>
       </div>
-
-      <!-- To KVA -->
       <div class="filter-item">
-        <label>To KVA <span class="required">*</span></label>
-        <select class="form-select" [(ngModel)]="selectedToKVA" (change)="onFilterChange()">
-          <option [ngValue]="null">Select KVA</option>
-          <option *ngFor="let kva of toKvaOptions" [ngValue]="kva">{{ kva }}</option>
+        <label>To KVA</label>
+        <select class="form-select" [(ngModel)]="selectedToKVA" (ngModelChange)="onSelectionChange()" [disabled]="editingId !== null">
+          <option value="">Select KVA</option>
+          <option *ngFor="let kva of kvaOptions" [value]="kva.KVA">{{ kva.KVA }}</option>
         </select>
       </div>
-
-      <!-- Fetch Button -->
-      <div class="filter-item fetch-btn-container">
-        <button class="btn btn-fetch" (click)="fetchCheckpointData()" [disabled]="isLoading">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <span *ngIf="!isLoading">Search CheckPoints</span>
-          <span *ngIf="isLoading">Searching...</span>
-        </button>
-      </div>
-
       <div class="filter-item-spacer"></div>
-
-      <!-- Add Row Button -->
       <div class="filter-item add-row-container">
-        <button class="btn btn-add" (click)="addRow()" title="Add Row">+</button>
+        <button class="btn btn-add" (click)="addRow()">+</button>
       </div>
     </div>
 
-    <!-- Data Table -->
+    <!-- Checkpoint Items Table -->
     <div class="table-container">
-      <!-- Loading Overlay -->
-      <div class="loading-overlay" *ngIf="isLoading">
-        <div class="spinner"></div>
-        <span>Loading data...</span>
-      </div>
-
       <table class="data-table">
         <thead>
           <tr>
@@ -114,36 +95,16 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Empty State -->
-          <tr *ngIf="checkpointItems.length === 0 && !isLoading">
-            <td colspan="7" class="empty-state">
-              <p>No data available. Please select filters and click "Fetch Data".</p>
-            </td>
-          </tr>
-
-          <!-- Data Rows -->
-          <tr *ngFor="let item of checkpointItems; let i = index; trackBy: trackByIndex">
+          <tr *ngFor="let item of checkpointItems; let i = index">
             <td class="text-center">{{ i + 1 }}</td>
-            <td>
-              <input type="text" class="form-input" placeholder="Enter sub-assembly part"
-                [(ngModel)]="item.subAssemblyPart">
-            </td>
-            <td>
-              <input type="text" class="form-input" placeholder="Enter checkpoint" [(ngModel)]="item.checkpoint">
-            </td>
-            <td>
-              <input type="text" class="form-input" placeholder="Enter specification" [(ngModel)]="item.specification">
-            </td>
-            <td>
-              <input type="text" class="form-input" placeholder="Enter observation" [(ngModel)]="item.observation">
-            </td>
-            <td>
-              <input type="text" class="form-input" placeholder="Enter" [(ngModel)]="item.ok">
-            </td>
+            <td><input type="text" class="form-input" placeholder="Enter sub-assembly part" [(ngModel)]="item.subAssemblyPart"></td>
+            <td><input type="text" class="form-input" placeholder="Enter checkpoint" [(ngModel)]="item.qualityProcessCheckpoint"></td>
+            <td><input type="text" class="form-input" placeholder="Enter specification" [(ngModel)]="item.specification"></td>
+            <td><input type="text" class="form-input" placeholder="Enter observation" [(ngModel)]="item.observation"></td>
+            <td><input type="text" class="form-input" placeholder="Enter" [(ngModel)]="item.ok_nok"></td>
             <td class="text-center">
               <button class="btn btn-delete" (click)="deleteRow(i)" title="Delete">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -156,11 +117,199 @@
       </table>
     </div>
 
-    <!-- Checker Remark Section -->
-    <div class="checker-remark-section">
-      <label class="remark-label">Checker Remark</label>
-      <textarea class="form-textarea" rows="3" placeholder="Enter checker remark..."
-        [(ngModel)]="checkerRemark"></textarea>
+    <!-- The checker enters their remark inline at the moment of authorizing
+         a row in the report below — keeps the remark tightly bound to the action. -->
+
+
+    <!-- ── Saved Quality Check Lists Report ──────────────────── -->
+    <div class="report-section">
+      <div class="report-header">
+        <h3 class="report-title">Saved Quality Checklists</h3>
+        <div class="report-meta">
+          <span class="report-count" *ngIf="!isLoadingReport && reportList.length > 0">
+            {{ reportList.length }} record{{ reportList.length > 1 ? 's' : '' }}
+          </span>
+          <button type="button" class="btn-refresh" (click)="loadReport()" [disabled]="isLoadingReport">
+            <svg *ngIf="!isLoadingReport" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>{{ isLoadingReport ? 'Loading…' : 'Refresh' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="reportError" class="report-error">{{ reportError }}</div>
+
+      <div class="report-table-container">
+        <table class="data-table report-table">
+          <thead>
+            <tr>
+              <th class="col-srno text-center">Sr.No.</th>
+              <th>Stage</th>
+              <th class="text-center">From KVA</th>
+              <th class="text-center">To KVA</th>
+              <th class="text-center">Items</th>
+              <th class="text-center">Status</th>
+              <th>Maker Remark</th>
+              <th>Checker Remark</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="isLoadingReport">
+              <td colspan="9" class="text-center">Loading…</td>
+            </tr>
+            <tr *ngIf="!isLoadingReport && reportList.length === 0 && !reportError">
+              <td colspan="9" class="text-center">No saved checklists yet.</td>
+            </tr>
+
+            <ng-container *ngFor="let r of reportList; let i = index">
+              <tr [class.row-expanded]="isReportRowExpanded(r)"
+                  [class.row-editing]="editingId === r.StageWiseQcid">
+                <td class="text-center">
+                  <span class="edit-marker" *ngIf="editingId === r.StageWiseQcid" title="Currently editing this row">✎</span>
+                  {{ i + 1 }}
+                </td>
+                <td>{{ r.StageName }}</td>
+                <td class="text-center">{{ r.FromKva }}</td>
+                <td class="text-center">{{ r.ToKva }}</td>
+                <td class="text-center">
+                  <button type="button"
+                          class="items-toggle"
+                          [class.is-open]="isReportRowExpanded(r)"
+                          [disabled]="!r.Items || r.Items.length === 0"
+                          (click)="toggleReportRow(r)"
+                          [title]="isReportRowExpanded(r) ? 'Hide checkpoints' : 'View checkpoints'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="items-chevron">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                    <span>{{ r.ItemCount }} item{{ r.ItemCount === 1 ? '' : 's' }}</span>
+                  </button>
+                </td>
+                <td class="text-center">
+                  <span class="status-pill" [ngClass]="getStatusClass(r.AuthStatus)">
+                    {{ r.AuthStatus }}
+                  </span>
+                </td>
+                <td [title]="r.MakerRemark || ''">{{ r.MakerRemark || '—' }}</td>
+                <td [title]="r.CheckerAuthRemark || ''">{{ r.CheckerAuthRemark || '—' }}</td>
+                <td class="text-center action-cell">
+                  <!-- Default action icons -->
+                  <ng-container *ngIf="confirmDeleteId !== r.StageWiseQcid
+                                    && confirmAuthId   !== r.StageWiseQcid
+                                    && confirmRevertId !== r.StageWiseQcid">
+                    <!-- ✓ Authorize — shown only when status is Pending -->
+                    <button class="icon-btn icon-btn-auth"
+                            *ngIf="r.AuthStatus === 'Pending'"
+                            (click)="requestAuth(r)"
+                            [disabled]="editingId !== null || isSubmitting"
+                            title="Authorize this checklist">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </button>
+                    <!-- ↶ Revert authorization — shown only when status is Authorized -->
+                    <button class="icon-btn icon-btn-revert"
+                            *ngIf="r.AuthStatus === 'Authorized'"
+                            (click)="requestRevert(r)"
+                            [disabled]="editingId !== null || isSubmitting"
+                            title="Revert authorization">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                      </svg>
+                    </button>
+                    <!-- ✏️ Edit -->
+                    <button class="icon-btn icon-btn-edit"
+                            (click)="startEdit(r)"
+                            [disabled]="editingId !== null || isSubmitting"
+                            title="Edit this checklist">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                    <!-- 🗑 Delete -->
+                    <button class="icon-btn icon-btn-delete"
+                            (click)="requestDelete(r)"
+                            [disabled]="editingId !== null || isSubmitting"
+                            title="Delete this checklist">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </ng-container>
+
+                  <!-- Inline confirm: delete -->
+                  <span class="confirm-pill confirm-pill-delete" *ngIf="confirmDeleteId === r.StageWiseQcid">
+                    <span class="confirm-text">Delete?</span>
+                    <button class="confirm-yes confirm-yes-red"  (click)="confirmDelete(r)">Yes</button>
+                    <button class="confirm-no"                    (click)="cancelDelete()">No</button>
+                  </span>
+
+                  <!-- Inline confirm: authorize (with checker-remark input) -->
+                  <span class="confirm-pill confirm-pill-auth confirm-pill-auth-wide" *ngIf="confirmAuthId === r.StageWiseQcid">
+                    <input type="text"
+                           class="confirm-remark-input"
+                           placeholder="Checker remark (optional)…"
+                           [(ngModel)]="inlineAuthRemark"
+                           (keydown.enter)="confirmAuth(r)"
+                           (keydown.escape)="cancelAuth()" />
+                    <button class="confirm-yes confirm-yes-green" (click)="confirmAuth(r)" title="Authorize">Authorize</button>
+                    <button class="confirm-no"                     (click)="cancelAuth()" title="Cancel">Cancel</button>
+                  </span>
+
+                  <!-- Inline confirm: revert authorization -->
+                  <span class="confirm-pill confirm-pill-revert" *ngIf="confirmRevertId === r.StageWiseQcid">
+                    <span class="confirm-text">Revert authorization?</span>
+                    <button class="confirm-yes confirm-yes-amber" (click)="confirmRevert(r)">Yes</button>
+                    <button class="confirm-no"                     (click)="cancelRevert()">No</button>
+                  </span>
+                </td>
+              </tr>
+
+              <tr *ngIf="isReportRowExpanded(r)" class="detail-row">
+                <td [attr.colspan]="9">
+                  <div class="detail-wrap">
+                    <div class="detail-header">
+                      <i class="fas fa-list"></i>
+                      <span>Checkpoints for {{ r.StageName }} · {{ r.FromKva }}–{{ r.ToKva }} kVA</span>
+                    </div>
+                    <table class="detail-table">
+                      <thead>
+                        <tr>
+                          <th class="col-srno text-center">Sr.No.</th>
+                          <th>Sub-Assembly Part</th>
+                          <th>Quality/Process Checkpoint</th>
+                          <th>Specification</th>
+                          <th>Observation</th>
+                          <th class="text-center">OK/NOK</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let it of r.Items">
+                          <td class="text-center">{{ it.SrNo }}</td>
+                          <td>{{ it.SubAssemblyPart }}</td>
+                          <td>{{ it.QualityProcessCheckpoint }}</td>
+                          <td>{{ it.Specification }}</td>
+                          <td>{{ it.Observation }}</td>
+                          <td class="text-center">{{ it.OkNok }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
     </div>
+
   </div>
 </div>

@@ -136,4 +136,169 @@
     </div>
   </div>
 
+  <!-- ── Jobcard 2 Report ───────────────────────────────────── -->
+  <div class="jc2-card jc2-card--table jc-card-report">
+    <div class="jc-report-header">
+      <div class="jc-report-title">
+        <i class="fas fa-chart-line"></i>
+        <span>Jobcard 2 Report</span>
+      </div>
+      <div class="jc-report-filters">
+        <label class="jc-filter">
+          <span>From</span>
+          <input type="date" [(ngModel)]="reportFromDate" name="reportFromDate" />
+        </label>
+        <label class="jc-filter">
+          <span>To</span>
+          <input type="date" [(ngModel)]="reportToDate" name="reportToDate" />
+        </label>
+        <button type="button"
+                class="jc-btn-sm"
+                (click)="loadReport()"
+                [disabled]="isLoadingReport">
+          <span *ngIf="!isLoadingReport"><i class="fas fa-search"></i> Search</span>
+          <span *ngIf="isLoadingReport"><i class="fas fa-circle-notch fa-spin"></i> Loading...</span>
+        </button>
+        <div class="jc-search-box">
+          <i class="fas fa-search jc-search-icon"></i>
+          <input type="text"
+                 class="jc-search-input"
+                 [(ngModel)]="reportSearchText"
+                 name="reportSearchText"
+                 placeholder="Filter by JobCard 2 / JobCard 1 / BOM / Part" />
+          <button *ngIf="reportSearchText"
+                  type="button"
+                  class="jc-search-clear"
+                  (click)="reportSearchText = ''"
+                  title="Clear">&times;</button>
+        </div>
+        <button type="button"
+                class="jc-btn-excel"
+                (click)="downloadReportExcel()"
+                [disabled]="isLoadingExcel || isLoadingReport || reportList.length === 0"
+                title="Download report as Excel (.xlsx)">
+          <span *ngIf="!isLoadingExcel"><i class="fas fa-file-excel"></i> Excel</span>
+          <span *ngIf="isLoadingExcel"><i class="fas fa-circle-notch fa-spin"></i> Exporting...</span>
+        </button>
+        <span class="jc-report-count" *ngIf="!isLoadingReport && filteredReportList.length > 0">
+          {{ filteredReportList.length }}<span *ngIf="reportSearchText"> / {{ reportList.length }}</span> rows
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="reportError" class="jc2-alert jc2-alert--error" style="margin: 8px 16px;">
+      <i class="fas fa-times-circle"></i><span>{{ reportError }}</span>
+    </div>
+
+    <div class="jc2-table-wrap">
+      <table class="jc-report-table">
+        <thead>
+          <tr>
+            <th class="jc-th-center" style="width:50px">SrNo</th>
+            <th style="width:170px">JobCard 2</th>
+            <th style="width:170px">JobCard 1</th>
+            <th class="jc-th-center" style="width:120px">Auth Status</th>
+            <th style="width:100px">Jobcard Date</th>
+            <th class="jc-th-center" style="width:75px">Plan No</th>
+            <th style="width:185px">BOM Code</th>
+            <th style="width:170px">Part Code</th>
+            <th class="jc-th-center" style="width:60px">KVA</th>
+            <th class="jc-th-center" style="width:60px">Phase</th>
+            <th style="width:140px">Model</th>
+            <th style="width:140px">Control Panel</th>
+            <th>DG Description</th>
+            <th class="jc-th-center" style="width:75px">Qty</th>
+            <th style="width:150px">Engine</th>
+            <th style="width:150px">Alternator</th>
+            <th style="width:140px">Battery 1</th>
+            <th style="width:140px">Battery 2</th>
+            <th style="width:140px">Battery 3</th>
+            <th style="width:140px">Battery 4</th>
+            <th style="width:150px">Canopy</th>
+            <th style="width:130px">KRM</th>
+            <th style="width:140px">CP 1</th>
+            <th style="width:140px">CP 2</th>
+            <th class="jc-th-center" style="width:100px">Stage 3</th>
+            <th class="jc-th-center" style="width:100px">TR Status</th>
+            <th class="jc-th-center" style="width:100px">PDIR Status</th>
+            <th class="jc-th-center" style="width:130px">QR Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoadingReport">
+            <td colspan="28" class="jc2-empty">
+              <div class="jc2-empty-inner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading report...</p>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingReport && reportList.length === 0 && !reportError">
+            <td colspan="28" class="jc2-empty">
+              <div class="jc2-empty-inner">
+                <i class="fas fa-inbox"></i>
+                <p>No records for the selected range.</p>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingReport && reportList.length > 0 && filteredReportList.length === 0">
+            <td colspan="28" class="jc2-empty">
+              <div class="jc2-empty-inner">
+                <i class="fas fa-search-minus"></i>
+                <p>No JobCards match "{{ reportSearchText }}".</p>
+              </div>
+            </td>
+          </tr>
+          <tr *ngFor="let r of filteredReportList; let i = index">
+            <td class="jc-td-center">{{ i + 1 }}</td>
+            <td class="jc-td-mono" [title]="'Remark: ' + (r.Remark || '—')">{{ r.JobCard2Code }}</td>
+            <td class="jc-td-mono">{{ r.JobCard1Code }}</td>
+            <td class="jc-td-center">
+              <span class="jc-status" [ngClass]="getStatusClass(r.JobCardAuthStatus)">{{ r.JobCardAuthStatus }}</span>
+            </td>
+            <td>{{ r.JobDate }}</td>
+            <td class="jc-td-center">{{ r.PlanNo }}</td>
+            <td class="jc-td-mono">{{ r.BOMCode || '—' }}</td>
+            <td class="jc-td-mono">{{ r.DGProductCode || '—' }}</td>
+            <td class="jc-td-center">{{ r.KVA }}</td>
+            <td class="jc-td-center">{{ r.Phase }}</td>
+            <td>{{ r.Model || '—' }}</td>
+            <td>{{ r.ControlPanel || '—' }}</td>
+            <td class="jc-td-desc" [title]="r.DGProductDesc + ' (' + r.DGProductCode + ')'">{{ r.DGProductDesc }}</td>
+            <td class="jc-td-center">{{ r.PlannedQty }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.EngineSrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.AlternatorSrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.Battery1SrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.Battery2SrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.Battery3SrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.Battery4SrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.CanopySrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.KRMSrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.ControlPanel1SrNo || '—' }}</td>
+            <td class="jc-td-mono jc-td-serial">{{ r.ControlPanel2SrNo || '—' }}</td>
+            <td class="jc-td-center"><span class="jc-status" [ngClass]="getStatusClass(r.Stage3)">{{ r.Stage3 }}</span></td>
+            <td class="jc-td-center"><span class="jc-status" [ngClass]="getStatusClass(r.TRStatus)">{{ r.TRStatus }}</span></td>
+            <td class="jc-td-center"><span class="jc-status" [ngClass]="getStatusClass(r.PDIRStatus)">{{ r.PDIRStatus }}</span></td>
+            <td class="jc-td-center">
+              <button type="button"
+                      class="jc-qr-btn"
+                      [class.jc-qr-btn-locked]="r.JobCardAuthStatus !== 'Authorized'"
+                      (click)="downloadReportQrPdf(r, i)"
+                      [disabled]="qrPdfRowIndex !== -1"
+                      [title]="r.JobCardAuthStatus !== 'Authorized'
+                                 ? 'JobCard not authorized — click for details'
+                                 : 'Download QR Code PDF'">
+                <i class="fas"
+                   [class.fa-qrcode]="qrPdfRowIndex !== i"
+                   [class.fa-circle-notch]="qrPdfRowIndex === i"
+                   [class.fa-spin]="qrPdfRowIndex === i"></i>
+                {{ qrPdfRowIndex === i ? 'Generating' : 'Download' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>

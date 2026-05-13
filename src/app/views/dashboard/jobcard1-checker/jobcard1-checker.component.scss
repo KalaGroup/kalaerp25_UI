@@ -309,6 +309,15 @@ table {
   font-weight: 600;
 }
 
+// Truncated description cell — full text shown via title tooltip on hover
+.td-desc {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
 .action-btn {
   background: none;
   border: 1.5px solid $primary;
@@ -756,6 +765,302 @@ table {
   }
 }
 
+// ── Top section group — visually merges filter + jobcard details + plan details ─
+.ck-section-group {
+  margin: 16px 24px 0;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  overflow: hidden;
+  background: $card;
+
+  > .ck-card {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  > .ck-card + .ck-card {
+    border-top: 1px solid $line;
+  }
+}
+
+// ── Jobcard 1 Report (ported from jobcard1 maker) ─────────────────
+// Sits clearly below the top group with a generous gap.
+.jc-card-report { margin-top: 28px !important; }
+
+.jc-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid $line;
+  background: #fafbfd;
+}
+
+.jc-report-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: $primary;
+  font-size: 14px;
+  i { font-size: 16px; }
+}
+
+.jc-report-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.jc-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $ink-med;
+  font-weight: 600;
+
+  input[type="date"] {
+    border: 1px solid #cfd8dc;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: $ink;
+    background: #fff;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 2px rgba($primary, .15);
+    }
+  }
+}
+
+.jc-btn-sm {
+  background: $primary;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .15s;
+
+  &:hover:not(:disabled) { background: $primary-dark; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+}
+
+.jc-report-count {
+  background: #e3f2fd;
+  color: $primary-dark;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+// JobCode / identifier search box in the report header
+.jc-search-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  .jc-search-icon {
+    position: absolute;
+    left: 8px;
+    color: $ink-light;
+    font-size: 11px;
+    pointer-events: none;
+  }
+
+  .jc-search-input {
+    border: 1px solid #cfd8dc;
+    border-radius: 6px;
+    padding: 5px 26px 5px 26px;
+    font-size: 12px;
+    color: $ink;
+    background: #fff;
+    width: 240px;
+    transition: border-color .15s, box-shadow .15s;
+
+    &::placeholder { color: #b0bec5; font-style: italic; }
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 2px rgba($primary, .15);
+    }
+  }
+
+  .jc-search-clear {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: #cfd8dc;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    &:hover { background: $ink-light; }
+  }
+}
+
+// Status badge — used per stage cell in the report
+.jc-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  min-width: 72px;
+  text-align: center;
+}
+.jc-status-ok       { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.jc-status-pending  { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+.jc-status-off      { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.jc-status-neutral  { background: #eceff1; color: #455a64; border: 1px solid #cfd8dc; }
+
+// Qty cell colouring
+.jc-qty-done     { color: #2e7d32; font-weight: 700; }
+.jc-qty-progress { color: #e65100; font-weight: 700; }
+.jc-qty-pending  { color: #90a4ae; font-weight: 600; }
+
+// Generic centred cell
+.jc-th-center, .jc-td-center { text-align: center; }
+
+// Truncated description cell
+.jc-td-desc {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+// Serial-number cells
+.jc-td-serial {
+  white-space: nowrap;
+  font-size: 11.5px;
+}
+
+// QR Code download button
+.jc-qr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: $primary;
+  border: 1.5px solid $primary;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+
+  i { font-size: 12px; }
+
+  &:hover:not(:disabled) {
+    background: $primary;
+    color: #ffffff;
+  }
+
+  &:disabled {
+    background: #f5f7fa;
+    color: #b0bec5;
+    border-color: #cfd8dc;
+    cursor: not-allowed;
+  }
+
+  // Soft amber tint when JobCard is not authorized — still clickable so
+  // the user sees the validation alert explaining why download is blocked.
+  &.jc-qr-btn-locked:not(:disabled) {
+    background: #fff8e1;
+    color: #ef6c00;
+    border-color: #ffcc80;
+
+    &:hover {
+      background: #ffe0b2;
+      color: #e65100;
+    }
+  }
+}
+
+// Excel export button (next to Search in the report header)
+.jc-btn-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1d6f42;          // Excel green
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+
+  i { font-size: 13px; }
+
+  &:hover:not(:disabled) {
+    background: #166030;
+    box-shadow: 0 2px 8px rgba(29, 111, 66, .25);
+  }
+
+  &:disabled {
+    background: #b0bec5;
+    cursor: not-allowed;
+  }
+}
+
+// Tighten the report table a touch
+.jc-report-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  th, td { padding: 8px 8px; }
+
+  thead th {
+    background: linear-gradient(180deg, $primary 0%, $primary-dark 100%);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    white-space: nowrap;
+  }
+
+  tbody tr { border-bottom: 1px solid $line; }
+  tbody tr:hover { background: #f7fafc; }
+  tbody td { color: $ink; font-size: 12.5px; }
+
+  // mono cells inside the report table
+  .td-mono { white-space: nowrap; }
+}
+
 // ── Responsive ────────────────────────────────────────────────────
 @media (max-width: 768px) {
   .ck-header { padding: 14px 16px; }
@@ -767,4 +1072,6 @@ table {
   }
   .ck-table-header { padding: 10px 16px; }
   th, td { padding: 9px 14px; }
+  .jc-report-header { padding: 10px 12px; }
+  .jc-report-filters { width: 100%; }
 }
