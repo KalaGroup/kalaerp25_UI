@@ -2,10 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'environments/environment';
-import {
-  CheckpointRequest,
-  CheckpointResponse,
-} from './quality-master-checker/quality-master-checker.component';
 
 export interface KaizenSheetRecord {
   id: number;
@@ -195,6 +191,33 @@ export interface PendingAuthQcResponse {
   ToKva: number;
 }
 
+export interface QualityCheckListItem {
+  StageWiseQcdetailId:      number;
+  SrNo:                     number;
+  SubAssemblyPart:          string;
+  QualityProcessCheckpoint: string;
+  Specification:            string;
+  Observation:              string;
+  OkNok:                    string;
+}
+
+export interface QualityCheckListReportRow {
+  StageWiseQcid:     number;
+  Pccode:            string;
+  PCName:            string;
+  StageName:         string;
+  FromKva:           number;
+  ToKva:             number;
+  MakerRemark:       string | null;
+  CheckerAuthRemark: string | null;
+  IsActive:          boolean;
+  IsAuth:            boolean;
+  IsDiscard:         boolean;
+  ItemCount:         number;
+  AuthStatus:        string;
+  Items:             QualityCheckListItem[];
+}
+
 export interface QualityCheckpointResponse {
   StageWiseQcid: number;
   SrNo: number;
@@ -269,12 +292,12 @@ export class QualityService {
   }
 
   getActivePartKvaList(): Observable<PartKvaResponse[]> {
-    const url = `${this.baseUrl}DgStageChecker/GetActivePartKvaList`;
+    const url = `${this.baseUrl}Quality/GetActivePartKvaList`;
     return this.http.get<PartKvaResponse[]>(url);
   }
 
   insertDgQualityMaster(data: any): Observable<any> {
-    const url = `${this.baseUrl}DgStageChecker/SaveStageWiseQualityCheckList`;
+    const url = `${this.baseUrl}Quality/SaveStageWiseQualityCheckList`;
     return this.http.post<any>(url, data);
   }
 
@@ -285,7 +308,7 @@ export class QualityService {
     fromKva: string,
     toKva: string,
   ): Observable<{ isDuplicate: boolean }> {
-    const url = `${this.baseUrl}DgStageChecker/CheckDuplicateQualityCheckList/${pcCode}/${stageName}/${fromKva}/${toKva}`;
+    const url = `${this.baseUrl}Quality/CheckDuplicateQualityCheckList/${pcCode}/${stageName}/${fromKva}/${toKva}`;
     return this.http.get<{ isDuplicate: boolean }>(url);
   }
 
@@ -295,17 +318,43 @@ export class QualityService {
     );
   }
 
-  // Fetch checkpoint data using StageWiseQcid - GET with route parameter
-  getCheckpointData(stageWiseQcid: number): Observable<CheckpointResponse[]> {
-    return this.http.get<CheckpointResponse[]>(
-      `${this.baseUrl}DgStageChecker/GetPendingAuthQAListDetails/${stageWiseQcid}`,
+  // GET — full Quality Check List report (all rows, with item count + status)
+  getAllQualityCheckLists(): Observable<QualityCheckListReportRow[]> {
+    return this.http.get<QualityCheckListReportRow[]>(
+      `${this.baseUrl}Quality/GetAllQualityCheckLists`,
     );
   }
 
-  // Save checkpoint data
-  saveCheckpointData(data: any): Observable<any> {
-    const url = `${this.baseUrl}DgStageChecker/SaveOrUpdateQualityCheckpoint`;
-    return this.http.post<any>(url, data);
+  // POST — update an existing Quality Check List
+  updateDgQualityMaster(payload: any): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}Quality/UpdateStageWiseQualityCheckList`,
+      payload,
+    );
+  }
+
+  // POST — soft-delete a Quality Check List master (IsActive = false)
+  softDeleteDgQualityMaster(stageWiseQcid: number): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}Quality/SoftDeleteStageWiseQualityCheckList/${stageWiseQcid}`,
+      {},
+    );
+  }
+
+  // POST — checker authorization for a Quality Check List (IsAuth = true)
+  authorizeDgQualityMaster(stageWiseQcid: number, checkerRemark: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}Quality/AuthorizeStageWiseQualityCheckList/${stageWiseQcid}`,
+      { checkerRemark },
+    );
+  }
+
+  // POST — revert a previous authorization (IsAuth = false, remark cleared)
+  revertAuthDgQualityMaster(stageWiseQcid: number): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}Quality/RevertAuthorizationStageWiseQualityCheckList/${stageWiseQcid}`,
+      {},
+    );
   }
 
   getStageAndKvaWiseCheckpointList(

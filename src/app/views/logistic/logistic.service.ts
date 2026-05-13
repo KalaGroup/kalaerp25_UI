@@ -13,10 +13,61 @@ export interface MTFCodeAndMTFNoDTO {
   MTFNo: string;
 }
 
+export interface ReqCodeForMTFDTO {
+  ReqCode: string;
+  ReqNo: string;
+}
+
+export interface GetReqDetailsRequest {
+  PCCode: string;
+  StrBomCode: string;
+  StrReqCode: string;
+  StrReqQty: number;
+  StrMTFQty: number;
+}
+
+export interface ReqDetailsForMTFDTO {
+  PartDesc: string;
+  PartCode: string;
+  UName: string;
+  Uid: string;
+  KitQty: number;
+  ReqQty: number;
+  PQty: number;
+  Stk: number;
+  MTFQty: number;
+  QtyAfterMTF: number;
+  Rate: number;
+  Amt: number;
+  SheetQty: number;
+  ConvUOMCode: string;
+  Length: number;
+  Width: number;
+  Thickness: number;
+  MOB: string;
+}
+
+export interface SubmitMTFWipInternalRequest {
+  FromPCCode: string;
+  ToPCCode: string;
+  ReqCode: string;
+  ProdPartCode: string;
+  ReqBalQty: number;
+  MTFQty: number;
+  MTFDetails: string;
+  Remark: string;
+  UserID: string;
+  CompID: string;
+}
+
 export interface PartDescDTO {
+  BOMCode: string;
+  ReqCode: string;
   KitPartDesc: string;
   KitPartCode: string;
+  ReqQty: number;
   MTFQty: number;
+  BalReqQty: number;
 }
 
 export interface MTFSerialNoDtl {
@@ -54,11 +105,30 @@ export class LogisticService {
     return this.http.get<MTFCodeAndMTFNoDTO[]>(url);
   }
 
-  getPartDesc(mtfNo: string): Observable<any> {
+  getReqCodeForMTF(
+    TPCCode: string,
+    FPCCode: string
+  ): Observable<ReqCodeForMTFDTO[]> {
+    const url = `${this.baseUrl}Logistic/GetReqCodeForMTF/${TPCCode}/${FPCCode}`;
+    return this.http.get<ReqCodeForMTFDTO[]>(url);
+  }
+
+  getPartDesc(mtfNo: string): Observable<PartDescDTO[]> {
     const encodedMtfNo = encodeURIComponent(mtfNo);
-    return this.http.get(
+    return this.http.get<PartDescDTO[]>(
       `${this.baseUrl}Logistic/GetPartDescByMTFCode/${encodedMtfNo}`
     );
+  }
+
+  getReqDetails(request: GetReqDetailsRequest): Observable<ReqDetailsForMTFDTO[]> {
+    const url = `${this.baseUrl}Logistic/GetReqDetails`;
+    return this.http.post<ReqDetailsForMTFDTO[]>(url, request);
+  }
+
+  submitMTFWipInternal(request: SubmitMTFWipInternalRequest): Observable<string> {
+    const url = `${this.baseUrl}Logistic/SubmitMTFWipInternal`;
+    // Backend returns a plain string (MTFCode on success, or a validation message)
+    return this.http.post(url, request, { responseType: 'text' });
   }
 
   getMTFSrNoDtl(mtfNo: string): Observable<any> {

@@ -51,10 +51,61 @@ export interface JobCardDtsRow {
   Qty:          number;
 }
 
+export interface JobCard1ReportRow {
+  JobCode:            string;
+  JobDate:            string;
+  FinancialYear:      string;
+  ProfitCenter:       string;
+  AssemblyLine:       string;
+  CompanyCode:        string;
+  Remark:             string;
+  JobCardStatus:      string;
+  JobCardAuthStatus:  string;
+  PlanSrNo:           number;
+  PlanNo:             number;
+  DGProductCode:      string;
+  DGProductDesc:      string;
+  KVA:                number;
+  Phase:              string;
+  Model:              string;
+  PlannedQty:         number;
+  PlanCode:           string;
+  PlanDate:           string;
+  Stage2CompletedQty: number;
+  Engine:             number;
+  Alternator:         number;
+  Batteries:          number;
+  Canopy:             number;
+  TotalComponents:    number;
+  Stage1:             string;
+  Stage1QAStatus:     string;
+  Stage2:             string;
+  Stage2QAStatus:     string;
+  JobCard2Status:     string;
+
+  // Per-plan component serials (combined into JobCard1Report SP)
+  BOMCode?:               string;
+  Engine_SrNo?:           string;
+  Engine_SrNoDesc?:       string;
+  Alternator_SrNo?:       string;
+  Alternator_SrNoDesc?:   string;
+  Battery1_SrNo?:         string;
+  Battery1_SrNoDesc?:     string;
+  Battery2_SrNo?:         string;
+  Battery2_SrNoDesc?:     string;
+  Battery3_SrNo?:         string;
+  Battery3_SrNoDesc?:     string;
+  Battery4_SrNo?:         string;
+  Battery4_SrNoDesc?:     string;
+  Canopy_SrNo?:           string;
+  Canopy_SrNoDesc?:       string;
+}
+
 export interface JobCard1CheckerRow {
   JobCode:   string;
   Dt:        string;
   PartCode:  string;
+  PartDesc:  string;
   Model:     string;
   KVA:       number;
   Phase:     string;
@@ -77,10 +128,22 @@ export interface PlanDetailItem {
   PlanCode: string;
   PlanDate: string;
   PartCode: string;
+  JPriority?: number;
   Engine: string;
+  Engine_Desc?: string;
   Alternator: string;
-  Battery: string;
+  Alternator_Desc?: string;
+  Battery1: string;
+  Battery1_Desc?: string;
+  Battery2: string;
+  Battery2_Desc?: string;
+  Battery3: string;
+  Battery3_Desc?: string;
+  Battery4: string;
+  Battery4_Desc?: string;
   Canopy: string;
+  Canopy_Desc?: string;
+  Remark?: string;
 }
 
 export interface CheckerDetailItem {
@@ -120,6 +183,33 @@ export class Jobcard1Service {
   getJobCardDetails(compCode: string, pcCode: string): Observable<JobCardDtsRow[]> {
     return this.http
       .get<JobCardDtsRow[]>(`${this.baseUrl}Jobcard/GetJobCard1?CompId=${compCode}&AssemblyLine=${pcCode}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // GET — Plan details for one JobCode + Plan number (used by report drill-in modal)
+  getPlanDetailsForReport(jobCode: string, planNo: number): Observable<PlanDetailItem[]> {
+    const url = `${this.baseUrl}Jobcard/GetPlanDetailsForJobcard1Report`
+      + `?jobCode=${encodeURIComponent(jobCode)}`
+      + `&planNo=${planNo}`;
+    return this.http
+      .get<PlanDetailItem[]>(url)
+      .pipe(catchError(this.handleError));
+  }
+
+  // GET — JobCard production report (status + stage progress, one row per plan)
+  getJobCard1Report(
+    compCode: string,
+    assemblyLine: string,
+    fromDate: string,
+    toDate: string
+  ): Observable<JobCard1ReportRow[]> {
+    const url = `${this.baseUrl}Jobcard/GetJobCard1Report`
+      + `?CompanyCode=${encodeURIComponent(compCode)}`
+      + `&AssemblyLine=${encodeURIComponent(assemblyLine)}`
+      + `&FromDate=${encodeURIComponent(fromDate)}`
+      + `&ToDate=${encodeURIComponent(toDate)}`;
+    return this.http
+      .get<JobCard1ReportRow[]>(url)
       .pipe(catchError(this.handleError));
   }
 

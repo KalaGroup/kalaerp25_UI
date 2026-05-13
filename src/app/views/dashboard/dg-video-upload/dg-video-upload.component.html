@@ -50,7 +50,7 @@
     </div>
 
     <!-- Submit Button -->
-    <button class="upload-btn" (click)="uploadFile()" [disabled]="!isFormValid()">
+    <button class="upload-btn" (click)="uploadFile()" [disabled]="!isFormValid() || isUploading">
       <i class="fas fa-upload"></i>
       Upload
     </button>
@@ -119,5 +119,50 @@
   <div class="warningModal_content">
     <p>{{ warningMessage }}</p>
     <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>
+
+<!-- ─── Upload Progress Modal ─── -->
+<div class="upload-overlay" *ngIf="isUploading">
+  <div class="upload-progress-modal">
+
+    <div class="progress-header">
+      <i class="fas fa-cloud-upload-alt progress-icon"></i>
+      <span class="progress-title">Uploading File</span>
+    </div>
+
+    <div class="progress-filename" [title]="selectedFileName">
+      {{ selectedFileName }}
+    </div>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" [style.width.%]="uploadProgress">
+          <span class="progress-shimmer"></span>
+        </div>
+      </div>
+      <div class="progress-percentage">{{ uploadProgress }}%</div>
+    </div>
+
+    <div class="progress-details">
+      <div class="progress-stat" title="Uploaded / Total size">
+        <i class="fas fa-database"></i>
+        <span>{{ formatBytes(uploadedBytes) }} / {{ formatBytes(totalBytes) }}</span>
+      </div>
+      <div class="progress-stat" title="Upload speed">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>{{ formatSpeed(uploadSpeed) }}</span>
+      </div>
+      <div class="progress-stat" title="Estimated time remaining">
+        <i class="far fa-clock"></i>
+        <span>{{ formatETA(uploadETA) }}</span>
+      </div>
+    </div>
+
+    <p class="progress-hint">Please don't close this window. Your upload is in progress.</p>
+
+    <button class="cancel-upload-btn" (click)="cancelUpload()">
+      <i class="fas fa-times"></i> Cancel Upload
+    </button>
   </div>
 </div>

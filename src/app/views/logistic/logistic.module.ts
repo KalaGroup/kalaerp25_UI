@@ -20,12 +20,14 @@ import { LogisticRoutes } from './logistic.routing';
 import { MatSelectModule } from '@angular/material/select';
 import { MtfScanComponent } from './mtf-scan/mtf-scan.component';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { MtfWipInternalComponent } from './mtf-wip-internal/mtf-wip-internal.component';
 
 
 
 @NgModule({
   declarations: [
-    MtfScanComponent
+    MtfScanComponent,
+    MtfWipInternalComponent
   ],
   imports: [
     CommonModule,

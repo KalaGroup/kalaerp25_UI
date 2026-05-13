@@ -479,3 +479,427 @@
     cursor: pointer;
     margin-top: 10px;
   }
+
+// ── Edit-mode banner ─────────────────────────────────────────────
+.edit-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 16px 20px;
+  padding: 10px 14px;
+  background: #eef5fc;
+  border: 1px solid #cfe0f1;
+  border-left: 3px solid #4a8bd1;
+  border-radius: 6px;
+  color: #2a4f73;
+  font-size: 13px;
+
+  svg { color: #4a8bd1; flex-shrink: 0; }
+
+  .edit-banner-text {
+    flex: 1;
+    strong { color: #1565c0; font-weight: 700; }
+  }
+
+  .edit-banner-cancel {
+    background: transparent;
+    border: 1px solid #cfd8dc;
+    color: #546e7a;
+    padding: 4px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    &:hover { background: #fff; color: #c62828; border-color: #ffcdd2; }
+  }
+}
+
+.btn-cancel-edit {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .55);
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: all .15s;
+  &:hover:not(:disabled) { background: rgba(255, 255, 255, .12); border-color: #fff; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+}
+
+.form-select:disabled {
+  background: #f0f4f8;
+  color: #546e7a;
+  cursor: not-allowed;
+  opacity: .9;
+}
+
+// ── Checker remark section ───────────────────────────────────────
+.checker-remark-section {
+  margin-top: 18px;
+
+  .remark-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #455a64;
+    margin-bottom: 6px;
+  }
+
+  .remark-hint {
+    margin-left: 8px;
+    font-size: 11.5px;
+    font-weight: 500;
+    font-style: italic;
+    color: #90a4ae;
+  }
+}
+
+// ── Saved Quality Checklists Report ──────────────────────────────
+.report-section {
+  margin-top: 28px;
+  background: #fff;
+  border: 1px solid #e1e5ea;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #f5f9fd 0%, #ffffff 100%);
+  border-bottom: 1px solid #e1e5ea;
+}
+
+.report-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a3a52;
+  letter-spacing: .2px;
+}
+
+.report-meta { display: inline-flex; align-items: center; gap: 10px; }
+
+.report-count {
+  background: #e3f2fd;
+  color: #0d47a1;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  &:hover:not(:disabled) { background: #0d47a1; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+  svg { display: block; }
+}
+
+.report-error {
+  margin: 8px 16px;
+  padding: 8px 12px;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.report-table-container { overflow-x: auto; }
+
+.report-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  th, td { padding: 9px 12px; }
+
+  thead th {
+    background: #f0f4f8;
+    color: #455a64;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    text-align: left;
+    border-bottom: 1px solid #e1e5ea;
+    white-space: nowrap;
+  }
+
+  tbody tr { border-bottom: 1px solid #eceff1; }
+  tbody tr:hover { background: #f7fafc; }
+  tbody td {
+    font-size: 13px;
+    color: #263238;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th.text-center, td.text-center { text-align: center !important; }
+}
+
+// Status pill
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  min-width: 72px;
+  text-align: center;
+}
+.status-pill.status-ok       { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.status-pill.status-pending  { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+.status-pill.status-off      { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.status-pill.status-neutral  { background: #eceff1; color: #455a64; border: 1px solid #cfd8dc; }
+
+// Items toggle
+.items-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: #1565c0;
+  border: 1px dashed transparent;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  .items-chevron { transition: transform .18s; color: #90a4ae; }
+  &:hover:not(:disabled) { background: #e3f2fd; border-color: rgba(21, 101, 192, .25); .items-chevron { color: #1565c0; } }
+  &.is-open { background: #e3f2fd; border-color: rgba(21, 101, 192, .35); .items-chevron { transform: rotate(90deg); color: #1565c0; } }
+  &:disabled { color: #90a4ae; cursor: default; .items-chevron { display: none; } }
+}
+
+// Master row highlight when expanded
+.report-table tbody tr.row-expanded > td { background: #eaf2fb; }
+
+// Row currently being edited — soft amber so it stands out from
+// "expanded" and from "hover" without competing with the status pills.
+.report-table tbody tr.row-editing > td {
+  background: #fff8e1 !important;        // soft amber
+  border-bottom-color: #ffe0b2;
+  position: relative;
+}
+.report-table tbody tr.row-editing > td:first-child {
+  box-shadow: inset 4px 0 0 #f6a623;     // amber left ribbon
+}
+
+.edit-marker {
+  display: inline-block;
+  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 50%;
+  background: #f6a623;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  vertical-align: middle;
+}
+
+// Detail row + inner card
+.detail-row > td {
+  background: #eef5fc !important;
+  padding: 0 !important;
+  border-top: 1px solid #cfe0f1;
+  border-bottom: 1px solid #cfe0f1 !important;
+}
+.detail-wrap {
+  margin: 10px 14px 12px;
+  padding: 12px 14px 14px;
+  background: #ffffff;
+  border: 1px solid #d8e4f0;
+  border-left: 3px solid #4a8bd1;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(21, 101, 192, .06);
+}
+.detail-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: #2a4f73;
+  i { color: #4a8bd1; font-size: 12px; }
+}
+.detail-table {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e3eaf2;
+  border-radius: 6px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+
+  thead th {
+    background: #f3f7fb;
+    color: #38597a;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #dde6ef;
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 8px 10px;
+    font-size: 12.5px;
+    color: #2c3e50;
+    border-bottom: 1px solid #f0f4f8;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) td { background: #fafcfe; }
+  tbody tr:hover td           { background: #f1f6fb; }
+  tbody tr:last-child td      { border-bottom: none; }
+  .text-center { text-align: center !important; }
+}
+
+// ── Action icons (Authorize · Edit · Delete) ─────────────────────
+.action-cell { white-space: nowrap; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0 2px;
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #546e7a;
+  padding: 0;
+  transition: all .15s;
+  svg { display: block; }
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+}
+
+.icon-btn-auth {
+  &:hover:not(:disabled) {
+    color: #2e7d32;
+    background: #e8f5e9;
+    border-color: #c8e6c9;
+  }
+}
+
+.icon-btn-revert {
+  &:hover:not(:disabled) {
+    color: #e65100;
+    background: #fff3e0;
+    border-color: #ffe0b2;
+  }
+}
+.icon-btn-edit {
+  &:hover:not(:disabled) {
+    color: #1565c0;
+    background: #e3f2fd;
+    border-color: #bbdefb;
+  }
+}
+.icon-btn-delete {
+  &:hover:not(:disabled) {
+    color: #c62828;
+    background: #ffebee;
+    border-color: #ffcdd2;
+  }
+}
+
+// Inline "Delete?/Authorize? [Yes] [No]" pills
+.confirm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 14px;
+  padding: 3px 8px 3px 12px;
+  font-size: 12px;
+
+  .confirm-text { font-weight: 600; }
+
+  .confirm-yes, .confirm-no {
+    border: none;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .confirm-no { background: #e0e0e0; color: #455a64; &:hover { background: #c8c8c8; } }
+  .confirm-yes-red   { background: #c62828; color: #fff; &:hover { background: #a51d1d; } }
+  .confirm-yes-green { background: #2e7d32; color: #fff; &:hover { background: #1f5e23; } }
+  .confirm-yes-amber { background: #e65100; color: #fff; &:hover { background: #bf4400; } }
+}
+
+.confirm-pill.confirm-pill-delete {
+  background: #fff5f5;
+  border: 1px solid #ffcdd2;
+  .confirm-text { color: #c62828; }
+}
+.confirm-pill.confirm-pill-auth {
+  background: #f1faf2;
+  border: 1px solid #c8e6c9;
+  .confirm-text { color: #2e7d32; }
+}
+.confirm-pill.confirm-pill-revert {
+  background: #fff8ec;
+  border: 1px solid #ffe0b2;
+  .confirm-text { color: #e65100; }
+}
+
+// Wider auth pill so the inline remark input fits comfortably
+.confirm-pill.confirm-pill-auth-wide {
+  padding: 3px 4px 3px 8px;
+  gap: 4px;
+}
+
+.confirm-remark-input {
+  border: 1px solid #c8e6c9;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #263238;
+  width: 200px;
+  max-width: 240px;
+  outline: none;
+
+  &::placeholder { color: #a5cca7; font-style: italic; }
+  &:focus {
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, .15);
+  }
+}

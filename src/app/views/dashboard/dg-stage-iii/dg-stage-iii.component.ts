@@ -1060,13 +1060,12 @@ export class DgStageIIIComponent implements OnInit {
     for (let i = 0; i < this.batteryScanDetailsStart.length; i++) {
       const battery = this.batteryScanDetailsStart[i];
 
-      // Only validate if battery exists and has valid data (not stk='0')
+      // Validate if battery row is real (has serial + part + desc).
+      // stk is no longer required — current API doesn't include it in BatDts.
       if (
         battery.qrSrNo &&
         battery.batteryPart &&
-        battery.batteryDesc &&
-        battery.stk &&
-        battery.stk !== '0'
+        battery.batteryDesc
       ) {
         // Battery must be green (scanned result matches)
         if (this.scannedBatteryQrResultsStart[i] !== battery.qrSrNo) {
@@ -1078,8 +1077,9 @@ export class DgStageIIIComponent implements OnInit {
     return true; // All scanned batteries are valid
   }
 
-  // Control Panel 1 - Required (turns green when matches)
+  // Control Panel 1 - Required ONLY if visible (qrSrNo present and not '0')
   isControlPanel1ValidStart(): boolean {
+    if (!this.isControlPanel1Visible('Start')) return true;
     return (
       !!this.scanDetails?.Start?.controlPanel1?.qrSrNo &&
       this.scannedQrResultCP1Start ===
@@ -1087,9 +1087,10 @@ export class DgStageIIIComponent implements OnInit {
     );
   }
 
-  // Control Panel 2 - OPTIONAL (always returns true - IGNORED as per requirement)
+  // Control Panel 2 - Required ONLY if visible (currently always optional)
   isControlPanel2ValidStart(): boolean {
-    return true; // Completely ignored for save validation
+    if (!this.isControlPanel2Visible('Start')) return true;
+    return true; // Still treated as optional even when visible
   }
 
   // KRM - Required only if KRM found AND has valid serial to scan
@@ -1158,13 +1159,12 @@ export class DgStageIIIComponent implements OnInit {
     for (let i = 0; i < this.batteryScanDetailsEnd.length; i++) {
       const battery = this.batteryScanDetailsEnd[i];
 
-      // Only validate if battery exists and has valid data (not stk='0')
+      // Validate if battery row is real (has serial + part + desc).
+      // stk is no longer required — current API doesn't include it in BatDts.
       if (
         battery.qrSrNo &&
         battery.batteryPart &&
-        battery.batteryDesc &&
-        battery.stk &&
-        battery.stk !== '0'
+        battery.batteryDesc
       ) {
         // Battery must be green (scanned result matches)
         if (this.scannedBatteryQrResultsEnd[i] !== battery.qrSrNo) {
