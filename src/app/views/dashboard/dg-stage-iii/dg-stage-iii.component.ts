@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChildren, QueryList, ElementRef, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
 import { DgStageIIIService } from './dg-stage-iii-service.service';
@@ -11,7 +11,7 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
     styleUrl: './dg-stage-iii.component.scss',
     standalone: false
 })
-export class DgStageIIIComponent implements OnInit {
+export class DgStageIIIComponent implements OnInit, OnDestroy {
   [key: string]: any;
   userId: string = '';
   profitcenter_old: string = '';
@@ -66,6 +66,61 @@ export class DgStageIIIComponent implements OnInit {
     | 'controlPanel1'
     | 'controlPanel2'
     | null = null;
+
+  // RUGTEK HID barcode/QR scanner support.
+  // RUGTEK acts as a USB keyboard: it types the decoded value then sends Enter.
+  // A hidden auto-focused input next to each <zxing-scanner> captures that
+  // keystream and routes it through the same handler the camera already uses,
+  // so both input methods work side-by-side without touching the camera path.
+  @ViewChildren('hidScannerInput') hidScannerInputs!: QueryList<ElementRef<HTMLInputElement>>;
+
+  // 'init'   - scanner just mounted, zxing hasn't reported yet
+  // 'available'   - zxing found at least one camera
+  // 'unavailable' - zxing found zero cameras (no hardware, permission blocked,
+  //                 non-secure context, or device in use by another app)
+  cameraStatus: 'init' | 'available' | 'unavailable' = 'init';
+
+  // Saved references so the console filter installed in ngOnInit can be
+  // restored when the component is destroyed.
+  private originalConsoleError?: typeof console.error;
+  private originalConsoleWarn?: typeof console.warn;
+  private deviceChangeHandler?: () => void;
+
+  // Document-level HID keystroke buffer (see onDocumentKeydown).
+  private hidBuffer = '';
+  private hidLastKeyAt = 0;
+  private readonly HID_MAX_GAP_MS = 80;
+  private readonly HID_MIN_LENGTH = 3;
+
+  // Names of all single-instance scanner flags on this component. Used by
+  // isAnyScannerOpen / dispatchHidScan / remountActiveScanner so they don't
+  // need to hard-code 12 if-branches. Note the inconsistent casing in the
+  // existing names (showQrScanner vs showQRScanner) — preserved as-is.
+  private readonly scannerFlags: string[] = [
+    'showQrScannerEngineStart', 'showQrScannerEngineEnd',
+    'showQrScannerAlternatorStart', 'showQrScannerAlternatorEnd',
+    'showQrScannerCanopyStart', 'showQrScannerCanopyEnd',
+    'showQrScannerControlPanel1Start', 'showQrScannerControlPanel1End',
+    'showQRScannerControlPanel2Start', 'showQRScannerControlPanel2End',
+    'showQRScannerKRMStart', 'showQRScannerKRMEnd',
+  ];
+
+  // (flag name) -> (type, action) for dispatching HID scans back into
+  // handleQrCodeResult, mirroring the (scanSuccess) bindings in the template.
+  private readonly scannerFlagRoute: { [flag: string]: { type: string; action: 'Start' | 'End' } } = {
+    showQrScannerEngineStart: { type: 'engine', action: 'Start' },
+    showQrScannerEngineEnd: { type: 'engine', action: 'End' },
+    showQrScannerAlternatorStart: { type: 'alternator', action: 'Start' },
+    showQrScannerAlternatorEnd: { type: 'alternator', action: 'End' },
+    showQrScannerCanopyStart: { type: 'canopy', action: 'Start' },
+    showQrScannerCanopyEnd: { type: 'canopy', action: 'End' },
+    showQrScannerControlPanel1Start: { type: 'controlPanel1', action: 'Start' },
+    showQrScannerControlPanel1End: { type: 'controlPanel1', action: 'End' },
+    showQRScannerControlPanel2Start: { type: 'controlPanel2', action: 'Start' },
+    showQRScannerControlPanel2End: { type: 'controlPanel2', action: 'End' },
+    showQRScannerKRMStart: { type: 'krm', action: 'Start' },
+    showQRScannerKRMEnd: { type: 'krm', action: 'End' },
+  };
   selectedSixMItem: string | null = null;
   apiResponse: any;
   selectedTabIndex: number = 0;
@@ -213,6 +268,236 @@ export class DgStageIIIComponent implements OnInit {
       this.profitcenter_act = pccode_Act;
       this.profitcenter_old = pccode_Old;
     }
+    this.installZxingConsoleFilter();
+    this.installDeviceChangeListener();
+  }
+
+  ngOnDestroy(): void {
+    if (this.originalConsoleError) console.error = this.originalConsoleError;
+    if (this.originalConsoleWarn) console.warn = this.originalConsoleWarn;
+    if (this.deviceChangeHandler && navigator.mediaDevices?.removeEventListener) {
+      navigator.mediaDevices.removeEventListener('devicechange', this.deviceChangeHandler);
+    }
+  }
+
+  // <zxing-scanner> calls console.error / console.warn from
+  // handlePermissionException when no camera is available. Those calls bypass
+  // the (scanError) output, so the only way to keep DevTools clean on a
+  // RUGTEK-only machine is to filter them at the console level. The filter is
+  // surgical (matches the exact zxing prefix + permission strings) and is
+  // uninstalled on destroy so nothing else in the app is affected.
+  private installZxingConsoleFilter(): void {
+    const isZxingPermissionNoise = (args: unknown[]): boolean => {
+      const joined = args
+        .map((a) => {
+          if (typeof a === 'string') return a;
+          if (a instanceof Error) return `${a.name} ${a.message}`;
+          try {
+            return String(a);
+          } catch {
+            return '';
+          }
+        })
+        .join(' ');
+      if (!joined.includes('@zxing/ngx-scanner')) return false;
+      return (
+        joined.includes('Error when asking for permission') ||
+        joined.includes('Requested device not found') ||
+        joined.includes('NotFoundError')
+      );
+    };
+
+    this.originalConsoleError = console.error.bind(console);
+    console.error = (...args: unknown[]) => {
+      if (isZxingPermissionNoise(args)) return;
+      this.originalConsoleError!.apply(console, args as unknown[] as []);
+    };
+
+    this.originalConsoleWarn = console.warn.bind(console);
+    console.warn = (...args: unknown[]) => {
+      if (isZxingPermissionNoise(args)) return;
+      this.originalConsoleWarn!.apply(console, args as unknown[] as []);
+    };
+  }
+
+  // Hot-swap support across desktop AND mobile: when camera hardware or
+  // permission state changes (USB webcam plugged/unplugged, RUGTEK swapped
+  // in/out, mobile OS revokes camera, external USB-C camera attached to a
+  // phone), the browser fires 'devicechange' on navigator.mediaDevices. We
+  // remount whichever scanner section is currently open so zxing
+  // re-enumerates against the new device list — no page reload required.
+  private installDeviceChangeListener(): void {
+    if (!navigator.mediaDevices?.addEventListener) return;
+    this.deviceChangeHandler = () => {
+      console.log('[zxing-diag] devicechange - re-detecting cameras');
+      this.cameraStatus = 'init';
+      this.remountActiveScanner();
+    };
+    navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeHandler);
+  }
+
+  private remountActiveScanner(): void {
+    const wasOpen: { [k: string]: boolean } = {};
+    this.scannerFlags.forEach((f) => (wasOpen[f] = !!this[f]));
+    const wasBatStart =
+      this.batteryScanDetailsStart?.map((b: any) => !!b?.showQrScanner) || [];
+    const wasBatEnd =
+      this.batteryScanDetailsEnd?.map((b: any) => !!b?.showQrScanner) || [];
+    const anyOpen =
+      this.scannerFlags.some((f) => !!this[f]) ||
+      wasBatStart.some(Boolean) ||
+      wasBatEnd.some(Boolean);
+    if (!anyOpen) {
+      this.cdr.detectChanges();
+      return;
+    }
+    this.scannerFlags.forEach((f) => (this[f] = false));
+    this.batteryScanDetailsStart?.forEach((b: any) => {
+      if (b) b.showQrScanner = false;
+    });
+    this.batteryScanDetailsEnd?.forEach((b: any) => {
+      if (b) b.showQrScanner = false;
+    });
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.scannerFlags.forEach((f) => (this[f] = wasOpen[f]));
+      wasBatStart.forEach((open: boolean, i: number) => {
+        if (this.batteryScanDetailsStart[i])
+          this.batteryScanDetailsStart[i].showQrScanner = open;
+      });
+      wasBatEnd.forEach((open: boolean, i: number) => {
+        if (this.batteryScanDetailsEnd[i])
+          this.batteryScanDetailsEnd[i].showQrScanner = open;
+      });
+      this.cdr.detectChanges();
+      this.focusActiveHidInput();
+    }, 150);
+  }
+
+  // Move keyboard focus to whichever hidden scanner input is currently in
+  // the DOM, so the RUGTEK gun can deliver characters + Enter to it.
+  private focusActiveHidInput(): void {
+    setTimeout(() => {
+      const visible = this.hidScannerInputs?.find(
+        (ref) => ref.nativeElement.offsetParent !== null
+      );
+      visible?.nativeElement.focus();
+    }, 50);
+  }
+
+  // Triggered when RUGTEK (or any HID scanner) presses Enter after typing the
+  // code while focus happens to be on the hidden input.
+  onHidScan(
+    input: HTMLInputElement,
+    type: string,
+    action: 'Start' | 'End',
+    index?: number
+  ): void {
+    const value = (input.value || '').trim();
+    input.value = '';
+    console.log('[RUGTEK] hidden-input scan:', value, type, action, index);
+    if (!value) return;
+    this.handleQrCodeResult(value, type, action, index);
+  }
+
+  // Document-level keystroke buffer for the RUGTEK HID scanner.
+  // The hidden input above only catches keys when focus actually lands on it,
+  // which is fragile (the SCAN button may keep focus, modals may steal it,
+  // etc.). This listener is focus-independent: while any scan section is
+  // open, it accumulates rapid keystrokes and dispatches on Enter, routing
+  // the value to the same handler the camera path uses.
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (!this.isAnyScannerOpen()) return;
+
+    const target = event.target as HTMLElement | null;
+    if (target && target.classList?.contains('hid-scanner-input')) {
+      // dedicated hidden input handles its own (keydown.enter)
+      return;
+    }
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable)
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    const gap = now - this.hidLastKeyAt;
+    this.hidLastKeyAt = now;
+
+    if (event.key === 'Enter') {
+      const value = this.hidBuffer.trim();
+      this.hidBuffer = '';
+      console.log('[RUGTEK] document scan:', value);
+      if (value.length >= this.HID_MIN_LENGTH) {
+        this.dispatchHidScan(value);
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (event.key.length === 1) {
+      if (gap > this.HID_MAX_GAP_MS) this.hidBuffer = '';
+      this.hidBuffer += event.key;
+    }
+  }
+
+  private isAnyScannerOpen(): boolean {
+    if (this.scannerFlags.some((f) => !!this[f])) return true;
+    return (
+      (this.batteryScanDetailsStart || []).some((b: any) => !!b?.showQrScanner) ||
+      (this.batteryScanDetailsEnd || []).some((b: any) => !!b?.showQrScanner)
+    );
+  }
+
+  private dispatchHidScan(value: string): void {
+    for (const flag of this.scannerFlags) {
+      if (this[flag]) {
+        const route = this.scannerFlagRoute[flag];
+        this.handleQrCodeResult(value, route.type, route.action);
+        return;
+      }
+    }
+    const startIdx = (this.batteryScanDetailsStart || []).findIndex(
+      (b: any) => !!b?.showQrScanner
+    );
+    if (startIdx >= 0) {
+      this.handleQrCodeResult(value, 'battery', 'Start', startIdx);
+      return;
+    }
+    const endIdx = (this.batteryScanDetailsEnd || []).findIndex(
+      (b: any) => !!b?.showQrScanner
+    );
+    if (endIdx >= 0) {
+      this.handleQrCodeResult(value, 'battery', 'End', endIdx);
+    }
+  }
+
+  // Silently swallow camera errors (e.g. NotFoundError on PCs without a webcam).
+  // The HID scanner path continues to work via the document keydown listener.
+  onScannerError(_err: unknown): void {}
+
+  // Diagnostic listeners for the camera path. They log via console.log which
+  // is NOT covered by our console.error/warn filter, so they remain visible
+  // and help reveal why the scanner viewport stays blank (permission denial,
+  // zero devices, etc.).
+  onScannerPermission(granted: boolean): void {
+    console.log('[zxing-diag] permission granted:', granted);
+  }
+
+  onCamerasFound(devices: MediaDeviceInfo[]): void {
+    console.log('[zxing-diag] cameras found:', devices?.length ?? 0, devices);
+    this.cameraStatus = (devices?.length ?? 0) > 0 ? 'available' : 'unavailable';
+    this.cdr.detectChanges();
+  }
+
+  onCamerasNotFound(): void {
+    console.log('[zxing-diag] no cameras found by zxing');
+    this.cameraStatus = 'unavailable';
+    this.cdr.detectChanges();
   }
 
   fetchSixMData(): void {
@@ -244,7 +529,9 @@ export class DgStageIIIComponent implements OnInit {
       this[`batteryScanDetails${action}`].forEach(
         (battery) => (battery.showQrScanner = false)
       ); // Reset battery scanners
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   onScanAlternatorClick(action: 'Start' | 'End') {
@@ -264,7 +551,9 @@ export class DgStageIIIComponent implements OnInit {
       this[`batteryScanDetails${action}`].forEach(
         (battery) => (battery.showQrScanner = false)
       );
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   onScanCanopyClick(action: 'Start' | 'End') {
@@ -284,7 +573,9 @@ export class DgStageIIIComponent implements OnInit {
       this[`batteryScanDetails${action}`].forEach(
         (battery) => (battery.showQrScanner = false)
       );
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   onScanBatteryClick(action: 'Start' | 'End', index: number): void {
@@ -306,7 +597,9 @@ export class DgStageIIIComponent implements OnInit {
       ];
 
       elements.forEach((element) => (this[`${element}${action}`] = false));
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   onScanControlPanel1Click(action: 'Start' | 'End') {
@@ -326,7 +619,9 @@ export class DgStageIIIComponent implements OnInit {
       this[`batteryScanDetails${action}`].forEach(
         (battery) => (battery.showQrScanner = false)
       );
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   onScanControlPanel2Click(action: 'Start' | 'End') {
@@ -346,7 +641,9 @@ export class DgStageIIIComponent implements OnInit {
       this[`batteryScanDetails${action}`].forEach(
         (battery) => (battery.showQrScanner = false)
       );
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   onScanKRMClick(action: 'Start' | 'End') {
@@ -366,7 +663,9 @@ export class DgStageIIIComponent implements OnInit {
       this[`batteryScanDetails${action}`].forEach(
         (battery) => (battery.showQrScanner = false)
       );
+      this.cameraStatus = 'init';
     }
+    this.focusActiveHidInput();
   }
 
   toggleDropdown() {

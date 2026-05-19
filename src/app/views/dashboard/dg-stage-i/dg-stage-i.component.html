@@ -40,8 +40,20 @@
           <div class="qr-scanner-container">
             <div *ngIf="showQrScannerEngineStart" class="qr-scanner-wrapper">
               <div class="qr-scan-header">Scan QR Code</div>
-              <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event,'engine')">
+              <zxing-scanner [formats]="allowedFormats"
+                             (scanSuccess)="handleQrCodeResult($event,'engine')"
+                             (scanError)="onScannerError($event)"
+                             (permissionResponse)="onScannerPermission($event)"
+                             (camerasFound)="onCamerasFound($event)"
+                             (camerasNotFound)="onCamerasNotFound()">
               </zxing-scanner>
+              <div *ngIf="cameraStatus === 'unavailable'" class="no-camera-message">
+                Camera not available on this device.<br>
+                Use the connected barcode/QR scanner.
+              </div>
+              <input #hidScannerInput type="text" class="hid-scanner-input"
+                     autocomplete="off"
+                     (keydown.enter)="onHidScan(hidScannerInput,'engine','start')" />
             </div>
           </div>
           <!-- SCAN ENGINE Details -->
@@ -70,8 +82,20 @@
           <div class="qr-scanner-container">
             <div *ngIf="showQrScannerAlternatorStart" class="qr-scanner-wrapper">
               <div class="qr-scan-header">Scan QR Code</div>
-              <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult($event,'alternator')">
+              <zxing-scanner [formats]="allowedFormats"
+                             (scanSuccess)="handleQrCodeResult($event,'alternator')"
+                             (scanError)="onScannerError($event)"
+                             (permissionResponse)="onScannerPermission($event)"
+                             (camerasFound)="onCamerasFound($event)"
+                             (camerasNotFound)="onCamerasNotFound()">
               </zxing-scanner>
+              <div *ngIf="cameraStatus === 'unavailable'" class="no-camera-message">
+                Camera not available on this device.<br>
+                Use the connected barcode/QR scanner.
+              </div>
+              <input #hidScannerInput type="text" class="hid-scanner-input"
+                     autocomplete="off"
+                     (keydown.enter)="onHidScan(hidScannerInput,'alternator','start')" />
             </div>
           </div>
           <!-- SCAN ALTERNATOR Details -->
@@ -145,8 +169,20 @@
           <div class="qr-scanner-container">
             <div *ngIf="showQrScannerEngineEnd" class="qr-scanner-wrapper">
               <div class="qr-scan-header">Scan QR Code</div>
-              <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult1($event, 'engine')">
+              <zxing-scanner [formats]="allowedFormats"
+                             (scanSuccess)="handleQrCodeResult1($event, 'engine')"
+                             (scanError)="onScannerError($event)"
+                             (permissionResponse)="onScannerPermission($event)"
+                             (camerasFound)="onCamerasFound($event)"
+                             (camerasNotFound)="onCamerasNotFound()">
               </zxing-scanner>
+              <div *ngIf="cameraStatus === 'unavailable'" class="no-camera-message">
+                Camera not available on this device.<br>
+                Use the connected barcode/QR scanner.
+              </div>
+              <input #hidScannerInput type="text" class="hid-scanner-input"
+                     autocomplete="off"
+                     (keydown.enter)="onHidScan(hidScannerInput,'engine','end')" />
             </div>
           </div>
           <!-- SCAN ENGINE Details -->
@@ -171,8 +207,20 @@
           <div class="qr-scanner-container">
             <div *ngIf="showQrScannerAlternatorEnd" class="qr-scanner-wrapper">
               <div class="qr-scan-header">Scan QR Code</div>
-              <zxing-scanner [formats]="allowedFormats" (scanSuccess)="handleQrCodeResult1($event, 'alternator')">
+              <zxing-scanner [formats]="allowedFormats"
+                             (scanSuccess)="handleQrCodeResult1($event, 'alternator')"
+                             (scanError)="onScannerError($event)"
+                             (permissionResponse)="onScannerPermission($event)"
+                             (camerasFound)="onCamerasFound($event)"
+                             (camerasNotFound)="onCamerasNotFound()">
               </zxing-scanner>
+              <div *ngIf="cameraStatus === 'unavailable'" class="no-camera-message">
+                Camera not available on this device.<br>
+                Use the connected barcode/QR scanner.
+              </div>
+              <input #hidScannerInput type="text" class="hid-scanner-input"
+                     autocomplete="off"
+                     (keydown.enter)="onHidScan(hidScannerInput,'alternator','end')" />
             </div>
           </div>
           <!-- SCAN ALTERNATOR Details -->
