@@ -1,0 +1,115 @@
+<div class="rp-container">
+  <div *ngIf="errorMessage" class="errorModal">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="successModal">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <div class="rp-header">Reverse Process</div>
+
+  <!-- Filter form -->
+  <div class="rp-form-grid">
+    <!-- Row 1 (read-only context) -->
+    <div class="rp-field">
+      <label>Reverse Tran Code</label>
+      <input class="rp-input rp-readonly" [value]="reverseTranCode" readonly />
+    </div>
+    <div class="rp-field">
+      <label>Reverse Tran Date</label>
+      <input class="rp-input rp-prefilled" [value]="reverseTranDate" readonly />
+    </div>
+    <div class="rp-field">
+      <label>Profitcenter</label>
+      <input class="rp-input rp-prefilled" [value]="profitcenter" readonly />
+    </div>
+
+    <!-- Row 2 (selectable filters + search) -->
+    <div class="rp-field">
+      <label>Reverse Transaction For</label>
+      <select class="rp-select" [(ngModel)]="reverseTxnFor" (ngModelChange)="onReverseTxnForChange()">
+        <option *ngFor="let opt of reverseTxnForOptions" [value]="opt.TransName">{{ opt.TransName }}</option>
+      </select>
+    </div>
+    <div class="rp-field">
+      <label>Select KVA</label>
+      <select class="rp-select" [(ngModel)]="selectedKVA" (ngModelChange)="onSelectedKVAChange()">
+        <option *ngFor="let opt of kvaOptions" [value]="opt">{{ opt }}</option>
+      </select>
+    </div>
+    <div class="rp-field rp-field-with-action">
+      <label>Select Model</label>
+      <div class="rp-model-row">
+        <select class="rp-select" [(ngModel)]="selectedModel">
+          <option *ngFor="let opt of modelOptions" [value]="opt">{{ opt }}</option>
+        </select>
+        <button class="rp-btn rp-btn-search" type="button" (click)="onSearch()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details section -->
+  <div class="rp-section-label">Reverse Details</div>
+
+  <div class="rp-table-wrapper">
+    <table class="rp-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of reverseColumns">{{ col }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="reverseDetails.length === 0">
+          <td [attr.colspan]="reverseColumns.length" class="rp-empty">No Record(s) Found</td>
+        </tr>
+        <tr *ngFor="let row of reverseDetails; let i = index" [class.rp-row-selected]="!!row?.SelectR">
+          <td>{{ i + 1 }}</td>
+          <td>
+            <input type="checkbox"
+                   [checked]="!!row.SelectR"
+                   (change)="row.SelectR = ($any($event.target).checked ? 1 : 0)" />
+          </td>
+          <td>{{ row.Stage4Code }}</td>
+          <td>{{ row.TRCode }}</td>
+          <td>{{ row.KVA }}</td>
+          <td>{{ row.Phase }}</td>
+          <td>{{ row.Model }}</td>
+          <td>{{ row.Panel }}</td>
+          <td>{{ row.EngSrNo }}</td>
+          <td>{{ row.AltSrno }}</td>
+          <td>{{ row.CpySrno }}</td>
+          <td>{{ row.BatSrNo }}</td>
+          <td>{{ row.Bat2SrNo }}</td>
+          <td>{{ row.Bat3SrNo }}</td>
+          <td>{{ row.Bat4SrNo }}</td>
+          <td>{{ row.CPSrNo }}</td>
+          <td>{{ row.CP2SrNo }}</td>
+          <td>{{ row.KRMSrNo }}</td>
+          <td>{{ row.Partcode }}</td>
+          <td>{{ row.JobCode }}</td>
+          <td>{{ row.J2Priority }}</td>
+          <td>{{ row.Dt | date:'dd-MM-yyyy' }}</td>
+          <td>{{ row.JobCard1 }}</td>
+          <td>{{ row.PanelType }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer: remark + submit -->
+  <div class="rp-footer">
+    <div class="rp-field rp-remark">
+      <label>Remark</label>
+      <input class="rp-input" type="text" [(ngModel)]="remark" />
+    </div>
+    <button class="rp-btn rp-btn-submit" type="button" (click)="onSubmit()">Submit</button>
+  </div>
+</div>

@@ -292,7 +292,7 @@ export class QualityService {
   }
 
   getActivePartKvaList(): Observable<PartKvaResponse[]> {
-    const url = `${this.baseUrl}Quality/GetActivePartKvaList`;
+    const url = `${this.baseUrl}DgStageChecker/GetActivePartKvaList`;
     return this.http.get<PartKvaResponse[]>(url);
   }
 
