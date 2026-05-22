@@ -34,6 +34,7 @@ import { DgVideoUploadComponent } from './dg-video-upload/dg-video-upload.compon
 import { Jobcard1Component } from './jobcard1/jobcard1.component';
 import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.component';
 import { Jobcard2Component } from './jobcard2/jobcard2.component';
+import { DgReverseProcessComponent } from './dg-reverse-process/dg-reverse-process.component';
 
 
 @NgModule({
@@ -73,6 +74,7 @@ import { Jobcard2Component } from './jobcard2/jobcard2.component';
     Jobcard1Component,
     Jobcard1CheckerComponent,
     Jobcard2Component,
+    DgReverseProcessComponent,
   ],
 
 })

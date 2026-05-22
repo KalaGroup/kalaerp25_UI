@@ -11,6 +11,7 @@ import { UserRoleGuard } from 'app/shared/guards/user-role.guard';
 // import { config } from 'config';
 import { title } from 'process';
 import { Jobcard2Component } from './jobcard2/jobcard2.component';
+import { DgReverseProcessComponent } from './dg-reverse-process/dg-reverse-process.component';
 
 export const DashboardRoutes: Routes = [
   {
@@ -57,5 +58,10 @@ export const DashboardRoutes: Routes = [
     path: 'jobcard2',
     component: Jobcard2Component,
     data: { title: 'Job Card 2', breadcrumb: 'Job Card 2' }
+  },
+  {
+    path: 'dg-reverse-process',
+    component: DgReverseProcessComponent,
+    data: { title: 'DG Reverse Process', breadcrumb: 'DG Reverse Process' }
   }
  ];
