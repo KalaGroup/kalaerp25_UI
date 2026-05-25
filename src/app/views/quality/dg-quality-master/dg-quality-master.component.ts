@@ -153,7 +153,8 @@ export class DgQualityMasterComponent implements OnInit {
           this.selectedProfitCenter,
           this.selectedStage,
           this.selectedFromKVA,
-          this.selectedToKVA
+          this.selectedToKVA,
+          this.editingId ?? undefined,
         )
         .toPromise();
 

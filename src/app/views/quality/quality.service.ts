@@ -302,13 +302,20 @@ export class QualityService {
   }
 
   // Add to quality.service.ts
+  // `excludeId` is the StageWiseQcid of the row currently being edited — passing
+  // it makes the API skip that row when looking for duplicates, so edit-mode
+  // doesn't flag the row as its own duplicate.
   checkDuplicateQualityCheckList(
     pcCode: string,
     stageName: string,
     fromKva: string,
     toKva: string,
+    excludeId?: number,
   ): Observable<{ isDuplicate: boolean }> {
-    const url = `${this.baseUrl}Quality/CheckDuplicateQualityCheckList/${pcCode}/${stageName}/${fromKva}/${toKva}`;
+    let url = `${this.baseUrl}Quality/CheckDuplicateQualityCheckList/${pcCode}/${stageName}/${fromKva}/${toKva}`;
+    if (excludeId != null) {
+      url += `?excludeId=${excludeId}`;
+    }
     return this.http.get<{ isDuplicate: boolean }>(url);
   }
 
