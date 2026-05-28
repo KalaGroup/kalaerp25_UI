@@ -1,0 +1,225 @@
+<div class="eac-container">
+
+  <!-- Header strip -->
+  <div class="eac-header">
+    <div class="eac-title">EngAltTRCertificate</div>
+    <div class="eac-header-actions">
+      <button class="eac-btn eac-btn-export"
+              type="button"
+              (click)="onExportExcel()"
+              [disabled]="filteredRows.length === 0">
+        Export to Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter strip -->
+  <div class="eac-filters">
+    <div class="eac-field">
+      <label>Profit Center</label>
+      <input class="eac-input eac-input-readonly" type="text"
+             [value]="pcName && pcCode ? pcName + ' (' + pcCode + ')' : (pcName || pcCode)"
+             readonly />
+    </div>
+    <div class="eac-field">
+      <label>Eng/Alt SerialNo</label>
+      <input class="eac-input" type="text"
+             [(ngModel)]="serialNoFilter"
+             placeholder="optional" />
+    </div>
+    <div class="eac-field">
+      <label>From Date</label>
+      <input class="eac-input" type="date" [(ngModel)]="fromDate" />
+    </div>
+    <div class="eac-field">
+      <label>To Date</label>
+      <input class="eac-input" type="date" [(ngModel)]="toDate" />
+    </div>
+    <div class="eac-field eac-field-action">
+      <label>&nbsp;</label>
+      <button class="eac-btn eac-btn-search" type="button" (click)="onSearch()">Search</button>
+    </div>
+  </div>
+
+  <!-- Results table -->
+  <div class="eac-table-wrapper">
+    <table class="eac-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of reportColumns">{{ col }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="pagedRows.length === 0">
+          <td [attr.colspan]="reportColumns.length" class="eac-empty">
+            <ng-container *ngIf="isLoading">Loading…</ng-container>
+            <ng-container *ngIf="!isLoading">No record(s) found.</ng-container>
+          </td>
+        </tr>
+        <tr *ngFor="let row of pagedRows; let i = index">
+          <td>{{ rowDisplayIndex(i) }}</td>
+          <td>
+            <a class="eac-link" (click)="openAttachments(row)">Attachment</a>
+          </td>
+          <td>{{ row.TRCode }}</td>
+          <td>{{ row.TRDt }}</td>
+          <td><span class="eac-badge" [class.is-yes]="row.CntEngFile === 'Yes'">{{ row.CntEngFile }}</span></td>
+          <td><span class="eac-badge" [class.is-yes]="row.CntAltFile === 'Yes'">{{ row.CntAltFile }}</span></td>
+          <td><span class="eac-badge" [class.is-yes]="row.CTFile === 'Yes'">{{ row.CTFile }}</span></td>
+          <td><span class="eac-badge" [class.is-yes]="row.KWHFile === 'Yes'">{{ row.KWHFile }}</span></td>
+          <td>{{ row.EngSrNo }}</td>
+          <td>{{ row.AltSrNo }}</td>
+          <td>{{ row.KVA }}</td>
+          <td>{{ row.Phase }}</td>
+          <td>{{ row.Model }}</td>
+          <td>{{ row.PanelType }}</td>
+          <td class="eac-truncate" [title]="row.PartDesc || ''">{{ row.PartDesc }}</td>
+          <td>{{ row.DIStatus }}</td>
+          <td>{{ row.ProcessCode }}</td>
+          <td>{{ row.ProcessDt }}</td>
+          <td>{{ row.PCName }}</td>
+          <td>{{ row.Remark }}</td>
+          <td>{{ row.PartCode }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="eac-pagination" *ngIf="filteredRows.length > 0">
+    <div class="eac-pagination-pages">
+      <button class="eac-page-btn" type="button" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+      <button class="eac-page-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+      <button *ngFor="let n of pageNumbers"
+              class="eac-page-btn"
+              [class.is-current]="n === currentPage"
+              type="button"
+              (click)="goToPage(n)">{{ n }}</button>
+      <button class="eac-page-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+      <button class="eac-page-btn" type="button" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+    </div>
+    <div class="eac-pagination-meta">
+      <span>Records: {{ recordRangeLabel }}</span>
+      <span class="eac-context-sep">·</span>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="eac-context-sep">·</span>
+      <label>Page size:
+        <select class="eac-input eac-input-sm" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s === 0 ? 'All' : s }}</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Attachment modal ─────────────────────────────────────── -->
+  <div class="attachmentModal" *ngIf="showAttachmentModal">
+    <div class="attachmentModal-content">
+      <div class="attachmentModal-header">
+        <h3>Attachment Details</h3>
+        <div class="attachmentModal-subtitle" *ngIf="selectedTrCode">{{ selectedTrCode }}</div>
+        <button class="attachmentModal-close" type="button" (click)="closeAttachmentModal()" aria-label="Close">×</button>
+      </div>
+
+      <div class="attachmentModal-body">
+        <table class="eac-table">
+          <thead>
+            <tr>
+              <th style="width:48px">Sr</th>
+              <th style="width:90px">Status</th>
+              <th style="width:120px">Type</th>
+              <th>Attachment</th>
+              <th style="width:80px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="attachmentRows.length === 0">
+              <td colspan="5" class="eac-empty">No attachments yet — use the row below to add one.</td>
+            </tr>
+            <tr *ngFor="let a of attachmentRows; let i = index"
+                [class.is-pending]="isPending(a)">
+              <td>{{ a.srNo }}</td>
+              <td>
+                <span class="eac-badge"
+                      [class.is-yes]="a.saveOrUpdate === 'S'"
+                      [class.is-pending]="a.saveOrUpdate === 'N'">
+                  {{ a.saveOrUpdate }}
+                </span>
+              </td>
+              <td>{{ a.fileType }}</td>
+              <td>
+                <a class="eac-link" (click)="onViewAttachment(a)">{{ a.fileName }}</a>
+              </td>
+              <td>
+                <button class="eac-btn eac-btn-danger eac-btn-sm"
+                        type="button"
+                        [title]="isPending(a) ? 'Remove this file' : 'Delete saved file'"
+                        (click)="onDeleteAttachment(i)">Delete</button>
+              </td>
+            </tr>
+            <!-- Footer add-row -->
+            <tr class="eac-footer-row">
+              <td></td>
+              <td><span class="eac-required">*</span></td>
+              <td>
+                <select class="eac-input eac-input-sm" [(ngModel)]="selectedFileType">
+                  <option value="" disabled>Select FileType</option>
+                  <option *ngFor="let opt of fileTypeOptions" [value]="opt">{{ opt }}</option>
+                </select>
+              </td>
+              <td>
+                <input id="attachmentFileInput"
+                       type="file"
+                       (change)="onFileChosen($event)" />
+              </td>
+              <td>
+                <button class="eac-btn eac-btn-search eac-btn-sm"
+                        type="button"
+                        (click)="onInsertAttachment()">Insert</button>
+                <button class="eac-btn eac-btn-cancel eac-btn-sm"
+                        type="button"
+                        [disabled]="!selectedFileType && !pendingFile"
+                        (click)="clearInsertRow()">Cancel</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="attachmentModal-footer">
+        <button class="eac-btn eac-btn-cancel" type="button" (click)="closeAttachmentModal()">Cancel</button>
+        <button class="eac-btn eac-btn-save"
+                type="button"
+                [disabled]="!hasPendingRows()"
+                (click)="saveAttachmentChanges()">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Status overlays (success / error) ────────────────────── -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <h2>Alert</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" type="button" (click)="clearMessages()">OK</button>
+    </div>
+  </div>
+
+  <!-- ── Confirm (delete) overlay ──────────────────────────────── -->
+  <div class="confirmModal" *ngIf="confirmMessage">
+    <div class="confirmModal-content">
+      <h2>Confirm</h2>
+      <p>{{ confirmMessage }}</p>
+      <div class="confirmModal-actions">
+        <button class="error-ok-button" type="button" (click)="confirmDeleteYes()">Delete</button>
+        <button class="confirm-cancel-button" type="button" (click)="confirmDeleteNo()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</div>

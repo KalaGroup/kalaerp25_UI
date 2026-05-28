@@ -1,0 +1,548 @@
+// ──────────────────────────────────────────────────────────────
+//  Eng/Alt TR Certificate Report — list + attachment modal
+//  Styled in the same idiom as dg-reverse-process (which the user
+//  previously approved); shares the .errorModal / .successModal
+//  status-overlay pattern.
+// ──────────────────────────────────────────────────────────────
+
+.eac-container {
+  background: #fff;
+  padding: 0 0 24px;
+  font-family: inherit;
+  color: #333;
+}
+
+// ── Header strip ─────────────────────────────────────────────
+.eac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(180deg, #fafbfd 0%, #eef2f7 100%);
+  border-top: 1px solid #dde2ea;
+  border-bottom: 1px solid #d6dce6;
+  padding: 12px 24px;
+}
+
+.eac-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2b3a4a;
+  letter-spacing: 0.2px;
+}
+
+.eac-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+// ── Filter strip ─────────────────────────────────────────────
+.eac-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  padding: 18px 24px 4px;
+}
+
+.eac-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.eac-field-action {
+  justify-content: flex-end;
+}
+
+.eac-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.eac-input {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: #4ba3c7;
+    box-shadow: 0 0 0 2px rgba(75, 163, 199, 0.18);
+  }
+}
+
+.eac-input-sm {
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.eac-input-readonly {
+  background: #f4f6f9;
+  color: #444;
+  font-weight: 500;
+  cursor: default;
+  min-width: 220px;
+}
+
+// ── Context strip ────────────────────────────────────────────
+.eac-context {
+  padding: 4px 24px 14px;
+  font-size: 12px;
+  color: #555;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+.eac-context-sep {
+  color: #aaa;
+}
+
+// ── Buttons ──────────────────────────────────────────────────
+.eac-btn {
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.05s ease;
+  padding: 0 20px;
+  height: 36px;
+  min-width: 100px;
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    background: #d8dee5 !important;
+    color: #777 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.eac-btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  min-width: 0;
+  font-size: 12px;
+
+  & + .eac-btn-sm {
+    margin-left: 6px;
+  }
+}
+
+.eac-btn-search {
+  background: #17a2b8;
+  color: #fff;
+  &:hover { background: #138496; }
+}
+
+.eac-btn-export {
+  background: #0d6efd;
+  color: #fff;
+  &:hover { background: #0b5ed7; }
+}
+
+.eac-btn-save {
+  background: #198754;
+  color: #fff;
+  &:hover { background: #146c43; }
+}
+
+.eac-btn-cancel {
+  background: #e9ecef;
+  color: #333;
+  &:hover { background: #d6dade; }
+}
+
+.eac-btn-danger {
+  background: #dc3545;
+  color: #fff;
+  &:hover { background: #b02a37; }
+}
+
+// ── Table ────────────────────────────────────────────────────
+.eac-table-wrapper {
+  margin: 0 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  background: #fff;
+  // Fixed viewport — body scrolls vertically and horizontally, header stays put.
+  max-height: calc(100vh - 360px);
+  min-height: 220px;
+  overflow: auto;
+}
+
+.eac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead th {
+    background: #f5f5f5;
+    color: #4a4a4a;
+    font-weight: 600;
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    white-space: nowrap;
+    color: #333;
+  }
+
+  /* Zebra striping — odd rows in white, even in a faint blue tint. */
+  tbody tr:nth-child(even) td {
+    background: #f9fbfd;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover td {
+    background: #eef5ff;
+  }
+}
+
+.eac-empty {
+  text-align: left;
+  color: #8a8a8a;
+  font-style: italic;
+  padding: 14px;
+}
+
+// ── Truncated cell with hover-expand tooltip ────────────────
+.eac-truncate {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+// ── Cell helpers ─────────────────────────────────────────────
+.eac-link {
+  color: #0d6efd;
+  cursor: pointer;
+  text-decoration: underline;
+  outline: none;
+  border-radius: 2px;
+  padding: 1px 2px;
+
+  &:hover {
+    color: #0a58ca;
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+  }
+}
+
+.eac-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: #eef0f3;
+  color: #6b7280;
+  border: 1px solid #e0e3e8;
+
+  &.is-yes {
+    background: #e6f6ec;
+    color: #1d643b;
+    border-color: #c6e8d2;
+  }
+  &.is-pending {
+    background: #fff7d6;
+    color: #856404;
+    border-color: #f3e3a8;
+  }
+}
+
+// ── Pagination ───────────────────────────────────────────────
+.eac-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  padding: 14px 24px 0;
+  font-size: 12px;
+  color: #555;
+}
+
+.eac-pagination-pages {
+  display: flex;
+  gap: 4px;
+}
+
+.eac-page-btn {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+
+  &:hover:not(:disabled) {
+    background: #f0f3f6;
+  }
+  &.is-current {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+  }
+  &:disabled {
+    color: #bbb;
+    cursor: not-allowed;
+  }
+}
+
+.eac-pagination-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+
+// ──────────────────────────────────────────────────────────────
+//  Attachment modal (overlay)
+// ──────────────────────────────────────────────────────────────
+.attachmentModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  padding: 20px;
+}
+
+.attachmentModal-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.attachmentModal-header {
+  position: relative;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid #eee;
+  background: #f7f9fc;
+
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #333;
+  }
+}
+
+.attachmentModal-subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.attachmentModal-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+
+  &:hover { color: #333; }
+}
+
+.attachmentModal-body {
+  padding: 14px 20px;
+  overflow-y: auto;
+}
+
+.attachmentModal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #eee;
+  background: #fafbfc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.eac-required {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.eac-footer-row {
+  background: #fcfcfd;
+  td {
+    vertical-align: middle;
+  }
+}
+
+.is-pending {
+  background: #fffcf3;
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Status modals — same pattern as dg-reverse-process
+// ──────────────────────────────────────────────────────────────
+.errorModal,
+.successModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1100;
+}
+
+.errorModal-content,
+.successModal_content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.successModal_content p {
+  white-space: pre-line;
+}
+
+.error-ok-button {
+  padding: 8px 16px;
+  background: #f51202;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.success-ok-button {
+  padding: 8px 16px;
+  background: #0d6efd;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+// ── Confirm (delete) modal — same idiom, sits above all others ──
+.confirmModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1200;
+}
+
+.confirmModal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: #2b3a4a;
+  }
+  p {
+    margin: 0;
+    color: #444;
+    white-space: pre-line;
+  }
+}
+
+.confirmModal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.confirm-cancel-button {
+  padding: 8px 16px;
+  background: #e9ecef;
+  color: #333;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover { background: #d6dade; }
+}
+
+// ── Responsive trim ─────────────────────────────────────────
+@media (max-width: 720px) {
+  .eac-header,
+  .eac-filters,
+  .eac-context,
+  .eac-pagination {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .eac-table-wrapper {
+    margin: 0 12px;
+  }
+  .attachmentModal-content {
+    max-height: 95vh;
+  }
+}
