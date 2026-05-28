@@ -12,6 +12,7 @@ import { UserRoleGuard } from 'app/shared/guards/user-role.guard';
 import { title } from 'process';
 import { Jobcard2Component } from './jobcard2/jobcard2.component';
 import { DgReverseProcessComponent } from './dg-reverse-process/dg-reverse-process.component';
+import{EngAltCertificateComponent} from './eng-alt-certificate/eng-alt-certificate.component';
 
 export const DashboardRoutes: Routes = [
   {
@@ -63,5 +64,10 @@ export const DashboardRoutes: Routes = [
     path: 'dg-reverse-process',
     component: DgReverseProcessComponent,
     data: { title: 'DG Reverse Process', breadcrumb: 'DG Reverse Process' }
+  },
+  {
+    path: 'eng-alt-certificate',
+    component: EngAltCertificateComponent,
+    data: { title: 'Engine Alternator Certificate', breadcrumb: 'Engine Alternator Certificate' }
   }
  ];

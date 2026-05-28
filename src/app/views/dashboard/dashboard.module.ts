@@ -35,6 +35,7 @@ import { Jobcard1Component } from './jobcard1/jobcard1.component';
 import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.component';
 import { Jobcard2Component } from './jobcard2/jobcard2.component';
 import { DgReverseProcessComponent } from './dg-reverse-process/dg-reverse-process.component';
+import { EngAltCertificateComponent } from './eng-alt-certificate/eng-alt-certificate.component';
 
 
 @NgModule({
@@ -75,6 +76,7 @@ import { DgReverseProcessComponent } from './dg-reverse-process/dg-reverse-proce
     Jobcard1CheckerComponent,
     Jobcard2Component,
     DgReverseProcessComponent,
+    EngAltCertificateComponent,
   ],
 
 })
