@@ -163,6 +163,38 @@ $shadow:       0 2px 12px rgba(0,0,0,.08);
   white-space: nowrap;
 }
 
+// Profit-Center field — wide enough to show "<pcName> --> <pcCode>" without
+// truncation (e.g. "Full Stack Development --> 01.016", "Canopy & DG Assembly-
+// Unit- I Line A --> 01.188").
+.jc2-field--pc {
+  min-width: 320px;
+}
+
+.jc2-value--pc {
+  min-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Select-Line dropdown styled to match `.jc2-value` width/idiom.
+.jc2-line-select {
+  padding: 8px 12px;
+  border: 1.5px solid $line;
+  border-radius: 6px;
+  font-size: 13px;
+  color: $ink;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 260px;
+
+  &:disabled {
+    background: $primary-light;
+    color: $ink;
+    cursor: not-allowed;
+  }
+}
+
 // ── Buttons ──────────────────────────────────────────────────────
 .jc2-btn {
   padding: 9px 28px;

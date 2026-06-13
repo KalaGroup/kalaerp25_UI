@@ -34,9 +34,9 @@
   <div class="jc2-card">
     <div class="jc2-filters">
 
-      <div class="jc2-field">
-        <label>JobCard Code (With CP Plan)</label>
-        <div class="jc2-value">{{ jobCardCode || '-' }}</div>
+      <div class="jc2-field jc2-field--pc">
+        <label>Profit Center</label>
+        <div class="jc2-value jc2-value--pc">{{ pcDisplay || '-' }}</div>
       </div>
 
       <div class="jc2-field">
@@ -45,8 +45,16 @@
       </div>
 
       <div class="jc2-field">
-        <label>Profitcenter</label>
-        <div class="jc2-value">{{ pcDisplay }}</div>
+        <label>Select Line</label>
+        <select class="jc2-line-select"
+                [(ngModel)]="selectedLineWisePC"
+                [disabled]="lineRights.length === 0"
+                name="lineWisePC">
+          <option value="" disabled>Select Line</option>
+          <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }} --> {{ l.LineWisePC }}
+          </option>
+        </select>
       </div>
 
       <div class="jc2-field jc2-field--action">

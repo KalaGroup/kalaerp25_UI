@@ -20,8 +20,17 @@
   <div class="rp-form-grid">
     <!-- Row 1 (read-only context) -->
     <div class="rp-field">
-      <label>Reverse Tran Code</label>
-      <input class="rp-input rp-readonly" [value]="reverseTranCode" readonly />
+      <label>Select Line</label>
+      <select class="rp-input rp-line-select"
+              [(ngModel)]="selectedLineWisePC"
+              (ngModelChange)="onLineChange()"
+              [disabled]="lineRights.length === 0"
+              name="lineWisePC">
+        <option value="" disabled>Select Line</option>
+        <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+          {{ l.LineDesc }} --> {{ l.LineWisePC }}
+        </option>
+      </select>
     </div>
     <div class="rp-field">
       <label>Reverse Tran Date</label>

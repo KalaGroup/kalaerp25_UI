@@ -5,6 +5,7 @@ import {
   DgStage3CheckerResponse,
   DefectResponse,
   QualityCheckpointResponse,
+  LineRight,
 } from '../quality.service';
 import { FormControl } from '@angular/forms';
 import { sub } from 'date-fns';
@@ -91,12 +92,26 @@ export interface QualityCheckpoint {
 })
 export class DgStageICheckerComponent implements OnInit {
   profitcenterName = '';
+  pcDisplay: string = '';
   pccode = '';
   cid = '';
   ecode = '';
   selectedStage = '';
   profitcenter_act: string = '';
   profitcenter_old: string = '';
+
+  // ── Line-wise PC selector (replaces login-derived PC) ──
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
+
+  // ── UI-only pagination for the QA-pending list ─────────────
+  currentPage: number = 1;
+  pageSize: number = 25;
+  pageSizeOptions: number[] = [25, 50, 100, 250, 500, 0]; // 0 == "All"
+
+  // ── Load-in-flight flag for the QA-pending jobcard list ────
+  isLoadingPendingList: boolean = false;
 
 
   readonly stages: StageOption[] = [
@@ -242,8 +257,106 @@ export class DgStageICheckerComponent implements OnInit {
     if (profitCenterName) {
       this.profitcenterName = profitCenterName;
     }
+
+    // Composite label shown in the Profit Center field — "Name --> Code".
+    // Same convention used in jobcard1.
+    this.pcDisplay = this.profitcenterName && this.profitcenter_act
+      ? `${this.profitcenterName} --> ${this.profitcenter_act}`
+      : this.profitcenterName || this.profitcenter_act;
+
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
     this.loadEmployeeList();
     this.load6MOptions();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ────────────────────────────────────────────────────────────
+  //  UI-only pagination — reference: eng-alt-certificate component
+  // ────────────────────────────────────────────────────────────
+
+  /** Row count of whichever list is active (Stage 1/2 vs Stage 3). */
+  private get activeRowCount(): number {
+    return this.isStage3() ? this.stage3DataSource.length : this.dataSource.length;
+  }
+
+  /** Slice of stage 1/2 rows for the current page (pageSize = 0 → all). */
+  get pagedDataSource(): JobCard[] {
+    if (this.pageSize === 0) return this.dataSource;
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.dataSource.slice(start, start + this.pageSize);
+  }
+
+  /** Slice of stage 3 rows for the current page (pageSize = 0 → all). */
+  get pagedStage3DataSource(): Stage3JobCard[] {
+    if (this.pageSize === 0) return this.stage3DataSource;
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.stage3DataSource.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    if (this.pageSize === 0) return 1;
+    return Math.max(1, Math.ceil(this.activeRowCount / this.pageSize));
+  }
+
+  /** Up to 7 page-tab buttons centred around the current page. */
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const start = Math.max(1, Math.min(this.currentPage - 3, total - 6));
+    return Array.from({ length: 7 }, (_, i) => start + i);
+  }
+
+  goToPage(n: number): void {
+    if (n < 1 || n > this.totalPages) return;
+    this.currentPage = n;
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+  }
+
+  /** Renders "absolute" row number across pages — e.g. row 1 on page 3 with
+   *  pageSize 25 displays as 51. */
+  rowDisplayIndex(rowInPage: number): number {
+    if (this.pageSize === 0) return rowInPage + 1;
+    return (this.currentPage - 1) * this.pageSize + rowInPage + 1;
+  }
+
+  get recordRangeLabel(): string {
+    const total = this.activeRowCount;
+    if (total === 0) return '0 of 0';
+    if (this.pageSize === 0) return `1–${total} of ${total}`;
+    const start = (this.currentPage - 1) * this.pageSize + 1;
+    const end = Math.min(start + this.pageSize - 1, total);
+    return `${start}–${end} of ${total}`;
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgStageIChecker] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.dgStageICheckerService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgStageIChecker] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+      },
+      error: (err) => {
+        console.error('[DgStageIChecker] line rights error', err);
+        this.lineRights = [];
+      },
+    });
   }
 
   // Add this method
@@ -299,8 +412,13 @@ load6MOptions(): void {
 
   loadStage1Or2QAPendingList(): void {
     this.stage3DataSource = [];
+    this.dataSource = [];
+    this.currentPage = 1;
+    this.isLoadingPendingList = true;
+    // Use the line picked from the dropdown (LineWisePC), not the login PC.
+    const linePc = this.selectedLineRight?.LineWisePC ?? '';
     this.dgStageICheckerService
-      .getDgStageICheckerData(this.selectedStage, this.profitcenter_act)
+      .getDgStageICheckerData(this.selectedStage, linePc)
       .subscribe({
         next: (response: DgStageICheckerResponse[]) => {
           console.log('Stage 1/2 API Response:', response);
@@ -323,15 +441,24 @@ load6MOptions(): void {
             partCode: item.Partcode || '',
           }));
           this.updateDisplayedColumns();
+          this.isLoadingPendingList = false;
         },
-        error: (error) => console.error('Error fetching data:', error),
+        error: (error) => {
+          console.error('Error fetching data:', error);
+          this.isLoadingPendingList = false;
+        },
       });
   }
 
   loadStage3QAPendingList(): void {
     this.dataSource = [];
+    this.stage3DataSource = [];
+    this.currentPage = 1;
+    this.isLoadingPendingList = true;
+    // Use the line picked from the dropdown (LineWisePC), not the login PC.
+    const linePc = this.selectedLineRight?.LineWisePC ?? '';
     this.dgStageICheckerService
-      .getDgStage3CheckerData(this.selectedStage, this.profitcenter_act)
+      .getDgStage3CheckerData(this.selectedStage, linePc)
       .subscribe({
         next: (response: DgStage3CheckerResponse[]) => {
           console.log('Stage 3 API Response:', response);
@@ -357,8 +484,12 @@ load6MOptions(): void {
             krm: item.KRM || '',
           }));
           this.updateDisplayedColumns();
+          this.isLoadingPendingList = false;
         },
-        error: (error) => console.error('Error fetching Stage 3 data:', error),
+        error: (error) => {
+          console.error('Error fetching Stage 3 data:', error);
+          this.isLoadingPendingList = false;
+        },
       });
   }
 
@@ -437,8 +568,15 @@ load6MOptions(): void {
       kvaValue = this.selectedStage3JobCardForQuality.kva;
     }
 
-    if (!this.modalSelectedStage || !this.profitcenter_act || kvaValue === null) {
-      console.warn('Missing required parameters: Stage, PCCode or KVA');
+    // Quality checkpoint MASTERS are authored once against PC '01.175' (the
+    // template profit centre used by dg-quality-master). Every line/checker
+    // reads from this same master list — they don't have line-specific
+    // copies — so we lookup against '01.175' regardless of which line the
+    // operator is checking.
+    const MASTER_PC_CODE = '01.175';
+
+    if (!this.modalSelectedStage || kvaValue === null) {
+      console.warn('Missing required parameters: Stage or KVA');
       this.qualityCheckpointDataSource = [];
       return;
     }
@@ -448,7 +586,7 @@ load6MOptions(): void {
     this.dgStageICheckerService
       .getStageAndKvaWiseCheckpointList(
         this.modalSelectedStage,
-        this.profitcenter_act,
+        MASTER_PC_CODE,
         kvaValue,
       )
       .subscribe({
@@ -547,6 +685,14 @@ load6MOptions(): void {
   }
 
   onAcceptClick(): void {
+    // Guard 1: an assembly line MUST be selected — pccode_act / pccode_old are
+    // stamped from this pick. Catches the empty-dropdown case before any other
+    // validation so the user sees the most useful next-step message first.
+    if (!this.selectedLineRight) {
+      this.warningMessage = 'Please select an Assembly Line before accepting.';
+      return;
+    }
+
     if (!this.isAcceptEnabled) {
       const allOk = this.qualityCheckpointDataSource.every(item => item.ok);
       const has6M = this.qualityCheckpointDataSource.some(item => this.is6MSelected(item));
@@ -632,10 +778,13 @@ onSaveReworkReject(): void {
 }
 
   saveQualityData(qualityStatus: string): void {
-    // Base data (common for all stages)
+    // Base data (common for all stages). pccode_act ← LineWisePC, pccode_old ← ParentDgPC
+    // from the Select-Line dropdown — NOT the login profit centre. Same convention used by
+    // jobcard1, dg-stage-i, etc., so the saved QA row is stamped against the line the user
+    // is actually checking on, with the rolled-up parent PC alongside.
     const QPCheckerData: any = {
-      pccode_act: this.profitcenter_act,
-      pccode_old: this.profitcenter_old,
+      pccode_act: this.selectedLineRight?.LineWisePC ?? '',
+      pccode_old: this.selectedLineRight?.ParentDgPC ?? '',
       cid: this.cid,
       stageName: this.modalSelectedStage,
       qualityStatus: qualityStatus,
@@ -643,94 +792,95 @@ onSaveReworkReject(): void {
     };
 
     // Stage 1 & 2: Add JobCode and related fields
+    // Field-name casing must match the backend DTO `QProcessCheckerData` exactly
+    // (PascalCase for these properties; mixed-case elsewhere — see comparison below).
     if (
       this.modalSelectedStage === 'Stage1' ||
       this.modalSelectedStage === 'Stage2'
     ) {
-      QPCheckerData.jobCode = this.selectedJobCardForQuality?.jobCardNo || '';
+      QPCheckerData.JobCode = this.selectedJobCardForQuality?.jobCardNo || '';
       QPCheckerData.partCode = this.selectedJobCardForQuality?.partCode || '';
-      QPCheckerData.kva = this.selectedJobCardForQuality?.kva || 0;
+      QPCheckerData.Kva = this.selectedJobCardForQuality?.kva || 0;
       QPCheckerData.priority = parseInt(
         this.selectedJobCardForQuality?.jPriority || '0',
         10,
       );
       QPCheckerData.model = this.selectedJobCardForQuality?.model || '';
-      QPCheckerData.engSrNo = this.selectedJobCardForQuality?.engSrNo || '';
-      QPCheckerData.altSrNo = this.selectedJobCardForQuality?.altSrNo || '';
+      QPCheckerData.EngSrNo = this.selectedJobCardForQuality?.engSrNo || '';
+      QPCheckerData.AltSrNo = this.selectedJobCardForQuality?.altSrNo || '';
     }
 
     // Stage 2: Add battery and canopy fields
     if (this.modalSelectedStage === 'Stage2') {
-      QPCheckerData.cpySrNo = this.selectedJobCardForQuality?.cpySrNo || '';
-      QPCheckerData.batSrNo = this.selectedJobCardForQuality?.batSrNo || '';
-      QPCheckerData.bat2SrNo = this.selectedJobCardForQuality?.bat2SrNo || '';
-      QPCheckerData.bat3SrNo = this.selectedJobCardForQuality?.bat3SrNo || '';
-      QPCheckerData.bat4SrNo = this.selectedJobCardForQuality?.bat4SrNo || '';
-      QPCheckerData.bat5SrNo = this.selectedJobCardForQuality?.bat5SrNo || '';
-      QPCheckerData.bat6SrNo = this.selectedJobCardForQuality?.bat6SrNo || '';
+      QPCheckerData.CpySrNo = this.selectedJobCardForQuality?.cpySrNo || '';
+      QPCheckerData.BatSrNo = this.selectedJobCardForQuality?.batSrNo || '';
+      QPCheckerData.Bat2SrNo = this.selectedJobCardForQuality?.bat2SrNo || '';
+      QPCheckerData.Bat3SrNo = this.selectedJobCardForQuality?.bat3SrNo || '';
+      QPCheckerData.Bat4SrNo = this.selectedJobCardForQuality?.bat4SrNo || '';
+      QPCheckerData.Bat5SrNo = this.selectedJobCardForQuality?.bat5SrNo || '';
+      QPCheckerData.Bat6SrNo = this.selectedJobCardForQuality?.bat6SrNo || '';
     }
 
     // Stage 3: Add PFBCode and all Stage 3 specific fields
     if (this.modalSelectedStage === 'Stage3') {
-      QPCheckerData.pfbCode =
+      QPCheckerData.PFBCode =
         this.selectedStage3JobCardForQuality?.pfbCode || '';
       QPCheckerData.partCode =
         this.selectedStage3JobCardForQuality?.partCode || '';
-      QPCheckerData.kva = this.selectedStage3JobCardForQuality?.kva || 0;
+      QPCheckerData.Kva = this.selectedStage3JobCardForQuality?.kva || 0;
       QPCheckerData.model = this.selectedStage3JobCardForQuality?.model || '';
-      QPCheckerData.engine = this.selectedStage3JobCardForQuality?.engine || '';
-      QPCheckerData.alternator =
+      QPCheckerData.Engine = this.selectedStage3JobCardForQuality?.engine || '';
+      QPCheckerData.Alternator =
         this.selectedStage3JobCardForQuality?.alternator || '';
-      QPCheckerData.canopy = this.selectedStage3JobCardForQuality?.canopy || '';
-      QPCheckerData.controlPanel1 =
+      QPCheckerData.Canopy = this.selectedStage3JobCardForQuality?.canopy || '';
+      QPCheckerData.ControlPanel1 =
         this.selectedStage3JobCardForQuality?.controlPanel1 || '';
-      QPCheckerData.controlPanel2 =
-
+      QPCheckerData.ControlPanel2 =
         this.selectedStage3JobCardForQuality?.controlPanel2 || '';
-      QPCheckerData.battery1 =
+      QPCheckerData.Battery1 =
         this.selectedStage3JobCardForQuality?.battery1 || '';
-      QPCheckerData.battery2 =
+      QPCheckerData.Battery2 =
         this.selectedStage3JobCardForQuality?.battery2 || '';
-      QPCheckerData.battery3 =
+      QPCheckerData.Battery3 =
         this.selectedStage3JobCardForQuality?.battery3 || '';
-      QPCheckerData.battery4 =
+      QPCheckerData.Battery4 =
         this.selectedStage3JobCardForQuality?.battery4 || '';
-      QPCheckerData.battery5 =
+      QPCheckerData.Battery5 =
         this.selectedStage3JobCardForQuality?.battery5 || '';
-      QPCheckerData.battery6 =
+      QPCheckerData.Battery6 =
         this.selectedStage3JobCardForQuality?.battery6 || '';
-      QPCheckerData.krm = this.selectedStage3JobCardForQuality?.krm || '';
+      QPCheckerData.Krm = this.selectedStage3JobCardForQuality?.krm || '';
     }
 
-    // Quality Checkpoint data
+    // Quality Checkpoint data — key casing matches the backend CheckpointDetail DTO.
     const QPCheckerDetailsData = this.qualityCheckpointDataSource.map(
       (item) => ({
-        srNo: item.srNo,
+        SrNo: item.srNo,
         subAssemblyPart: item.subAssemblyPart,
-        stageWiseQcId: item.stageWiseQcId,
-        remark: item.remark,
-        ok: item.ok ? 'OK' : 'NOK',
+        StageWiseQcId: item.stageWiseQcId,
+        Remark: item.remark,
+        Ok: item.ok ? 'OK' : 'NOK',
         sixM: this.sixMOptions.find(opt => opt.value === item.sixM)?.label || '',
-        raiseEsp: item.raiseEsp,
+        RaiseEsp: item.raiseEsp,
       }),
     );
 
-    // Combined payload
+    // Combined payload — root keys match QualityProcessCheckerRequest.
     const payload: any = {
       QProcessCheckerData: QPCheckerData,
-      checkpointsDetails: QPCheckerDetailsData,
+      CheckpointsDetails: QPCheckerDetailsData,
     };
 
-    // Add defect data for Rework/Reject
+    // Add defect data for Rework/Reject — key casing matches DefectDetail DTO.
     if (qualityStatus === 'Rework' || qualityStatus === 'Reject') {
-      payload.defectDetails = this.tempDefectData.map((item, index) => ({
-        qdcCode: item.qdcCode,
-        actualValue: item.actualValue ? parseFloat(item.actualValue) : 0,
-        tolerance: item.tolerance ? parseFloat(item.tolerance) : 0,
-        instrument: item.instrument || '',
-        rate: item.rate || 0,
-        fromRange: item.fromRange ? parseFloat(item.fromRange) : 0,
-        toRange: item.toRange ? parseFloat(item.toRange) : 0,
+      payload.DefectDetails = this.tempDefectData.map((item, index) => ({
+        QdcCode: item.qdcCode,
+        ActualValue: item.actualValue ? parseFloat(item.actualValue) : 0,
+        Tolerance: item.tolerance ? parseFloat(item.tolerance) : 0,
+        Instrument: item.instrument || '',
+        Rate: item.rate || 0,
+        FromRange: item.fromRange ? parseFloat(item.fromRange) : 0,
+        ToRange: item.toRange ? parseFloat(item.toRange) : 0,
       }));
     }
 

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewChildren, QueryList, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
-import { DgStageIIService } from './dg-stage-ii-service.service';
+import { DgStageIIService, LineRight } from './dg-stage-ii-service.service';
 import { Inject } from '@angular/core';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
@@ -16,6 +16,14 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
   password: string = '';
   profitcenter_old: string = '';
   profitcenter_act: string = '';
+
+  // ── Line-wise PC selector (replaces login-derived PC for save) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
+
+  // ── Save in-flight state — drives the loader bar + SAVE-button disable ──
+  isSaving: boolean = false;
 
   selectedOption: string = '';
   scannedQrResult: any;
@@ -159,8 +167,38 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
       this.profitcenter_act = pccode_Act;
       this.profitcenter_old = pccode_Old;
     }
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgStageII] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.dgAssemblyService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgStageII] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+      },
+      error: (err) => {
+        console.error('[DgStageII] line rights error', err);
+        this.lineRights = [];
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -575,8 +613,8 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
         PartCode: '001',
         Category: '001',
         Stage: '3',
-         PCCode_Old: this.profitcenter_old,
-         PCCode_Act: this.profitcenter_act,
+         PCCode_Old: this.selectedLineRight?.ParentDgPC ?? '',
+         PCCode_Act: this.selectedLineRight?.LineWisePC ?? '',
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -746,8 +784,8 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
     formData.append('AltSrno', this.alternatorScanDetails.qrSrNo);
     formData.append('StageNo', '3');
     formData.append('ProductCode', this.dgPartcode);
-    formData.append('PCCode_Old', this.profitcenter_old);
-    formData.append('PCCode_Act', this.profitcenter_act);
+    formData.append('PCCode_Old', this.selectedLineRight?.ParentDgPC ?? '');//Parent DG PC
+    formData.append('PCCode_Act', this.selectedLineRight?.LineWisePC ?? '');//Line-wise PC
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -784,34 +822,46 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
       formData.append('RecordedVideoFile', this.recordedVideoFile);
     }
 
+    this.isSaving = true;
     this.dgAssemblyService.submitAssemblyData(formData).subscribe(
       (response: any) => {
+        this.isSaving = false;
         console.log('API Success Response:', response);
         this.successMessage = 'Stage II Completed Successfully..!';
       },
       (error: any) => {
+        this.isSaving = false;
         console.error('API Error Response:', error);
-        // Extracting Jobcard and Engine Serial from the error message
-        this.errorMessage =
-          error.error || 'Failed to submit data. Please try again.';
-        console.log('Error Message from API:', this.errorMessage);
-        // Extracting Jobcard and Engine Serial from the error message
-        const jobcardMatch = this.errorMessage.match(/Jobcard:-\s*([\w\/-]+)/);
-        const engSerialMatch = this.errorMessage.match(
-          /Eng Serial No:-\s*([\w.\/-]+)/
-        );
-
-        this.extractedJobcard = jobcardMatch ? jobcardMatch[1] : 'N/A';
-        this.extractedEngSerial = engSerialMatch ? engSerialMatch[1] : 'N/A';
-
-        this.showError(this.errorMessage);
+        this.showError(this.extractApiErrorMessage(error));
       }
     );
+  }
+
+  /**
+   * Pull the most useful human-readable message from an HttpErrorResponse.
+   * Handles all three shapes the API returns:
+   *   - BadRequest with a plain string body  →  err.error is a string
+   *   - error object  →  err.error.Message / err.error.message / err.error.title
+   *   - network/CORS failure  →  err.message
+   */
+  private extractApiErrorMessage(err: any): string {
+    if (!err) return 'Failed to submit data. Please try again.';
+    const e = err.error;
+    if (typeof e === 'string' && e.trim()) return e.trim();
+    if (e && typeof e === 'object') {
+      const fromObj = e.Message || e.message || e.title || e.detail;
+      if (typeof fromObj === 'string' && fromObj.trim()) return fromObj.trim();
+    }
+    if (typeof err.message === 'string' && err.message.trim()) return err.message.trim();
+    return 'Failed to submit data. Please try again.';
   }
 
   // In your Stage II component.ts file
 
   isSaveDisabled(): boolean {
+    // Block re-clicks while a save is already in flight.
+    if (this.isSaving) return true;
+
     // Required validations
     const engineValid = this.isEngineScannedSuccessfully();
     const alternatorValid = this.isAlternatorScannedSuccessfully();

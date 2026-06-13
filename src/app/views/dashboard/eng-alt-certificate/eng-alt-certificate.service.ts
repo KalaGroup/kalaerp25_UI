@@ -29,6 +29,12 @@ export interface EngAltCertRow {
   [key: string]: any;
 }
 
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc: string;
+  ParentDgPC: string;
+}
+
 export interface AttachmentApiRow {
   SrNo: number;
   Type: 'Image' | 'Video' | string;
@@ -49,6 +55,7 @@ export class EngAltCertificateService {
   private downloadUrl = `${this.baseUrl}DGAssemblly/DownloadEngAltTrAttachment`;
   private saveAttachmentsUrl = `${this.baseUrl}DGAssemblly/SaveEngAltTrAttachments`;
   private deleteAttachmentUrl = `${this.baseUrl}DGAssemblly/DeleteEngAltTrAttachment`;
+  private lineRightsUrl = `${this.baseUrl}DGAssemblly/GetLineRights`;
 
   constructor(private http: HttpClient) {}
 
@@ -97,6 +104,11 @@ export class EngAltCertificateService {
       form.append('FileTypes', item.fileType);
     }
     return this.http.post<{ message: string }>(this.saveAttachmentsUrl, form);
+  }
+
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const params = new HttpParams().set('prmCode', prmCode);
+    return this.http.get<LineRight[]>(this.lineRightsUrl, { params });
   }
 
   deleteAttachment(

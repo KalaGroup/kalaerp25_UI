@@ -18,10 +18,24 @@
   SAVE
 </button> -->
 
-    <button mat-button class="save-button" (click)="submitData()" [disabled]="isSaveDisabled()"
-      [ngClass]="{'disabled': isSaveDisabled()}">
-      SAVE
-    </button>
+    <div class="header-actions">
+      <label class="line-select-label" for="lineWisePC">Select Line:</label>
+      <select class="line-select"
+              id="lineWisePC"
+              [(ngModel)]="selectedLineWisePC"
+              [disabled]="lineRights.length === 0"
+              name="lineWisePC">
+        <option value="" disabled>Select Line</option>
+        <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+          {{ l.LineDesc }} --> {{ l.LineWisePC }}
+        </option>
+      </select>
+      <button mat-button type="button" class="save-button" (click)="submitData()"
+        [disabled]="isSaveDisabled()"
+        [ngClass]="{'disabled': isSaveDisabled()}">
+        SAVE
+      </button>
+    </div>
 
   </div>
 
@@ -140,7 +154,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedEngineQrResult  === scanDetails?.TRStart?.engine?.qrSrNo, 'Eng-qr-sr-no': scannedEngineQrResult  !== scanDetails?.TRStart?.engine?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedEngineQrResult?.TRStart === scanDetails?.TRStart?.engine?.qrSrNo, 'Eng-qr-sr-no': scannedEngineQrResult?.TRStart !== scanDetails?.TRStart?.engine?.qrSrNo}">{{
                       scanDetails?.TRStart?.engine?.qrSrNo }}</span></div>
                   <div>Eng Desc: {{ scanDetails?.TRStart?.engine?.engDesc }}</div>
                   <div>Eng Code: {{ scanDetails?.TRStart?.engine?.engCode }}</div>
@@ -173,7 +187,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedAlternatorQrResult  === scanDetails?.TRStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult  !== scanDetails?.TRStart?.alternator?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedAlternatorQrResult?.TRStart === scanDetails?.TRStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult?.TRStart !== scanDetails?.TRStart?.alternator?.qrSrNo}">{{
                       scanDetails?.TRStart?.alternator?.qrSrNo }}</span></div>
                   <div>Alt Desc: {{ scanDetails?.TRStart?.alternator?.altDesc }}</div>
                   <div>TRStatus: {{ scanDetails?.TRStart?.alternator?.trStatus }}</div>
@@ -408,7 +422,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedEngineQrResult === scanDetails?.DGStart?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult !== scanDetails?.DGStart?.engine?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedEngineQrResult?.DGStart === scanDetails?.DGStart?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult?.DGStart !== scanDetails?.DGStart?.engine?.qrSrNo}">{{
                       scanDetails?.DGStart?.engine?.qrSrNo }}</span></div>
                   <div>Eng Desc: {{ scanDetails?.DGStart?.engine?.engDesc }}</div>
                   <div>Eng Code: {{ scanDetails?.DGStart?.engine?.engCode }}</div>
@@ -441,7 +455,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedAlternatorQrResult === scanDetails?.DGStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult !== scanDetails?.DGStart?.alternator?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedAlternatorQrResult?.DGStart === scanDetails?.DGStart?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult?.DGStart !== scanDetails?.DGStart?.alternator?.qrSrNo}">{{
                       scanDetails?.DGStart?.alternator?.qrSrNo }}</span></div>
                   <div>Alt Desc: {{ scanDetails?.DGStart?.alternator?.altDesc }}</div>
                   <div>TRStatus: {{ scanDetails?.DGStart?.alternator?.trStatus }}</div>
@@ -676,7 +690,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedEngineQrResult  === scanDetails?.DGEnd?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult  !== scanDetails?.DGEnd?.engine?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedEngineQrResult?.DGEnd === scanDetails?.DGEnd?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult?.DGEnd !== scanDetails?.DGEnd?.engine?.qrSrNo}">{{
                       scanDetails?.DGEnd?.engine?.qrSrNo }}</span></div>
                   <div>Eng Desc: {{ scanDetails?.DGEnd?.engine?.engDesc }}</div>
                   <div>Eng Code: {{ scanDetails?.DGEnd?.engine?.engCode }}</div>
@@ -709,7 +723,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedAlternatorQrResult  === scanDetails?.DGEnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult  !== scanDetails?.DGEnd?.alternator?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedAlternatorQrResult?.DGEnd === scanDetails?.DGEnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult?.DGEnd !== scanDetails?.DGEnd?.alternator?.qrSrNo}">{{
                       scanDetails?.DGEnd?.alternator?.qrSrNo }}</span></div>
                   <div>Alt Desc: {{ scanDetails?.DGEnd?.alternator?.altDesc }}</div>
                   <div>TRStatus: {{ scanDetails?.DGEnd?.alternator?.trStatus }}</div>
@@ -944,7 +958,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedEngineQrResult  === scanDetails?.TREnd?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult  !== scanDetails?.TREnd?.engine?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedEngineQrResult?.TREnd === scanDetails?.TREnd?.engine?.qrSrNo, 'Alt-qr-sr-no': scannedEngineQrResult?.TREnd !== scanDetails?.TREnd?.engine?.qrSrNo}">{{
                       scanDetails?.TREnd?.engine?.qrSrNo }}</span></div>
                   <div>Eng Desc: {{ scanDetails?.TREnd?.engine?.engDesc }}</div>
                   <div>Eng Code: {{ scanDetails?.TREnd?.engine?.engCode }}</div>
@@ -977,7 +991,7 @@
               <div class="scan-section-details">
                 <div class="scan-details">
                   <div>QR SrNo: <span
-                      [ngClass]="{'green-text': scannedAlternatorQrResult  === scanDetails?.TREnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult  !== scanDetails?.TREnd?.alternator?.qrSrNo}">{{
+                      [ngClass]="{'green-text': scannedAlternatorQrResult?.TREnd === scanDetails?.TREnd?.alternator?.qrSrNo, 'Alt-qr-sr-no': scannedAlternatorQrResult?.TREnd !== scanDetails?.TREnd?.alternator?.qrSrNo}">{{
                       scanDetails?.TREnd?.alternator?.qrSrNo }}</span></div>
                   <div>Alt Desc: {{ scanDetails?.TREnd?.alternator?.altDesc }}</div>
                   <div>TRStatus: {{ scanDetails?.TREnd?.alternator?.trStatus }}</div>

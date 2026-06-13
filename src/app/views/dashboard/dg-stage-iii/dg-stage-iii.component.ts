@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChildren, QueryList, ElementRef, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
-import { DgStageIIIService } from './dg-stage-iii-service.service';
+import { DgStageIIIService, LineRight } from './dg-stage-iii-service.service';
 
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
@@ -16,6 +16,14 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
   userId: string = '';
   profitcenter_old: string = '';
   profitcenter_act: string = '';
+
+  // ── Line-wise PC selector (replaces login-derived PC for save) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
+
+  // ── Save in-flight state — drives the loader bar + SAVE-button disable ──
+  isSaving: boolean = false;
 
   selectedTab: string = 'Start';
   selectedOption: string = '';
@@ -268,8 +276,38 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
       this.profitcenter_act = pccode_Act;
       this.profitcenter_old = pccode_Old;
     }
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgStageIII] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.dgAssemblyService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgStageIII] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+      },
+      error: (err) => {
+        console.error('[DgStageIII] line rights error', err);
+        this.lineRights = [];
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -872,8 +910,8 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
         Category: '001',
         // Stage: "4",
         Stage: stage === 'Start' ? '4' : '5',
-        PCCode_Old: this.profitcenter_old,
-        PCCode_Act: this.profitcenter_act,
+        PCCode_Old: this.selectedLineRight?.ParentDgPC ?? '',
+        PCCode_Act: this.selectedLineRight?.LineWisePC ?? '',
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -967,6 +1005,54 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
             krmPart: krmDetails[1] || '',
             krmDesc: krmDetails[2] || '',
           };
+
+          // ── BIDIRECTIONAL mirror of CP1 / CP2 / KRM across Start ↔ End ──
+          // Why: the Stage 5 (End) engine-scan API frequently returns blank /
+          // "0" for these fields because the components were already linked
+          // during Stage 4 (Start). The assignment above just overwrote END's
+          // CP1 with that empty payload, even if Start had populated it
+          // earlier. Result: End tab hides the CP1 section even though the
+          // Start tab still shows it.
+          //
+          // Fix: after writing the response, sync each field in BOTH directions:
+          //   - if THIS stage came back empty but the OTHER stage has a real
+          //     value → inherit it (so End re-acquires the lost CP1).
+          //   - if THIS stage has a real value but the OTHER stage doesn't
+          //     → propagate it (covers the first-scan case).
+          // Net effect: both stages always carry the same CP1 / CP2 / KRM data.
+          const otherStage: 'Start' | 'End' = stage === 'Start' ? 'End' : 'Start';
+          const hasRealValue = (v: any) => !!v?.qrSrNo && v.qrSrNo !== '0';
+
+          // CP1
+          {
+            const cur = this.scanDetails[stage].controlPanel1;
+            const oth = this.scanDetails[otherStage].controlPanel1;
+            if (!hasRealValue(cur) && hasRealValue(oth)) {
+              this.scanDetails[stage].controlPanel1 = { ...oth };
+            } else if (hasRealValue(cur) && !hasRealValue(oth)) {
+              this.scanDetails[otherStage].controlPanel1 = { ...cur };
+            }
+          }
+          // CP2
+          {
+            const cur = this.scanDetails[stage].controlPanel2;
+            const oth = this.scanDetails[otherStage].controlPanel2;
+            if (!hasRealValue(cur) && hasRealValue(oth)) {
+              this.scanDetails[stage].controlPanel2 = { ...oth };
+            } else if (hasRealValue(cur) && !hasRealValue(oth)) {
+              this.scanDetails[otherStage].controlPanel2 = { ...cur };
+            }
+          }
+          // KRM
+          {
+            const cur = this.scanDetails[stage].krm;
+            const oth = this.scanDetails[otherStage].krm;
+            if (!hasRealValue(cur) && hasRealValue(oth)) {
+              this.scanDetails[stage].krm = { ...oth };
+            } else if (hasRealValue(cur) && !hasRealValue(oth)) {
+              this.scanDetails[otherStage].krm = { ...cur };
+            }
+          }
 
           this.pFbCode = data.PFBCode;
           this.panelType = data.PanelType;
@@ -1121,7 +1207,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
   }
 
   fetchDGkitDetails(PrdPartCode: string) {
-    this.dgAssemblyService.getDGKitDetails(PrdPartCode, this.profitcenter_old, this.profitcenter_act).subscribe(
+    this.dgAssemblyService.getDGKitDetails(PrdPartCode, this.selectedLineRight?.ParentDgPC ?? '', this.selectedLineRight?.LineWisePC ?? '').subscribe(
       (response) => {
         console.log('DGKitDetails API Response:', response);
         if (response && response.length > 0) {
@@ -1153,8 +1239,8 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
     formData.append('Remark', 'Start');
     formData.append('StageNo', '4');
     formData.append('ProductCode', this.dgPartcodeStart);
-     formData.append('PCCode_Old', this.profitcenter_old);
-    formData.append('PCCode_Act', this.profitcenter_act);
+     formData.append('PCCode_Old', this.selectedLineRight?.ParentDgPC ?? '');//Parent DG PC
+    formData.append('PCCode_Act', this.selectedLineRight?.LineWisePC ?? '');//Line-wise PC
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -1198,8 +1284,10 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
 
     console.log('Submitting Stage Start Details', formData);
 
+    this.isSaving = true;
     this.dgAssemblyService.submitStage4Data(formData).subscribe(
       (response: any) => {
+        this.isSaving = false;
         const warningMessages = [
           'Please Scan Engine SerialNo',
           'Please Scan Alternator SerialNo',
@@ -1223,21 +1311,9 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
         }
       },
       (error: any) => {
+        this.isSaving = false;
         console.error('API Error Response:', error);
-        // Extracting Jobcard and Engine Serial from the error message
-        this.errorMessage =
-          error.error || 'Failed to submit data. Please try again.';
-        console.log('Error Message from API:', this.errorMessage);
-        // Extracting Jobcard and Engine Serial from the error message
-        const jobcardMatch = this.errorMessage.match(/Jobcard:-\s*([\w\/-]+)/);
-        const engSerialMatch = this.errorMessage.match(
-          /Eng Serial No:-\s*([\w.\/-]+)/
-        );
-
-        this.extractedJobcard = jobcardMatch ? jobcardMatch[1] : 'N/A';
-        this.extractedEngSerial = engSerialMatch ? engSerialMatch[1] : 'N/A';
-
-        this.showError(this.errorMessage);
+        this.showError(this.extractApiErrorMessage(error));
       }
     );
   }
@@ -1269,30 +1345,53 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
       formdata.append('RecordedVideoFile', this.recordedVideoFileEnd);
     }
 
+    this.isSaving = true;
     this.dgAssemblyService.submitStage4Data(formdata).subscribe(
       (response: any) => {
+        this.isSaving = false;
         console.log('API Success Response:', response);
         this.successMessage = response.Message;
       },
       (error: any) => {
+        this.isSaving = false;
         console.error('API Error Response:', error);
-        // Extracting Jobcard and Engine Serial from the error message
-        this.errorMessage =
-          error.error || 'Failed to submit data. Please try again.';
-        console.log('Error Message from API:', this.errorMessage);
-        // // Extracting Jobcard and Engine Serial from the error message
-        // const jobcardMatch = this.errorMessage.match(/Jobcard:-\s*([\w\/-]+)/);
-        // const engSerialMatch = this.errorMessage.match(/Eng Serial No:-\s*([\w.\/-]+)/);
-
-        // this.extractedJobcard = jobcardMatch ? jobcardMatch[1] : "N/A";
-        // this.extractedEngSerial = engSerialMatch ? engSerialMatch[1] : "N/A";
-
-        this.showError(this.errorMessage);
+        this.showError(this.extractApiErrorMessage(error));
       }
     );
   }
 
+  /**
+   * Pull the most useful human-readable message from an HttpErrorResponse.
+   * Handles four shapes the submit endpoint can return:
+   *   - Network failure / API unreachable  →  err.status === 0, err.error is a ProgressEvent
+   *     (this was the cause of the "[object ProgressEvent]" alert)
+   *   - BadRequest with a plain string body →  err.error is a string
+   *   - error object                        →  err.error.Message / message / title / detail
+   *   - last-resort                         →  err.message (the framework's HTTP failure string)
+   */
+  private extractApiErrorMessage(err: any): string {
+    if (!err) return 'Failed to submit data. Please try again.';
+
+    // Network failure → API is down, CORS rejected, or the user is offline.
+    // err.error is a ProgressEvent in this case and stringifies as "[object ProgressEvent]".
+    if (err.status === 0 || err.error instanceof ProgressEvent || err.error instanceof Event) {
+      return 'Unable to reach the server. Please check your network connection or confirm that the API is running, then try again.';
+    }
+
+    const e = err.error;
+    if (typeof e === 'string' && e.trim()) return e.trim();
+    if (e && typeof e === 'object') {
+      const fromObj = e.Message || e.message || e.title || e.detail;
+      if (typeof fromObj === 'string' && fromObj.trim()) return fromObj.trim();
+    }
+    if (typeof err.message === 'string' && err.message.trim()) return err.message.trim();
+    return 'Failed to submit data. Please try again.';
+  }
+
   isSaveDisabled(): boolean {
+    // Block re-clicks while a save is already in flight.
+    if (this.isSaving) return true;
+
     if (this.selectedTab === 'Start') {
       return !this.areAllStartComponentsValid();
     } else if (this.selectedTab === 'End') {
@@ -1311,8 +1410,6 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
     const cp1Valid = this.isControlPanel1ValidStart();
     const cp2Valid = this.isControlPanel2ValidStart();
     const krmValid = this.isKRMValidStart();
-
-    console.log('Start Validation:', { engineValid, alternatorValid, canopyValid, batteriesValid, cp1Valid, cp2Valid, krmValid, krmFoundStart: this.krmFoundStart });
 
     return (
       engineValid &&

@@ -3,6 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'environments/environment';
 
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc:   string;
+  ParentDgPC: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -31,6 +37,12 @@ export class DgStageIService {
 
   fetchSelect6MData(): Observable<any> {
     return this.http.get(this.apiSelect6MUrl);
+  }
+
+  // GET — lines this position role is entitled to post against
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
+    return this.http.get<LineRight[]>(url);
   }
 
   getProcessCheckPoints(

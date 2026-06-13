@@ -1,3 +1,33 @@
+// ── Submit-in-flight indeterminate loader (pure CSS) ───────────────
+@keyframes jc-submit-indeterminate {
+  0%   { left: -40%; }
+  50%  { left: 30%; }
+  100% { left: 100%; }
+}
+
+.jc-submit-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(21, 101, 192, 0.18);   // tinted with the page primary
+  overflow: hidden;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.jc-submit-loader-bar {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #1565c0 0%, #5e92f3 50%, #1565c0 100%);
+  border-radius: 3px;
+  animation: jc-submit-indeterminate 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 // ── Variables ──────────────────────────────────────────────────────
 $primary:    #1565c0;
 $primary-lt: #e3f2fd;
@@ -185,6 +215,18 @@ $shadow:     0 2px 8px rgba(0,0,0,.1);
   &-error {
     border-color: $danger;
     &:focus { box-shadow: 0 0 0 3px rgba($danger,.12); }
+  }
+}
+
+.jc-line-select {
+  cursor: pointer;
+  background: #fff;
+  min-width: 260px;
+
+  &:disabled {
+    background: $grey-lt;
+    color: $grey-med;
+    cursor: not-allowed;
   }
 }
 

@@ -226,12 +226,25 @@ export interface QualityCheckpointResponse {
   Specification: string;
 }
 
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc:   string;
+  ParentDgPC: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class QualityService {
   private baseUrl = environment.apiURL;
   constructor(private http: HttpClient) {}
+
+  // GET — lines this position role is entitled to post against
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
+    return this.http.get<LineRight[]>(url);
+  }
+
   getDgStageICheckerData(stageName: string, pccode: string): Observable<any> {
     const url = `${this.baseUrl}DgStageChecker/GetStageQAPendingList/${stageName}/${pccode}`;
     return this.http.get<any>(url);
