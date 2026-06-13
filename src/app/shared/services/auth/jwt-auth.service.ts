@@ -75,8 +75,9 @@ export class JwtAuthService {
       .pipe(
         map((res: any) => {
           console.log('API call success:', res); // Log the response for debugging
-          localStorage.setItem('ProfitCenter', res.pccode);
+          localStorage.setItem('ProfitCenter', res.pccode_act);
           localStorage.setItem('ProfitCenter_old', res.pccode_old);
+          localStorage.setItem('positionRoleId', res.positionRoleId);
           localStorage.setItem('companyName', res.companyName);
           localStorage.setItem('companyId', res.companyId);
           localStorage.setItem('userName', res.username);
@@ -142,6 +143,7 @@ export class JwtAuthService {
     localStorage.removeItem('companyId');
     localStorage.removeItem('profitCenterName');
     localStorage.removeItem('loginType');
+    localStorage.removeItem('positionRoleId');
     this.setUserAndToken(null, null, false);
     this.credentialsSubject.next(null); // Emit null to trigger menu reset
     this.router.navigateByUrl('sessions/signin2');

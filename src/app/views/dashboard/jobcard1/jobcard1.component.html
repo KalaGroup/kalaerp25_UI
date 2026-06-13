@@ -1,5 +1,14 @@
 <div class="jc-page">
 
+  <!-- Page-level indeterminate loader — pure CSS, fixed across the top
+       of the viewport. Fires for any in-flight async op (Search, Submit,
+       Report search, Excel export) so the user always knows something
+       is happening regardless of where on the page they're focused. -->
+  <div *ngIf="isLoading || isSubmitting || isLoadingReport || isLoadingExcel"
+       class="jc-submit-loader">
+    <div class="jc-submit-loader-bar"></div>
+  </div>
+
   <!-- ── Header ──────────────────────────────────────────────── -->
   <div class="jc-header">
     <div class="jc-header-left">
@@ -48,11 +57,16 @@
       <div class="jc-search-bar">
 
         <div class="jc-field-group">
-          <label class="jc-label">Profit Center</label>
-          <input type="text"
-                 class="jc-input jc-input-readonly"
-                 [value]="pcDisplay"
-                 readonly />
+          <label class="jc-label">Select Line</label>
+          <select class="jc-input jc-line-select"
+                  [(ngModel)]="selectedLineWisePC"
+                  [disabled]="lineRights.length === 0"
+                  name="lineWisePC">
+            <option value="" disabled>Select Line</option>
+            <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+              {{ l.LineDesc }} --> {{ l.LineWisePC }}
+            </option>
+          </select>
         </div>
 
         <div class="jc-field-group">

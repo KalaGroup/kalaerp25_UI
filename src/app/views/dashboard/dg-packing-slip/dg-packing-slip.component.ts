@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewChildren, QueryList, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
-import { DgPackingSlipService } from './dg-packing-slip-service.service';
+import { DgPackingSlipService, LineRight } from './dg-packing-slip-service.service';
 import { Inject } from '@angular/core';
 import { th } from 'date-fns/locale';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
@@ -15,6 +15,11 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 export class DgPackingSlip implements OnInit, OnDestroy {
   userId: string = '';
   profitcenter: string = '';
+
+  // ── Line-wise PC selector (replaces login-derived PC for save) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
 
   selectedTab: string = 'PSStart';
   stage: string = '';
@@ -240,8 +245,38 @@ export class DgPackingSlip implements OnInit, OnDestroy {
     if (pccode) {
       this.profitcenter = pccode;
     }
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgPackingSlip] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.dgAssemblyService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgPackingSlip] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+      },
+      error: (err) => {
+        console.error('[DgPackingSlip] line rights error', err);
+        this.lineRights = [];
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -748,7 +783,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
         strDGSrNo: result,
         strCat: '047',
         strCPBatCnt: '0',
-        strPCCode: this.profitcenter,
+        strPCCode: this.selectedLineRight?.LineWisePC ?? '',
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -1020,7 +1055,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
 
   fetchMOFAdditionalPartDetails(strMOFCode: string) {
     const encodedPfbCode = encodeURIComponent(strMOFCode);
-    const profitcenter_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+    const profitcenter_act = this.selectedLineRight?.LineWisePC ?? '';
     this.dgAssemblyService.getMOFPartDetails(encodedPfbCode, profitcenter_act).subscribe(
       (response) => {
         console.log('MOFAdditionalPartDetails API Response:', response);
@@ -1057,8 +1092,11 @@ export class DgPackingSlip implements OnInit, OnDestroy {
 
   submitPSStartData() {
     const formData = new FormData();
-    const pccode_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
-    const pccode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    // PCCode_Act ← LineWisePC (the chosen line), PCCode_Old ← ParentDgPC
+    // (rolled-up parent). Both come from the Select-Line dropdown — replaces
+    // the previous login-derived employee-master PCs.
+    const pccode_act = this.selectedLineRight?.LineWisePC ?? '';
+    const pccode_old = this.selectedLineRight?.ParentDgPC ?? '';
     formData.append('PCCode_Act', pccode_act);
     formData.append('PCCode_Old', pccode_old);
     formData.append('PSTime', 'PSStartTime');
@@ -1130,8 +1168,11 @@ export class DgPackingSlip implements OnInit, OnDestroy {
 
   submitPSEndData() {
     const formData = new FormData();
-    const pccode_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
-    const pccode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    // PCCode_Act ← LineWisePC (the chosen line), PCCode_Old ← ParentDgPC
+    // (rolled-up parent). Both come from the Select-Line dropdown — replaces
+    // the previous login-derived employee-master PCs.
+    const pccode_act = this.selectedLineRight?.LineWisePC ?? '';
+    const pccode_old = this.selectedLineRight?.ParentDgPC ?? '';
     formData.append('PCCode_Act', pccode_act);
     formData.append('PCCode_Old', pccode_old);
     formData.append('PSTime', 'PSEndTime');
@@ -1172,7 +1213,6 @@ export class DgPackingSlip implements OnInit, OnDestroy {
     const cp2Valid = this.isControlPanel2ValidPSStart();
     const krmValid = this.isKRMValidPSStart();
 
-    console.log('PSStart Validation:', { engineValid, alternatorValid, canopyValid, batteriesValid, cp1Valid, cp2Valid, krmValid, cp1Visible: this.isControlPanel1Visible('PSStart'), krmVisible: this.isKRMVisible('PSStart') });
 
     return (
       engineValid &&

@@ -31,6 +31,57 @@
     margin-bottom: 20px; /* Adds distance from the bottom */
     position: relative;
   }
+
+  // Wrapper that holds the Line dropdown + SAVE button on the right edge.
+  .header-actions {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 2;
+
+    // Pin the SAVE button as an inline flex item — !important is the only way
+    // to reliably beat the top-level `.save-button { position: absolute; right: 20px }`
+    // rule under Angular's emulated view encapsulation (attribute selectors can
+    // equalise specificity). Without this, the absolute SAVE button overlaps the
+    // dropdown and clicks on the select land on SAVE → save fires unexpectedly.
+    .save-button {
+      position: static !important;
+      right: auto !important;
+      top: auto !important;
+      left: auto !important;
+    }
+  }
+
+  .line-select-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+  }
+
+  .line-select {
+    position: relative;
+    z-index: 3;          // sit above any stray absolutely-positioned sibling
+    height: 34px;
+    padding: 4px 10px;
+    border: 1px solid #d4d4d4;
+    border-radius: 5px;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    min-width: 240px;
+    cursor: pointer;
+
+    &:disabled {
+      background: #f0f0f0;
+      color: #888;
+      cursor: not-allowed;
+    }
+  }
   
   .dg-stage-header {
     flex-grow: 1;
@@ -433,12 +484,15 @@
     display: none;
   }
 
-  // .error-message {
-  //   color: red;
-  //   font-weight: bold;
-  //   margin-top: 10px;
-  //   text-align: center;
-  // }
+  // Alert-modal body — preserves newlines from server-supplied messages so
+  // multi-line errors render readably instead of running together.
+  .error-message {
+    margin: 8px 0 16px;
+    color: #b02a37;
+    font-weight: 500;
+    white-space: pre-line;
+    word-break: break-word;
+  }
   
   .errorModal {
     display: flex;

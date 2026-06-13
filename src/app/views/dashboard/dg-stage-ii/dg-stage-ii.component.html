@@ -1,28 +1,40 @@
 <div class="dg-stage-container">
+
+  <!-- Save-in-flight indeterminate loader — pure CSS, sits above everything. -->
+  <div *ngIf="isSaving" class="stage-save-loader">
+    <div class="stage-save-loader-bar"></div>
+  </div>
+
   <div class="header-container">
     <h6 class="dg-stage-header">DG Assembly Stage II</h6>
-    <!-- <button mat-button class="save-button"
-                      (click)="submitData()"
-                      [disabled]="!engineScanDetails?.qrSrNo || !alternatorScanDetails?.qrSrNo"
-                      [ngClass]="{'disabled': !engineScanDetails?.qrSrNo || !alternatorScanDetails?.qrSrNo}">
-      SAVE
-      </button> -->
-    <button mat-button class="save-button" (click)="submitData()" [disabled]="isSaveDisabled()"
-      [ngClass]="{'disabled': isSaveDisabled()}">
-      SAVE
-    </button>
+    <div class="header-actions">
+      <label class="line-select-label" for="lineWisePC">Select Line:</label>
+      <select class="line-select"
+              id="lineWisePC"
+              [(ngModel)]="selectedLineWisePC"
+              [disabled]="lineRights.length === 0"
+              name="lineWisePC">
+        <option value="" disabled>Select Line</option>
+        <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+          {{ l.LineDesc }} --> {{ l.LineWisePC }}
+        </option>
+      </select>
+      <button mat-button type="button" class="save-button" (click)="submitData()"
+        [disabled]="isSaveDisabled()"
+        [ngClass]="{'disabled': isSaveDisabled()}">
+        <span *ngIf="!isSaving">SAVE</span>
+        <span *ngIf="isSaving" class="save-saving-label">
+          <span class="save-spinner"></span>
+          Saving<span class="save-dots"><span>.</span><span>.</span><span>.</span></span>
+        </span>
+      </button>
+    </div>
   </div>
 
   <div *ngIf="errorMessage" class="errorModal">
     <div class="errorModal-content">
       <h2>Alert</h2>
-      <p>
-        This Stage For Jobcard:-
-        <span class="highlight">{{ extractedJobcard }}</span>
-        With Eng Serial No:-
-        <span class="highlight">{{ extractedEngSerial }}</span>
-        Is Already Completed...!
-      </p>
+      <p class="error-message">{{ errorMessage }}</p>
       <button class="error-ok-button" (click)="clearMessages()">OK</button>
     </div>
   </div>

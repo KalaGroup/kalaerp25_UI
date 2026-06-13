@@ -157,8 +157,13 @@ export class MtfWipInternalComponent implements OnInit {
     this.partDetails = [];
     this.isSearching = true;
 
+    // Send the logged-in user's LineWisePC (from localStorage.ProfitCenter)
+    // as PCCode on Search, instead of the page-level hard-coded fromPCCode.
+    // Everything else on this form continues to use fromPCCode unchanged.
+    const linePc = localStorage.getItem('ProfitCenter')?.trim() ?? '';
+
     const payload = {
-      PCCode: this.fromPCCode,
+      PCCode: linePc,
       StrBomCode: this.bomCode,
       StrReqCode: this.requisitionNo,
       StrReqQty: Number(this.reqQty) || 0,

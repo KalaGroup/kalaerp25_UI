@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewChildren, QueryList, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
-import { DgTestReportService } from './dg-test-report-service.service';
+import { DgTestReportService, LineRight } from './dg-test-report-service.service';
 import { Inject } from '@angular/core';
 import { th } from 'date-fns/locale';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
@@ -17,12 +17,27 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   profitcenter_old: string = '';
   profitcenter_act: string = '';
 
+  // ── Line-wise PC selector (replaces login-derived PC for save) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
+
   selectedTab: string = 'TRStart';
   stage: string = '';
   selectedOption: string = '';
   scannedQrResult: any;
-  scannedEngineQrResult: string = '';
-  scannedAlternatorQrResult: string = '';
+  // Per-tab scan results. Was a single string previously — that caused a
+  // scan in TRStart to "leak" the matched state into DGStart / DGEnd / TREnd
+  // because the underlying engine/alternator serial is identical across all
+  // four tabs of the same DG, so the stale value always matched whatever the
+  // DG-scan API populated next. Keying by tab name keeps each tab's
+  // red/green state independent and forces a real scan in each tab.
+  scannedEngineQrResult: Record<string, string> = {
+    TRStart: '', DGStart: '', DGEnd: '', TREnd: ''
+  };
+  scannedAlternatorQrResult: Record<string, string> = {
+    TRStart: '', DGStart: '', DGEnd: '', TREnd: ''
+  };
   scannedDieselQrResult: string = '';
   showQrScanner: { [key: string]: boolean } = {};
   errorMessage: string = '';
@@ -308,8 +323,38 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
       this.profitcenter_act = pccode_Act;
       this.profitcenter_old = pccode_Old;
     }
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgTestReport] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.dgAssemblyService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgTestReport] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+      },
+      error: (err) => {
+        console.error('[DgTestReport] line rights error', err);
+        this.lineRights = [];
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -892,7 +937,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
         strSrNo: result,
         strDGSrNo: result,
         strCat: '047',
-        strPCCode: this.profitcenter_act,
+        strPCCode: this.selectedLineRight?.LineWisePC ?? '',
         //   this.userId === '0211'
         //     ? '01.004'
         //     : this.userId === '2236'
@@ -999,7 +1044,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
       this.showQrScannerDGScan = false;
       //this.showQrScannerEngineEnd = false;
     } else if (type === 'engine') {
-      this.scannedEngineQrResult = result;
+      this.scannedEngineQrResult[this.stage] = result ?? '';
       this.showQrScannerEngineTRStart = false;
       this.showQrScannerEngineDGStart = false;
       this.showQrScannerEngineDGEnd = false;
@@ -1007,11 +1052,11 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
       const storedQrSrNo = (
         this.scanDetails[this.stage]['engine'] as { qrSrNo: string }
       )?.qrSrNo;
-      if (this.scannedEngineQrResult !== storedQrSrNo) {
+      if (this.scannedEngineQrResult[this.stage] !== storedQrSrNo) {
         alert('Engine Serial code does not match! Please check.');
       }
     } else if (type === 'alternator') {
-      this.scannedAlternatorQrResult = result;
+      this.scannedAlternatorQrResult[this.stage] = result ?? '';
       this.showQrScannerAlternatorTRStart = false;
       this.showQrScannerAlternatorTREnd = false;
       this.showQrScannerAlternatorDGEnd = false;
@@ -1019,7 +1064,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
       const storedQrSrNo = (
         this.scanDetails[this.stage]['alternator'] as { qrSrNo: string }
       )?.qrSrNo;
-      if (this.scannedAlternatorQrResult !== storedQrSrNo) {
+      if (this.scannedAlternatorQrResult[this.stage] !== storedQrSrNo) {
         alert('Alternator Serial code does not match! Please check.');
       }
     } else if (type === 'diesel') {
@@ -1225,19 +1270,19 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     return this.isEngineValidTRStart() && this.isAlternatorValidTRStart();
   }
 
-  // Engine - Required (turns GREEN when scannedEngineQrResult matches qrSrNo)
+  // Engine - Required (turns GREEN when scannedEngineQrResult[TRStart] matches qrSrNo)
   isEngineValidTRStart(): boolean {
     return (
       !!this.scanDetails?.TRStart?.engine?.qrSrNo &&
-      this.scannedEngineQrResult === this.scanDetails.TRStart.engine.qrSrNo
+      this.scannedEngineQrResult['TRStart'] === this.scanDetails.TRStart.engine.qrSrNo
     );
   }
 
-  // Alternator - Required (turns GREEN when scannedAlternatorQrResult matches qrSrNo)
+  // Alternator - Required (turns GREEN when scannedAlternatorQrResult[TRStart] matches qrSrNo)
   isAlternatorValidTRStart(): boolean {
     return (
       !!this.scanDetails?.TRStart?.alternator?.qrSrNo &&
-      this.scannedAlternatorQrResult ===
+      this.scannedAlternatorQrResult['TRStart'] ===
         this.scanDetails.TRStart.alternator.qrSrNo
     );
   }
@@ -1248,19 +1293,19 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     return this.isEngineValidDGStart() && this.isAlternatorValidDGStart();
   }
 
-  // Engine - Required (turns GREEN when scannedEngineQrResult matches qrSrNo)
+  // Engine - Required (turns GREEN when scannedEngineQrResult[DGStart] matches qrSrNo)
   isEngineValidDGStart(): boolean {
     return (
       !!this.scanDetails?.DGStart?.engine?.qrSrNo &&
-      this.scannedEngineQrResult === this.scanDetails.DGStart.engine.qrSrNo
+      this.scannedEngineQrResult['DGStart'] === this.scanDetails.DGStart.engine.qrSrNo
     );
   }
 
-  // Alternator - Required (turns GREEN when scannedAlternatorQrResult matches qrSrNo)
+  // Alternator - Required (turns GREEN when scannedAlternatorQrResult[DGStart] matches qrSrNo)
   isAlternatorValidDGStart(): boolean {
     return (
       !!this.scanDetails?.DGStart?.alternator?.qrSrNo &&
-      this.scannedAlternatorQrResult ===
+      this.scannedAlternatorQrResult['DGStart'] ===
         this.scanDetails.DGStart.alternator.qrSrNo
     );
   }
@@ -1271,19 +1316,19 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     return this.isEngineValidDGEnd() && this.isAlternatorValidDGEnd();
   }
 
-  // Engine - Required (turns GREEN when scannedEngineQrResult matches qrSrNo)
+  // Engine - Required (turns GREEN when scannedEngineQrResult[DGEnd] matches qrSrNo)
   isEngineValidDGEnd(): boolean {
     return (
       !!this.scanDetails?.DGEnd?.engine?.qrSrNo &&
-      this.scannedEngineQrResult === this.scanDetails.DGEnd.engine.qrSrNo
+      this.scannedEngineQrResult['DGEnd'] === this.scanDetails.DGEnd.engine.qrSrNo
     );
   }
 
-  // Alternator - Required (turns GREEN when scannedAlternatorQrResult matches qrSrNo)
+  // Alternator - Required (turns GREEN when scannedAlternatorQrResult[DGEnd] matches qrSrNo)
   isAlternatorValidDGEnd(): boolean {
     return (
       !!this.scanDetails?.DGEnd?.alternator?.qrSrNo &&
-      this.scannedAlternatorQrResult ===
+      this.scannedAlternatorQrResult['DGEnd'] ===
         this.scanDetails.DGEnd.alternator.qrSrNo
     );
   }
@@ -1294,19 +1339,19 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     return this.isEngineValidTREnd() && this.isAlternatorValidTREnd();
   }
 
-  // Engine - Required (turns GREEN when scannedEngineQrResult matches qrSrNo)
+  // Engine - Required (turns GREEN when scannedEngineQrResult[TREnd] matches qrSrNo)
   isEngineValidTREnd(): boolean {
     return (
       !!this.scanDetails?.TREnd?.engine?.qrSrNo &&
-      this.scannedEngineQrResult === this.scanDetails.TREnd.engine.qrSrNo
+      this.scannedEngineQrResult['TREnd'] === this.scanDetails.TREnd.engine.qrSrNo
     );
   }
 
-  // Alternator - Required (turns GREEN when scannedAlternatorQrResult matches qrSrNo)
+  // Alternator - Required (turns GREEN when scannedAlternatorQrResult[TREnd] matches qrSrNo)
   isAlternatorValidTREnd(): boolean {
     return (
       !!this.scanDetails?.TREnd?.alternator?.qrSrNo &&
-      this.scannedAlternatorQrResult ===
+      this.scannedAlternatorQrResult['TREnd'] ===
         this.scanDetails.TREnd.alternator.qrSrNo
     );
   }

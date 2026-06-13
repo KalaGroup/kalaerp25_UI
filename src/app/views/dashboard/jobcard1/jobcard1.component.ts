@@ -6,7 +6,8 @@ import {
   Jobcard1Service,
   JobCardDtsRow,
   JobCardSubmitRequest,
-  JobCard1ReportRow
+  JobCard1ReportRow,
+  LineRight
 } from './jobcard1.service';
 
 @Component({
@@ -24,6 +25,9 @@ export class Jobcard1Component implements OnInit {
   pcCode_Old:     string          = '';
   compCode:       string          = '';
   empCode:        string          = '';
+  prmCode:        string          = '';
+  lineRights:     LineRight[]     = [];
+  selectedLineWisePC: string       = '';
   jobCardList:    JobCardDtsRow[] = [];
   isLoading:      boolean         = false;
   isSubmitting:   boolean         = false;
@@ -66,10 +70,50 @@ export class Jobcard1Component implements OnInit {
     // Read from localStorage — set during login
     this.compCode = localStorage.getItem('companyId')?.trim() ?? '';
     this.empCode  = localStorage.getItem('employeeCode')?.trim() ?? '';
+    this.prmCode  = localStorage.getItem('positionRoleId')?.trim() ?? '';
     this.today    = formatDate(new Date(), 'dd-MM-yyyy hh:mm:ss a', 'en-US', '+0530');
     this.setPCByCompany();
     this.initReportRange();
-    this.loadReport();
+    // Report load is chained after the line rights resolve — see loadLineRights().
+    this.loadLineRights();
+  }
+
+  // ── Fetch the lines this position is entitled to post against ───
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[Jobcard1] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      this.loadReport();
+      return;
+    }
+    this.jobcardService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[Jobcard1] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+        // Once we know the user's lines, fetch the first report.
+        this.loadReport();
+      },
+      error: (err) => {
+        console.error('[Jobcard1] line rights error', err);
+        this.lineRights = [];
+        this.loadReport();
+      },
+    });
+  }
+
+  /** AssemblyLine used in every fetch — driven by the dropdown selection. */
+  private get currentLineWisePC(): string {
+    return this.selectedLineWisePC || '';
+  }
+
+  /** Full LineRight object behind the dropdown selection — used at save time
+   *  to read ParentDgPC alongside LineWisePC. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
   }
 
   // ── Default report range: 1st of current month → today ────────
@@ -82,7 +126,12 @@ export class Jobcard1Component implements OnInit {
 
   // ── Fetch JobCard production report ────────────────────────────
   loadReport(): void {
-    if (!this.compCode || !this.pcCode_Act) return;
+    const assemblyLine = this.currentLineWisePC;
+    if (!this.compCode) return;
+    if (!assemblyLine) {
+      this.reportError = 'No assembly line is assigned to your position.';
+      return;
+    }
     if (!this.reportFromDate || !this.reportToDate) {
       this.reportError = 'Please select From and To dates.';
       return;
@@ -97,7 +146,7 @@ export class Jobcard1Component implements OnInit {
     this.reportList      = [];
 
     this.jobcardService
-      .getJobCard1Report(this.compCode, this.pcCode_Act, this.reportFromDate, this.reportToDate)
+      .getJobCard1Report(this.compCode, assemblyLine, this.reportFromDate, this.reportToDate)
       .subscribe({
         next: (data) => {
           this.reportList     = data ?? [];
@@ -426,7 +475,7 @@ export class Jobcard1Component implements OnInit {
     this.pcCode_Act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
     this.pcCode_Old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
     const pcName   = localStorage.getItem('profitCenterName')?.trim() ?? '';
-    this.pcDisplay = pcName && this.pcCode_Old ? `${pcName} --> ${this.pcCode_Old}` : pcName || this.pcCode_Old;
+    this.pcDisplay = pcName && this.pcCode_Act ? `${pcName} --> ${this.pcCode_Act}` : pcName || this.pcCode_Act;
   }
 
   // ── Search ────────────────────────────────────────────────────
@@ -436,16 +485,22 @@ export class Jobcard1Component implements OnInit {
       return;
     }
 
+    const assemblyLine = this.currentLineWisePC;
+    if (!assemblyLine) {
+      this.warningMessage = 'No assembly line is assigned to your position.';
+      return;
+    }
+
     this.isLoading   = true;
     this.jobCardList = [];
     this.clearMessages();
 
-    this.jobcardService.getJobCardDetails(this.compCode, this.pcCode_Act).subscribe({
+    this.jobcardService.getJobCardDetails(this.compCode, assemblyLine).subscribe({
       next: (data) => {
         this.jobCardList = data ?? [];
         this.isLoading   = false;
         if (this.jobCardList.length === 0)
-          this.warningMessage = 'No records found for the selected profit center.';
+          this.warningMessage = 'No records found for the selected assembly line.';
       },
       error: (err) => {
         this.isLoading    = false;
@@ -486,9 +541,17 @@ export class Jobcard1Component implements OnInit {
       return;
     }
 
+    // Stamp the line-wise PC (granular) and its parent (rolled-up) on the transaction.
+    // pcCode_Act ← LineWisePC, pcCode_Old ← ParentDgPC — both come from the dropdown.
+    const line = this.selectedLineRight;
+    if (!line) {
+      this.warningMessage = 'Please select a line before submitting.';
+      return;
+    }
+
     const request: JobCardSubmitRequest = {
-      pcCode_Act:  this.pcCode_Act,
-      pcCode_Old:  this.pcCode_Old,
+      pcCode_Act:  line.LineWisePC,
+      pcCode_Old:  line.ParentDgPC,
       remark:  form.value.remark?.trim() ?? '',
       empCode: this.empCode,
       plans:   selectedRows

@@ -62,6 +62,12 @@ export interface ReverseTransSearchResult {
   PanelType: string | null;
 }
 
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc:   string;
+  ParentDgPC: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -80,6 +86,12 @@ export class DgReverseProcessService {
     return this.http.get<ReverseTransOption[]>(this.apiReverseTransMstUrl, {
       params,
     });
+  }
+
+  // GET — lines this position role is entitled to post against
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
+    return this.http.get<LineRight[]>(url);
   }
 
   getReverseKvaList(

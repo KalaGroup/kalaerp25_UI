@@ -5,6 +5,12 @@ import { catchError, tap } from 'rxjs/operators';
 import { environment } from 'environments/environment';
 
 // ── Models ────────────────────────────────────────────────────────
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc:   string;
+  ParentDgPC: string;
+}
+
 export interface JobCardDtsRow {
   // Identifiers
   BOMCode?:     string;
@@ -178,6 +184,14 @@ export class Jobcard1Service {
   private cachedEmployees: EmployeeItem[] | null = null;
 
   constructor(private http: HttpClient) {}
+
+  // GET — lines this position role is entitled to post against
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
+    return this.http
+      .get<LineRight[]>(url)
+      .pipe(catchError(this.handleError));
+  }
 
   // GET — fetch DG list with plan + stock for a company
   getJobCardDetails(compCode: string, pcCode: string): Observable<JobCardDtsRow[]> {

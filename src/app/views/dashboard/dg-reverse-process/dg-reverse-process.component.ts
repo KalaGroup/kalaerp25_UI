@@ -7,6 +7,7 @@ import {
   ReverseTransSearchResult,
   ReverseTransSubmitRequest,
   ReverseTransRow,
+  LineRight,
 } from './dg-reverse-process-service.service';
 
 @Component({
@@ -20,6 +21,11 @@ export class DgReverseProcessComponent implements OnInit {
   reverseTranCode: string = '';
   reverseTranDate: string = '';
   profitcenter: string = '';
+
+  // ── Select Line dropdown (replaces the read-only Reverse Tran Code box) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
 
   // Filter row — `reverseTxnFor` is set after the API call resolves.
   reverseTxnFor: string = '';
@@ -68,7 +74,66 @@ export class DgReverseProcessComponent implements OnInit {
     const pccode = localStorage.getItem('ProfitCenter')?.trim();
     const pcname = localStorage.getItem('profitCenterName')?.trim() || 'DG Assembly';
     this.profitcenter = pccode ? `${pcname}-->${pccode}` : `${pcname}-->01.004`;
-    this.fetchReverseTransOptions(pccode || '01.004');
+
+    // NOTE: `fetchReverseTransOptions` is no longer called on init. It now
+    // fires only when the user picks a line in the Select-Line dropdown
+    // (or, for single-line users, immediately after auto-selection in
+    // `loadLineRights`). The dropdown's LineWisePC is the PCCode argument.
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgReverseProcess] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.rpService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgReverseProcess] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select AND fire the dependent
+        // "Reverse Transaction For" lookup using that line's LineWisePC,
+        // so single-line users don't have to click the dropdown manually.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+          this.onLineChange();
+        }
+      },
+      error: (err) => {
+        console.error('[DgReverseProcess] line rights error', err);
+        this.lineRights = [];
+      },
+    });
+  }
+
+  /**
+   * Fires whenever the Select-Line dropdown changes (and once on single-line
+   * auto-select via `loadLineRights`). Resets every downstream state that
+   * depended on the previous PC, then reloads the "Reverse Transaction For"
+   * options using the new LineWisePC as the PCCode argument.
+   */
+  onLineChange(): void {
+    // Clear cascading dropdowns + the previous results table so stale data
+    // from another line can't surface or get submitted by mistake.
+    this.reverseTxnFor = '';
+    this.selectedKVA = '';
+    this.selectedModel = '';
+    this.reverseTxnForOptions = [];
+    this.kvaOptions = [];
+    this.modelOptions = [];
+    this.reverseDetails = [];
+
+    const linePc = this.selectedLineRight?.LineWisePC ?? '';
+    if (!linePc) return;
+    this.fetchReverseTransOptions(linePc);
   }
 
   private fetchReverseTransOptions(pcCode: string): void {
@@ -106,7 +171,9 @@ export class DgReverseProcessComponent implements OnInit {
       this.selectedModel = '';
       return;
     }
-    const pccode = localStorage.getItem('ProfitCenter')?.trim() || '01.004';
+    // Use the line picked from the Select-Line dropdown (LineWisePC), not
+    // the login PC — keeps the KVA list scoped to the active line.
+    const pccode = this.selectedLineRight?.LineWisePC ?? '';
     this.rpService.getReverseKvaList(transType, pccode).subscribe({
       next: (rows: KvaOption[]) => {
         this.kvaOptions = (rows ?? []).map((r) => r.KVA);
@@ -138,7 +205,9 @@ export class DgReverseProcessComponent implements OnInit {
       this.selectedModel = '';
       return;
     }
-    const pccode = localStorage.getItem('ProfitCenter')?.trim() || '01.004';
+    // Use the line picked from the Select-Line dropdown (LineWisePC), not
+    // the login PC — keeps the Model list scoped to the active line.
+    const pccode = this.selectedLineRight?.LineWisePC ?? '';
     this.rpService.getReverseModelList(transType, pccode, kva).subscribe({
       next: (rows: ModelOption[]) => {
         this.modelOptions = (rows ?? []).map((r) => r.Model);
@@ -154,7 +223,9 @@ export class DgReverseProcessComponent implements OnInit {
 
   onSearch(): void {
     const transType = this.selectedTransID;
-    const pccode = localStorage.getItem('ProfitCenter')?.trim() || '01.004';
+    // Use the line picked from the Select-Line dropdown (LineWisePC), not
+    // the login PC — keeps the search results scoped to the active line.
+    const pccode = this.selectedLineRight?.LineWisePC ?? '';
     const kva = this.selectedKVA;
     const model = this.selectedModel;
 
@@ -185,7 +256,10 @@ export class DgReverseProcessComponent implements OnInit {
     }
 
     const transType = this.selectedTransID;
-    const pccode = localStorage.getItem('ProfitCenter')?.trim() || '01.004';
+    // Use the line picked from the Select-Line dropdown (LineWisePC), not
+    // the login PC — keeps the reverse transaction stamped against the
+    // active line, consistent with the rest of the cascade.
+    const pccode = this.selectedLineRight?.LineWisePC ?? '';
 
     if (!transType) {
       console.warn('[ReverseProcess] transType not set; cannot submit');

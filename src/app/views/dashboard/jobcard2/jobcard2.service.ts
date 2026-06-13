@@ -3,6 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'environments/environment';
 
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc:   string;
+  ParentDgPC: string;
+}
+
 export interface JobCard2ReportRow {
   JobCard2Code:       string;
   JobCard1Code:       string;
@@ -67,6 +73,12 @@ export class Jobcard2Service {
   private apiSubmitUrl = `${this.baseUrl}DGAssemblly/SaveJobCard2Details`;
 
   constructor(private http: HttpClient) {}
+
+  // GET — lines this position role is entitled to post against
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
+    return this.http.get<LineRight[]>(url);
+  }
 
   // GET — JobCard 2 production report (status + per-plan component serials)
   getJobCard2Report(

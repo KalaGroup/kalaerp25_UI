@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewChildren, QueryList, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
-import { DgStageIService } from './dg-stage-i-service.service';
+import { DgStageIService, LineRight } from './dg-stage-i-service.service';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 
 @Component({
@@ -15,6 +15,26 @@ export class DgStageIComponent implements OnInit, OnDestroy {
   password: string = '';
   profitcenter_act: string = '';
   profitcenter_old: string = '';
+
+  // ── Line-wise PC selector (replaces login-derived PC for save) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+
+  // Per-tab line selection — Scan Start and Scan End each keep their own
+  // pick, so switching tabs doesn't lose the other side's choice. Resets
+  // only on a full page refresh.
+  private startTabLineWisePC: string = '';
+  private endTabLineWisePC: string = '';
+
+  /** Two-way binding for the header dropdown. Reads/writes the slot
+   *  belonging to whichever tab is active. */
+  get selectedLineWisePC(): string {
+    return this.selectedTabIndex === 1 ? this.endTabLineWisePC : this.startTabLineWisePC;
+  }
+  set selectedLineWisePC(value: string) {
+    if (this.selectedTabIndex === 1) this.endTabLineWisePC = value;
+    else this.startTabLineWisePC = value;
+  }
 
   selectedOption: string = '';
   selectedSixMItem: string | null = null;
@@ -46,8 +66,50 @@ export class DgStageIComponent implements OnInit, OnDestroy {
       this.profitcenter_act = pccode_Act;
       this.profitcenter_old = pccode_Old;
     }
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
+  }
+
+  /** The line right object behind the current dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  /**
+   * Tab switch (Scan Start <-> Scan End). Each tab maintains its own line
+   * pick — switching to the other tab reveals that tab's previous selection
+   * (or empty if never picked there). Selections only reset on a page reload.
+   */
+  onTabChange(idx: number): void {
+    this.selectedTabIndex = idx;
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[DgStageI] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      return;
+    }
+    this.dgAssemblyService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[DgStageI] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-fill both tab slots with the only option
+        // (only happens on initial load — switching tabs preserves per-tab picks).
+        if (this.lineRights.length === 1) {
+          const only = this.lineRights[0].LineWisePC;
+          this.startTabLineWisePC = only;
+          this.endTabLineWisePC   = only;
+        }
+      },
+      error: (err) => {
+        console.error('[DgStageI] line rights error', err);
+        this.lineRights = [];
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -459,8 +521,8 @@ export class DgStageIComponent implements OnInit, OnDestroy {
         Category: '001',
         Stage: '0',
         //PCCode: '01.004',
-         PCCode_Old: this.profitcenter_old,
-         PCCode_Act: this.profitcenter_act,
+         PCCode_Old: this.selectedLineRight?.ParentDgPC ?? '',
+         PCCode_Act: this.selectedLineRight?.LineWisePC ?? '',
       };
       // Make the API call with the payload
       this.dgAssemblyService.getAssemblyDetails(payload).subscribe(
@@ -523,8 +585,8 @@ export class DgStageIComponent implements OnInit, OnDestroy {
         Category: '001',
         Stage: '1',
         //PCCode: "01.004"
-        PCCode_Old: this.profitcenter_old,
-        PCCode_Act: this.profitcenter_act,
+        PCCode_Old: this.selectedLineRight?.ParentDgPC ?? '',
+        PCCode_Act: this.selectedLineRight?.LineWisePC ?? '',
         // this.userId === '0211'
         //   ? '01.004'
         //   : this.userId === '2236'
@@ -781,8 +843,8 @@ export class DgStageIComponent implements OnInit, OnDestroy {
     formData.append('AltSrno', this.scanDetails1.qrSrNo); // Alternator Serial Number
     formData.append('StageNo', '0'); // Convert number to string
     formData.append('ProductCode', dgProductCode);
-    formData.append('PCCode_Act', this.profitcenter_act);//Actual pccode
-    formData.append('PCCode_Old', this.profitcenter_old);
+    formData.append('PCCode_Act', this.selectedLineRight?.LineWisePC ?? '');//Line-wise PC
+    formData.append('PCCode_Old', this.selectedLineRight?.ParentDgPC ?? '');//Parent DG PC
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -802,20 +864,7 @@ export class DgStageIComponent implements OnInit, OnDestroy {
       },
       (error: any) => {
         console.error('API Error Response:', error);
-        // Extracting Jobcard and Engine Serial from the error message
-        this.errorMessage =
-          error.error || 'Failed to submit data. Please try again.';
-        console.log('Error Message from API:', this.errorMessage);
-        // Extracting Jobcard and Engine Serial from the error message
-        const jobcardMatch = this.errorMessage.match(/Jobcard:-\s*([\w\/-]+)/);
-        const engSerialMatch = this.errorMessage.match(
-          /Eng Serial No:-\s*([\w.\/-]+)/
-        );
-
-        this.extractedJobcard = jobcardMatch ? jobcardMatch[1] : 'N/A';
-        this.extractedEngSerial = engSerialMatch ? engSerialMatch[1] : 'N/A';
-
-        this.showError(this.errorMessage);
+        this.showError(this.extractApiErrorMessage(error));
       }
     );
   }
@@ -835,8 +884,8 @@ export class DgStageIComponent implements OnInit, OnDestroy {
     formData.append('AltSrno', this.scanDetails3.qrSrNo);
     formData.append('StageNo', '1');
     formData.append('ProductCode', dgProductCode);
-    formData.append('PCCode_Act', this.profitcenter_act);//Actual pccode
-    formData.append('PCCode_Old', this.profitcenter_old);
+    formData.append('PCCode_Act', this.selectedLineRight?.LineWisePC ?? '');//Line-wise PC
+    formData.append('PCCode_Old', this.selectedLineRight?.ParentDgPC ?? '');//Parent DG PC
     // if (this.userId == '0211') {
     //   formData.append('PCCode', '01.004');
     // } else if (this.userId == '2236') {
@@ -873,22 +922,28 @@ export class DgStageIComponent implements OnInit, OnDestroy {
       },
       (error: any) => {
         console.error('API Error Response:', error);
-        // Extracting Jobcard and Engine Serial from the error message
-        this.errorMessage =
-          error.error || 'Failed to submit data. Please try again.';
-        console.log('Error Message from API:', this.errorMessage);
-        // Extracting Jobcard and Engine Serial from the error message
-        const jobcardMatch = this.errorMessage.match(/Jobcard:-\s*([\w\/-]+)/);
-        const engSerialMatch = this.errorMessage.match(
-          /Eng Serial No:-\s*([\w.\/-]+)/
-        );
-
-        this.extractedJobcard = jobcardMatch ? jobcardMatch[1] : 'N/A';
-        this.extractedEngSerial = engSerialMatch ? engSerialMatch[1] : 'N/A';
-
-        this.showError(this.errorMessage);
+        this.showError(this.extractApiErrorMessage(error));
       }
     );
+  }
+
+  /**
+   * Pull the most useful human-readable message from an HttpErrorResponse.
+   * Handles all three shapes the API returns:
+   *   - BadRequest with a plain string body  →  err.error is a string
+   *   - error object  →  err.error.Message / err.error.message / err.error.title
+   *   - network/CORS failure  →  err.message
+   */
+  private extractApiErrorMessage(err: any): string {
+    if (!err) return 'Failed to submit data. Please try again.';
+    const e = err.error;
+    if (typeof e === 'string' && e.trim()) return e.trim();
+    if (e && typeof e === 'object') {
+      const fromObj = e.Message || e.message || e.title || e.detail;
+      if (typeof fromObj === 'string' && fromObj.trim()) return fromObj.trim();
+    }
+    if (typeof err.message === 'string' && err.message.trim()) return err.message.trim();
+    return 'Failed to submit data. Please try again.';
   }
 
   fetchSixMData(): void {

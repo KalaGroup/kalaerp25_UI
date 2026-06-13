@@ -1,9 +1,30 @@
 <div class="checker-container">
+
+  <!-- Pending-list fetch loader — pure CSS, fixed across the very top of the page. -->
+  <div *ngIf="isLoadingPendingList" class="checker-load-loader">
+    <div class="checker-load-loader-bar"></div>
+  </div>
+
   <div class="filters-wrapper">
     <div class="field-group profit-center-field">
       <label class="field-label">Profit Center</label>
       <mat-form-field appearance="outline">
-        <input matInput [value]="profitcenterName" readonly [size]="profitcenterName?.length || 20" />
+        <input matInput [value]="pcDisplay" readonly [size]="pcDisplay?.length || 20" />
+      </mat-form-field>
+    </div>
+
+    <div class="field-group line-select-field">
+      <label class="field-label">Select Line</label>
+      <mat-form-field appearance="outline">
+        <mat-select [(ngModel)]="selectedLineWisePC"
+                    [disabled]="lineRights.length === 0"
+                    placeholder="Select Line"
+                    panelClass="line-select-panel"
+                    name="lineWisePC">
+          <mat-option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }} --> {{ l.LineWisePC }}
+          </mat-option>
+        </mat-select>
       </mat-form-field>
     </div>
 
@@ -51,10 +72,10 @@
     <div class="table-wrapper">
 
       <!-- STAGE 1 & STAGE 2 TABLE -->
-      <table mat-table [dataSource]="dataSource" *ngIf="!isStage3()">
+      <table mat-table [dataSource]="pagedDataSource" *ngIf="!isStage3()">
         <ng-container matColumnDef="srNo">
           <th mat-header-cell *matHeaderCellDef>Sr No</th>
-          <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+          <td mat-cell *matCellDef="let element; let i = index">{{ rowDisplayIndex(i) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="jobCardNo">
@@ -134,10 +155,10 @@
       </table>
 
       <!-- STAGE 3 TABLE -->
-      <table mat-table [dataSource]="stage3DataSource" *ngIf="isStage3()">
+      <table mat-table [dataSource]="pagedStage3DataSource" *ngIf="isStage3()">
         <ng-container matColumnDef="srNo">
           <th mat-header-cell *matHeaderCellDef>Sr No</th>
-          <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+          <td mat-cell *matCellDef="let element; let i = index">{{ rowDisplayIndex(i) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="pfbCode">
@@ -216,10 +237,46 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
       </table>
 
-      <!-- Empty state message -->
-      <div *ngIf="(isStage3() ? stage3DataSource.length : dataSource.length) === 0" class="empty-state">
+      <!-- In-table loading state — spinner + sequential dots, takes over the
+           empty-state region so the user sees motion while the API is in flight. -->
+      <div *ngIf="isLoadingPendingList" class="checker-table-loading">
+        <div class="checker-table-loading-spinner" aria-hidden="true"></div>
+        <p class="checker-table-loading-text">
+          Loading pending job cards<span class="checker-table-loading-dots"><span>.</span><span>.</span><span>.</span></span>
+        </p>
+      </div>
+
+      <!-- Empty state message — only when not loading. -->
+      <div *ngIf="!isLoadingPendingList && (isStage3() ? stage3DataSource.length : dataSource.length) === 0" class="empty-state">
         <p *ngIf="!selectedStage">Please select a stage to view data</p>
         <p *ngIf="selectedStage">No records found</p>
+      </div>
+    </div>
+
+    <!-- ── Pagination strip (UI-only) — outside .table-wrapper so it stays
+         pinned to the bottom of the table card regardless of inner scroll. -->
+    <div class="dsc-pagination" *ngIf="(isStage3() ? stage3DataSource.length : dataSource.length) > 0">
+      <div class="dsc-pagination-pages">
+        <button class="dsc-page-btn" type="button" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+        <button class="dsc-page-btn" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+        <button *ngFor="let n of pageNumbers"
+                class="dsc-page-btn"
+                [class.is-current]="n === currentPage"
+                type="button"
+                (click)="goToPage(n)">{{ n }}</button>
+        <button class="dsc-page-btn" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+        <button class="dsc-page-btn" type="button" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+      </div>
+      <div class="dsc-pagination-meta">
+        <span>Records: {{ recordRangeLabel }}</span>
+        <span class="dsc-context-sep">·</span>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <span class="dsc-context-sep">·</span>
+        <label>Page size:
+          <select class="dsc-input dsc-input-sm" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+            <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s === 0 ? 'All' : s }}</option>
+          </select>
+        </label>
       </div>
     </div>
   </div>
@@ -230,18 +287,37 @@
 <!-- ============================================ -->
 <div class="modal-overlay" *ngIf="isQualityModalOpen">
   <div class="modal-container quality-modal">
+    <!-- Loading bar — pure-CSS indeterminate bar pinned to the top of the modal
+         card. No Material dependency, high z-index, sits above the colored header
+         so it can't be hidden by inner layout. -->
+    <div *ngIf="isLoadingCheckpoints" class="quality-modal-loader">
+      <div class="quality-modal-loader-bar"></div>
+    </div>
     <!-- Modal Header -->
     <div class="modal-header">
       <div class="modal-title-group">
         <span class="modal-title">Quality Process Check</span>
-        <button class="btn-reject" (click)="onReject()" [class.active]="defectActionType === 'Reject'">
+        <!--
+          Reject button — hidden for now per business requirement.
+          Handler `onReject()` and all related state (defectActionType,
+          hasDefectData, defect modal, badges, save-final button) are kept
+          intact. To re-enable, change *ngIf="false" → *ngIf="true" (or
+          remove the ngIf entirely).
+        -->
+        <button *ngIf="false"
+                class="btn-reject" (click)="onReject()" [class.active]="defectActionType === 'Reject'">
           Reject
           <span *ngIf="defectActionType === 'Reject' && hasDefectData" class="badge">✓</span>
         </button>
       </div>
       <div class="modal-header-actions">
-        <!-- Rework Button -->
-        <button class="btn-rework" (click)="onReworkClick()" [class.active]="defectActionType === 'Rework'" [class.btn-disabled]="!isReworkEnabled">
+        <!--
+          Rework button — hidden for now per business requirement.
+          Handler `onReworkClick()` and related state are kept intact.
+          Re-enable by flipping *ngIf="false" → *ngIf="true".
+        -->
+        <button *ngIf="false"
+                class="btn-rework" (click)="onReworkClick()" [class.active]="defectActionType === 'Rework'" [class.btn-disabled]="!isReworkEnabled">
           Rework
           <span *ngIf="defectActionType === 'Rework' && hasDefectData" class="badge">✓</span>
         </button>
@@ -414,7 +490,10 @@
     <div class="modal-table-container">
       <div class="modal-table-wrapper">
         <div *ngIf="isLoadingCheckpoints" class="loading-state">
-          <p>Loading quality checkpoints...</p>
+          <div class="loading-spinner" aria-hidden="true"></div>
+          <p class="loading-text">
+            Loading quality checkpoints<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+          </p>
         </div>
 
         <table mat-table [dataSource]="qualityCheckpointDataSource"

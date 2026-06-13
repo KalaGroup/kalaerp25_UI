@@ -9,10 +9,95 @@ $accent: #3d5a80;
 $row-hover: #f0f2f5;
 $modal-header-bg: #4a90a4;
 
+// ── Pending-list loader — fixed top-of-page indeterminate bar ──
+// Same pure-CSS pattern proven in the Quality modal: no Material dependency,
+// huge z-index so nothing can hide it.
+.checker-load-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(74, 144, 164, 0.18);
+  overflow: hidden;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.checker-load-loader-bar {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, $modal-header-bg 0%, #6fb3c9 50%, $modal-header-bg 100%);
+  border-radius: 3px;
+  animation: checker-load-indeterminate 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+// In-table loading state — fills the empty-state region while data is fetched.
+.checker-table-loading {
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: $bg-white;
+
+  .checker-table-loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e0e4e8;
+    border-top-color: $accent;
+    border-radius: 50%;
+    animation: checker-table-spin 0.9s linear infinite;
+  }
+
+  .checker-table-loading-text {
+    margin: 0;
+    color: $text-primary;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .checker-table-loading-dots {
+    display: inline-block;
+    margin-left: 1px;
+
+    span {
+      display: inline-block;
+      opacity: 0;
+      animation: checker-table-dot-fade 1.4s infinite both;
+
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.4s; }
+    }
+  }
+}
+
+@keyframes checker-load-indeterminate {
+  0%   { left: -40%; }
+  50%  { left: 30%; }
+  100% { left: 100%; }
+}
+
+@keyframes checker-table-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes checker-table-dot-fade {
+  0%, 80%, 100% { opacity: 0; }
+  40%           { opacity: 1; }
+}
+
 .checker-container {
   padding: 24px;
   background-color: $bg-light;
-  min-height: 100vh;
+  // No `min-height: 100vh` — the outer layout already provides full-height
+  // background; forcing it here pushes total content past the viewport and
+  // triggers a redundant page-level scrollbar. Tall tables stay scrollable
+  // internally via .table-wrapper { max-height; overflow-y: auto }.
 }
 
 .filters-wrapper {
@@ -64,6 +149,26 @@ $modal-header-bg: #4a90a4;
       }
     }
 
+    // Select Line dropdown — wide enough for the full description like
+    // "Unit I Line A DG Assembly --> 01.106" to render in the trigger without
+    // truncation. Also nudge the visible text so it doesn't crowd the chevron.
+    &.line-select-field {
+      .mat-mdc-form-field {
+        width: 380px;
+
+        ::ng-deep {
+          .mat-mdc-select-value {
+            max-width: 100%;
+          }
+          .mat-mdc-select-value-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
+
     // Profit Center field - auto width
     &.profit-center-field {
       .mat-mdc-form-field {
@@ -90,11 +195,100 @@ $modal-header-bg: #4a90a4;
   }
 }
 
+// Mat-select overlay panel lives outside the component (in CDK overlay) so it
+// can't be reached by view-encapsulated styles. Target it via :ng-deep so the
+// option list is wide enough to render line descriptions on a single line.
+::ng-deep .line-select-panel.mat-mdc-select-panel {
+  min-width: 320px !important;
+  max-width: 480px !important;
+
+  .mat-mdc-option {
+    white-space: nowrap;
+  }
+}
+
 .table-container {
   background: $bg-white;
   border-radius: 6px;
   border: 1px solid $border-color;
   overflow: hidden;
+}
+
+// ── UI-only pagination strip (matches eng-alt-certificate idiom) ──
+.dsc-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  padding: 12px 18px;
+  border-top: 1px solid $border-color;
+  background: $bg-white;
+  font-size: 12px;
+  color: #555;
+}
+
+.dsc-pagination-pages {
+  display: flex;
+  gap: 4px;
+}
+
+.dsc-page-btn {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+
+  &:hover:not(:disabled) {
+    background: #f0f3f6;
+  }
+  &.is-current {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+  }
+  &:disabled {
+    color: #bbb;
+    cursor: not-allowed;
+  }
+}
+
+.dsc-pagination-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.dsc-context-sep {
+  color: #aaa;
+}
+
+.dsc-input {
+  height: 30px;
+  padding: 4px 8px;
+  border: 1px solid #d4d4d4;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  color: #333;
+  outline: none;
+}
+
+.dsc-input-sm {
+  height: 28px;
+  font-size: 12px;
 }
 
 .table-wrapper {
@@ -626,6 +820,7 @@ table.mat-mdc-table {
 // ============================================
 
 .modal-container.quality-modal {
+  position: relative;            // anchors the top `quality-modal-loader` progress bar
   max-width: 1200px;
   min-width: 1000px;
   max-height: 80vh;
@@ -1329,10 +1524,89 @@ table.mat-mdc-table {
   color: $text-muted;
   font-size: 14px;
   background: $bg-white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  // Circular spinner
+  .loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e0e4e8;
+    border-top-color: $accent;
+    border-radius: 50%;
+    animation: dsc-spin 0.9s linear infinite;
+  }
+
+  .loading-text {
+    color: $text-primary;
+    font-weight: 500;
+  }
+
+  // Sequentially-fading dots so the user sees motion even if the spinner is hidden
+  .loading-dots {
+    display: inline-block;
+    margin-left: 1px;
+
+    span {
+      display: inline-block;
+      opacity: 0;
+      animation: dsc-dot-fade 1.4s infinite both;
+
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.4s; }
+    }
+  }
 
   p {
     margin: 0;
   }
+}
+
+// Top-of-modal indeterminate loader — pinned to the rounded top edge of the
+// Quality modal card. Bumped z-index sky-high so even unforeseen overlays /
+// flex children can't hide it.
+.quality-modal-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(74, 144, 164, 0.18);   // light track tinted with the header colour
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  overflow: hidden;
+  z-index: 9999;
+  pointer-events: none;                   // never block clicks
+}
+
+.quality-modal-loader-bar {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #4a90a4 0%, #6fb3c9 50%, #4a90a4 100%);
+  border-radius: 3px;
+  animation: dsc-indeterminate 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes dsc-indeterminate {
+  0%   { left: -40%; }
+  50%  { left: 30%; }
+  100% { left: 100%; }
+}
+
+// Keyframes for the loading spinner + sequential dots used inside .loading-state.
+@keyframes dsc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dsc-dot-fade {
+  0%, 80%, 100% { opacity: 0; }
+  40%           { opacity: 1; }
 }
 
 // Responsive adjustments for Quality Modal

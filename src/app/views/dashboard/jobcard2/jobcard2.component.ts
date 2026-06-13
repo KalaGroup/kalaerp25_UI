@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { formatDate } from '@angular/common';
-import { Jobcard2Service, JobCard2ReportRow } from './jobcard2.service';
+import { Jobcard2Service, JobCard2ReportRow, LineRight } from './jobcard2.service';
 
 @Component({
   selector: 'app-jobcard2',
@@ -16,6 +16,11 @@ export class Jobcard2Component implements OnInit {
   compCode: string = '';
   jobCardCode: string = '';
   remarkText: string = '';
+
+  // ── Line-wise PC selector (replaces login-derived PC for search) ─
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
+  selectedLineWisePC: string = '';
 
   dataSource: any[] = [];
   panelTypeOptions: { PanelTypeName: string; PanelTypeCode: string }[] = [];
@@ -69,12 +74,50 @@ export class Jobcard2Component implements OnInit {
     this.compCode = localStorage.getItem('companyId')?.trim() ?? '';
     this.pcCode_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
     this.pcCode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
     const pcName = localStorage.getItem('profitCenterName')?.trim() ?? '';
-    this.pcDisplay = pcName && this.pcCode_old ? `${pcName} --> ${this.pcCode_old}` : pcName || this.pcCode_old;
+    this.pcDisplay = pcName && this.pcCode_act ? `${pcName} --> ${this.pcCode_act}` : pcName || this.pcCode_act;
     this.today = formatDate(new Date(), 'dd-MM-yyyy hh:mm:ss a', 'en-US', '+0530');
     this.loadPanelTypes();
     this.initReportRange();
-    this.loadReport();
+    // Report load is chained after the line rights resolve — see loadLineRights().
+    this.loadLineRights();
+  }
+
+  /** Full LineRight object behind the dropdown selection. */
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  /** AssemblyLine used in every fetch — driven by the dropdown selection. */
+  private get currentLineWisePC(): string {
+    return this.selectedLineWisePC || '';
+  }
+
+  // ── Fetch the lines this position is entitled to post against ──
+  private loadLineRights(): void {
+    if (!this.prmCode) {
+      console.warn('[Jobcard2] no positionRoleId in localStorage — skipping line rights fetch');
+      this.lineRights = [];
+      this.loadReport();
+      return;
+    }
+    this.jobcard2Service.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        console.log('[Jobcard2] line rights for', this.prmCode, '=>', this.lineRights);
+        // Single-line position: auto-select so the dropdown isn't blank.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+        this.loadReport();
+      },
+      error: (err) => {
+        console.error('[Jobcard2] line rights error', err);
+        this.lineRights = [];
+        this.loadReport();
+      },
+    });
   }
 
   // ── Default report range: 1st of current month → today ────────
@@ -87,7 +130,12 @@ export class Jobcard2Component implements OnInit {
 
   // ── Fetch JobCard 2 production report ─────────────────────────
   loadReport(): void {
-    if (!this.compCode || !this.pcCode_act) return;
+    const assemblyLine = this.currentLineWisePC;
+    if (!this.compCode) return;
+    if (!assemblyLine) {
+      this.reportError = 'No assembly line is assigned to your position.';
+      return;
+    }
     if (!this.reportFromDate || !this.reportToDate) {
       this.reportError = 'Please select From and To dates.';
       return;
@@ -102,7 +150,7 @@ export class Jobcard2Component implements OnInit {
     this.reportList      = [];
 
     this.jobcard2Service
-      .getJobCard2Report(this.compCode, this.pcCode_act, this.reportFromDate, this.reportToDate)
+      .getJobCard2Report(this.compCode, assemblyLine, this.reportFromDate, this.reportToDate)
       .subscribe({
         next: (data) => {
           this.reportList     = data ?? [];
@@ -428,11 +476,17 @@ export class Jobcard2Component implements OnInit {
   }
 
   onSearch(): void {
+    const assemblyLine = this.currentLineWisePC;
+    if (!assemblyLine) {
+      this.warningMessage = 'Please select an Assembly Line before searching.';
+      return;
+    }
+
     this.isLoading = true;
     this.dataSource = [];
     this.clearMessages();
 
-    this.jobcard2Service.getJobCard2Data(this.compCode, this.pcCode_act).subscribe({
+    this.jobcard2Service.getJobCard2Data(this.compCode, assemblyLine).subscribe({
       next: (res: any[]) => {
         this.dataSource = (res ?? []).map(row => ({ ...row, PanelType: row.PanelType || '0' }));
         this.isLoading = false;
@@ -476,9 +530,18 @@ export class Jobcard2Component implements OnInit {
       return;
     }
 
+    // Stamp the line-wise PC (granular) and its parent (rolled-up) on the transaction.
+    // PCCode_Act ← LineWisePC, PCCode ← ParentDgPC. Both come from the user's
+    // selected dropdown line right; replaces the old employee-master PCs.
+    const line = this.selectedLineRight;
+    if (!line) {
+      this.warningMessage = 'Please select an Assembly Line before submitting.';
+      return;
+    }
+
     const payload = {
-      PCCode: this.pcCode_old,
-      PCCode_Act: this.pcCode_act,
+      PCCode: line.ParentDgPC,
+      PCCode_Act: line.LineWisePC,
       Remark: this.remarkText,
       JobCard2Dts: selectedRows,
     };
@@ -519,7 +582,8 @@ export class Jobcard2Component implements OnInit {
   onPanelTypeChange(row: any): void {
     const selectedOption = this.panelTypeOptions.find(opt => opt.PanelTypeCode === row.PanelType);
     if (selectedOption && selectedOption.PanelTypeName.trim().toLowerCase() === 'none') {
-      this.jobcard2Service.getCPStk(row.KVA, row.PartCode, 'None', this.compCode, this.pcCode_act).subscribe({
+      // AssemblyLine = LineWisePC from the Select-Line dropdown, NOT the login PC.
+      this.jobcard2Service.getCPStk(row.KVA, row.PartCode, 'None', this.compCode, this.currentLineWisePC).subscribe({
         next: (response: string) => {
           const cleaned = response.replace(/"/g, '').trim();
           const parts = cleaned.split('-->');
