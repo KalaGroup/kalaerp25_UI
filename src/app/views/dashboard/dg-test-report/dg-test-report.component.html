@@ -1231,6 +1231,145 @@
       <p *ngIf="trDGKitDetails && trDGKitDetails.length === 0" class="no-data">No Data Available Please Scan DG Serial
         Code.</p>
     </mat-tab>
+
+    <!-- ── Test Report Status ─────────────────────────────────────── -->
+    <mat-tab label="Test Report Status">
+      <div class="trs-report-tab">
+
+        <!-- Indeterminate loader bar — pure CSS, anchored to the top of the
+             report tab while the GetTestReportStatus call is in flight so the
+             user gets an unmistakable signal that work is happening. -->
+        <div *ngIf="isLoadingReport" class="trs-load-loader">
+          <div class="trs-load-loader-bar"></div>
+        </div>
+
+        <!-- Filter strip -->
+        <div class="trs-filter-strip">
+          <div class="trs-field">
+            <label>From Date</label>
+            <input class="trs-input" type="date" [(ngModel)]="reportFromDate" name="reportFromDate" />
+          </div>
+          <div class="trs-field">
+            <label>To Date</label>
+            <input class="trs-input" type="date" [(ngModel)]="reportToDate" name="reportToDate" />
+          </div>
+          <div class="trs-field trs-field-action">
+            <label>&nbsp;</label>
+            <button type="button"
+                    class="trs-btn trs-btn-search"
+                    (click)="loadTestReportStatus()"
+                    [disabled]="isLoadingReport">
+              <span *ngIf="!isLoadingReport">Search</span>
+              <span *ngIf="isLoadingReport">Loading…</span>
+            </button>
+          </div>
+          <div class="trs-field trs-field-filter">
+            <label>Filter</label>
+            <input class="trs-input"
+                   type="text"
+                   [(ngModel)]="reportSearchText"
+                   name="reportSearchText"
+                   placeholder="Filter by any field…" />
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="reportError" class="trs-error">{{ reportError }}</div>
+
+        <!-- Results table -->
+        <div class="trs-table-wrapper" *ngIf="!reportError">
+          <table class="trs-table">
+            <thead>
+              <tr>
+                <th>Sr</th>
+                <th>QR PDF</th>
+                <th *ngFor="let col of reportFixedColumns">{{ col.label }}</th>
+                <th *ngFor="let cp of reportControlPanelColumns">{{ cp.label }}</th>
+                <th *ngFor="let bat of reportBatteryColumns">{{ bat.label }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="isLoadingReport">
+                <td [attr.colspan]="2 + reportFixedColumns.length + reportControlPanelColumns.length + reportBatteryColumns.length"
+                    class="trs-table-loading">
+                  <span class="trs-spinner" aria-hidden="true"></span>
+                  Loading test reports<span class="trs-dots"><span>.</span><span>.</span><span>.</span></span>
+                </td>
+              </tr>
+              <tr *ngIf="!isLoadingReport && filteredReportRows.length === 0">
+                <td [attr.colspan]="2 + reportFixedColumns.length + reportControlPanelColumns.length + reportBatteryColumns.length"
+                    class="trs-empty">
+                  {{ reportSearchText ? 'No rows match the current filter.' : 'No records — pick a date range and click Search.' }}
+                </td>
+              </tr>
+              <tr *ngFor="let row of pagedReportRows; let i = index">
+                <td>{{ reportRowDisplayIndex(i) }}</td>
+                <td class="trs-qr-cell">
+                  <button type="button"
+                          class="trs-btn trs-btn-qr"
+                          [class.trs-btn-locked]="isTestReportDone(row)"
+                          (click)="downloadReportQrPdf(row, i)"
+                          [disabled]="qrPdfRowIndex !== -1 && qrPdfRowIndex !== i"
+                          [title]="isTestReportDone(row)
+                                   ? 'Test report already done — download disabled'
+                                   : 'Download QR-code PDF for ' + row.PFBCode">
+                    <span *ngIf="qrPdfRowIndex !== i">⬇ PDF</span>
+                    <span *ngIf="qrPdfRowIndex === i">…</span>
+                  </button>
+                </td>
+                <td *ngFor="let col of reportFixedColumns" [ngClass]="{
+                       'trs-badge-cell': col.key === 'Test Report'
+                     }">
+                  <ng-container [ngSwitch]="col.key">
+                    <span *ngSwitchCase="'ProcessStart'">{{ formatReportDate(row[col.key]) }}</span>
+                    <span *ngSwitchCase="'ProcessEnd'">{{ formatReportDate(row[col.key]) }}</span>
+                    <span *ngSwitchCase="'Test Report'"
+                          class="trs-badge"
+                          [ngClass]="{
+                            'is-done': row[col.key] === 'Done',
+                            'is-pending': row[col.key] === 'Pending'
+                          }">{{ row[col.key] }}</span>
+                    <span *ngSwitchDefault>{{ row[col.key] }}</span>
+                  </ng-container>
+                </td>
+                <td *ngFor="let cp of reportControlPanelColumns">{{ row[cp.key] }}</td>
+                <td *ngFor="let bat of reportBatteryColumns">{{ row[bat.key] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="trs-pagination" *ngIf="filteredReportRows.length > 0">
+          <div class="trs-pagination-pages">
+            <button class="trs-page-btn" type="button" (click)="goToReportPage(1)" [disabled]="reportCurrentPage === 1">«</button>
+            <button class="trs-page-btn" type="button" (click)="goToReportPage(reportCurrentPage - 1)" [disabled]="reportCurrentPage === 1">‹</button>
+            <button *ngFor="let n of reportPageNumbers"
+                    class="trs-page-btn"
+                    [class.is-current]="n === reportCurrentPage"
+                    type="button"
+                    (click)="goToReportPage(n)">{{ n }}</button>
+            <button class="trs-page-btn" type="button" (click)="goToReportPage(reportCurrentPage + 1)" [disabled]="reportCurrentPage === reportTotalPages">›</button>
+            <button class="trs-page-btn" type="button" (click)="goToReportPage(reportTotalPages)" [disabled]="reportCurrentPage === reportTotalPages">»</button>
+          </div>
+          <div class="trs-pagination-meta">
+            <span>Records: {{ reportRecordRangeLabel }}</span>
+            <span class="trs-sep">·</span>
+            <span>Page {{ reportCurrentPage }} of {{ reportTotalPages }}</span>
+            <span class="trs-sep">·</span>
+            <label>Page size:
+              <select class="trs-input trs-input-sm"
+                      [(ngModel)]="reportPageSize"
+                      (ngModelChange)="onReportPageSizeChange()"
+                      name="reportPageSize">
+                <option *ngFor="let s of reportPageSizeOptions" [ngValue]="s">{{ s === 0 ? 'All' : s }}</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
   </mat-tab-group>
 
 </div>

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewChildren, QueryList, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { BarcodeFormat } from '@zxing/browser';
 import { ChangeDetectorRef } from '@angular/core';
-import { DgTestReportService, LineRight } from './dg-test-report-service.service';
+import { DgTestReportService, LineRight, TestReportStatusRow } from './dg-test-report-service.service';
 import { Inject } from '@angular/core';
 import { th } from 'date-fns/locale';
 import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
@@ -21,6 +21,33 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   prmCode: string = '';
   lineRights: LineRight[] = [];
   selectedLineWisePC: string = '';
+
+  // ── Test Report Status tab ────────────────────────────────────
+  reportRows: TestReportStatusRow[] = [];
+  isLoadingReport: boolean = false;
+  reportError: string = '';
+  reportFromDate: string = '';
+  reportToDate: string = '';
+  reportSearchText: string = '';
+  reportCurrentPage: number = 1;
+  reportPageSize: number = 25;
+  readonly reportPageSizeOptions: number[] = [25, 50, 100, 250, 500, 0]; // 0 == "All"
+  /** Index of the row currently generating a QR PDF (-1 = idle). */
+  qrPdfRowIndex: number = -1;
+
+  // Fixed columns rendered in a known order before the dynamic CP/Bat columns.
+  readonly reportFixedColumns: { key: string; label: string }[] = [
+    { key: 'PFBCode',        label: 'PFB Code' },
+    { key: 'MachineCode',    label: 'Machine Code' },
+    { key: 'DGPartCode',     label: 'DG Part Code' },
+    { key: 'ProcessStart',   label: 'Process Start' },
+    { key: 'ProcessEnd',     label: 'Process End' },
+    { key: 'PrcBOMCode',     label: 'BOM Code' },
+    { key: 'Test Report',    label: 'Test Report' },
+    { key: 'EngineSrNo',     label: 'Engine SrNo' },
+    { key: 'AlternatorSrNo', label: 'Alternator SrNo' },
+    { key: 'CanopySrNo',     label: 'Canopy SrNo' },
+  ];
 
   selectedTab: string = 'TRStart';
   stage: string = '';
@@ -307,6 +334,26 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   showError(message: string) {
     this.errorMessage = message;
   }
+
+  /**
+   * Pull the most useful human-readable message from an HttpErrorResponse.
+   * Mirrors the helper in dg-stage-i/ii/iii so error alerts show the actual
+   * server message instead of "[object ProgressEvent]" on network failures.
+   */
+  private extractApiErrorMessage(err: any): string {
+    if (!err) return 'Failed to load data. Please try again.';
+    if (err.status === 0 || err.error instanceof ProgressEvent || err.error instanceof Event) {
+      return 'Unable to reach the server. Please check your network or confirm the API is running.';
+    }
+    const e = err.error;
+    if (typeof e === 'string' && e.trim()) return e.trim();
+    if (e && typeof e === 'object') {
+      const fromObj = e.Message || e.message || e.title || e.detail;
+      if (typeof fromObj === 'string' && fromObj.trim()) return fromObj.trim();
+    }
+    if (typeof err.message === 'string' && err.message.trim()) return err.message.trim();
+    return 'Failed to load data. Please try again.';
+  }
   clearMessages() {
     this.errorMessage = '';
     this.successMessage = '';
@@ -325,6 +372,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     }
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
     this.loadLineRights();
+    this.initReportDateRange();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
   }
@@ -355,6 +403,406 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
         this.lineRights = [];
       },
     });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  Test Report Status tab
+  // ════════════════════════════════════════════════════════════════
+
+  /** Default the date range to the 1st of the current month → today. */
+  initReportDateRange(): void {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const toIso = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    this.reportFromDate = toIso(first);
+    this.reportToDate   = toIso(now);
+  }
+
+  /** Discover the dynamic CP serial columns across all loaded rows.
+   *  Looks for keys matching /^ControlPanelSrNo(\d+)$/ and returns them
+   *  sorted by their numeric suffix so CP1, CP2, CP3… render in order. */
+  get reportControlPanelColumns(): { key: string; label: string }[] {
+    return this.collectDynamicKeys(/^ControlPanelSrNo(\d+)$/, 'Control Panel');
+  }
+
+  /** Same idea for batteries. */
+  get reportBatteryColumns(): { key: string; label: string }[] {
+    return this.collectDynamicKeys(/^BatterySrNo(\d+)$/, 'Battery');
+  }
+
+  private collectDynamicKeys(pattern: RegExp, labelPrefix: string): { key: string; label: string }[] {
+    const seen = new Map<number, string>();   // suffix → actual key
+    for (const row of this.reportRows) {
+      for (const key of Object.keys(row)) {
+        const m = key.match(pattern);
+        if (m) {
+          const idx = Number(m[1]);
+          if (!seen.has(idx)) seen.set(idx, key);
+        }
+      }
+    }
+    // Label format: just `<Component> <index>`  (e.g. "Battery 1",
+    // "Control Panel 2") — the redundant " SrNo " is dropped per UX request.
+    return Array.from(seen.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([idx, key]) => ({ key, label: `${labelPrefix} ${idx}` }));
+  }
+
+  /** Filter applied on top of the loaded rows — searches every cell value. */
+  get filteredReportRows(): TestReportStatusRow[] {
+    const q = (this.reportSearchText || '').trim().toLowerCase();
+    if (!q) return this.reportRows;
+    return this.reportRows.filter(r =>
+      Object.values(r).some(v => v != null && String(v).toLowerCase().includes(q))
+    );
+  }
+
+  /** Slice of `filteredReportRows` for the current page. */
+  get pagedReportRows(): TestReportStatusRow[] {
+    if (this.reportPageSize === 0) return this.filteredReportRows;
+    const start = (this.reportCurrentPage - 1) * this.reportPageSize;
+    return this.filteredReportRows.slice(start, start + this.reportPageSize);
+  }
+
+  get reportTotalPages(): number {
+    if (this.reportPageSize === 0) return 1;
+    return Math.max(1, Math.ceil(this.filteredReportRows.length / this.reportPageSize));
+  }
+
+  get reportPageNumbers(): number[] {
+    const total = this.reportTotalPages;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const start = Math.max(1, Math.min(this.reportCurrentPage - 3, total - 6));
+    return Array.from({ length: 7 }, (_, i) => start + i);
+  }
+
+  goToReportPage(n: number): void {
+    if (n < 1 || n > this.reportTotalPages) return;
+    this.reportCurrentPage = n;
+  }
+
+  onReportPageSizeChange(): void {
+    this.reportCurrentPage = 1;
+  }
+
+  reportRowDisplayIndex(rowInPage: number): number {
+    if (this.reportPageSize === 0) return rowInPage + 1;
+    return (this.reportCurrentPage - 1) * this.reportPageSize + rowInPage + 1;
+  }
+
+  get reportRecordRangeLabel(): string {
+    const total = this.filteredReportRows.length;
+    if (total === 0) return '0 of 0';
+    if (this.reportPageSize === 0) return `1–${total} of ${total}`;
+    const start = (this.reportCurrentPage - 1) * this.reportPageSize + 1;
+    const end = Math.min(start + this.reportPageSize - 1, total);
+    return `${start}–${end} of ${total}`;
+  }
+
+  /** Pretty-print an ISO date string. Returns the original on parse failure. */
+  formatReportDate(iso: string): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} `
+         + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  /**
+   * Download a 1-page A4 PDF for a single Test-Report row.
+   * - Header: PFB Code, BOM Code, Process Start/End, Test Report status.
+   * - "DG Sr No" (= MachineCode) renders at the **top**, with its own QR code,
+   *   matching the jobcard1 PDF idiom the user asked us to mirror.
+   * - Each component (Engine, Alternator, Canopy, every CP1..N, every Bat1..N
+   *   that the SP returned for this row) gets its own row in the body with a
+   *   QR code generated from its serial.
+   * Uses the same jsPDF + qrcode-generator CDN combo as jobcard1 so we don't
+   * pull new npm deps.
+   */
+  /** True when the row's Test Report status is "Done" — used to gate the QR
+   *  PDF download. Single source of truth for the rule so it can be flipped
+   *  off in one place if the business decision changes later. */
+  isTestReportDone(row: TestReportStatusRow): boolean {
+    return (row?.['Test Report'] ?? '').toString().trim().toLowerCase() === 'done';
+  }
+
+  async downloadReportQrPdf(row: TestReportStatusRow, index: number): Promise<void> {
+    if (this.qrPdfRowIndex !== -1) return;
+
+    // ─── Gate: "Done" rows can no longer be downloaded ────────
+    // To re-enable in the future, delete this `if` block. The CSS class
+    // and tooltip referenced from the template are also gated by
+    // `isTestReportDone(row)`, so they revert automatically.
+    if (this.isTestReportDone(row)) {
+      // Use the in-app warning modal already wired in this component
+      // (template binds `*ngIf="warningMessage"` with an OK button).
+      this.warningMessage = 'Test report already done. Download is disabled for completed records.';
+      return;
+    }
+
+    this.qrPdfRowIndex = index;
+
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      if (!(window as any).qrcode) {
+        await this.loadScript('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js');
+      }
+
+      const jsPDF  = (window as any).jspdf?.jsPDF;
+      const qrcode = (window as any).qrcode;
+      if (!jsPDF || !qrcode) {
+        this.warningMessage = 'PDF libraries failed to load. Please check your connection and try again.';
+        return;
+      }
+
+      // ─── Build component list (only non-empty serials) ─────────
+      // Each item now carries a `desc` field too — populated from the new
+      // SP outputs: EngDesc / AltDesc / CanopyDesc, and ControlPanelDescN
+      // / BatteryDescN for the dynamic CP / Battery rows. The desc-key
+      // naming pattern mirrors the SrNo-key naming pattern exactly:
+      // `ControlPanelSrNo3` → `ControlPanelDesc3`, etc.
+      const items: { label: string; serial: string; desc: string }[] = [];
+      const push = (label: string, serial: any, desc: any) => {
+        const s = (serial ?? '').toString().trim();
+        if (s) items.push({ label, serial: s, desc: (desc ?? '').toString().trim() });
+      };
+      push('Engine',     row.EngineSrNo,     row['EngDesc']);
+      push('Alternator', row.AlternatorSrNo, row['AltDesc']);
+      push('Canopy',     row.CanopySrNo,     row['CanopyDesc']);
+      // Dynamic CP / Battery — use the same column-detector the table uses,
+      // and derive the matching desc-key by swapping `SrNo` → `Desc`.
+      for (const cp of this.reportControlPanelColumns) {
+        push(cp.label, row[cp.key], row[cp.key.replace('SrNo', 'Desc')]);
+      }
+      for (const bat of this.reportBatteryColumns) {
+        push(bat.label, row[bat.key], row[bat.key.replace('SrNo', 'Desc')]);
+      }
+
+      const machineCode = (row.MachineCode ?? '').toString().trim();
+      if (!machineCode && items.length === 0) {
+        this.warningMessage = 'No serial numbers available for this row.';
+        return;
+      }
+
+      const pdf   = new jsPDF('p', 'mm', 'a4');
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const usableW = pageW - margin * 2;
+
+      // ─── HEADER ────────────────────────────────────────────────
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      pdf.text('Test Report — DG Component QR Codes', pageW / 2, margin + 6, { align: 'center' });
+
+      const kv = (label: string, value: string, x: number, y: number, labelW = 26) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.text(label, x, y);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value || '-', x + labelW, y);
+      };
+
+      // Line 1 — PFB Code | BOM Code | Test Report status
+      let y = margin + 14;
+      const colW = usableW / 3;
+      kv('PFB Code:',    row.PFBCode    || '-', margin,            y);
+      kv('BOM Code:',    row.PrcBOMCode || '-', margin + colW,     y);
+      kv('Test Report:', row['Test Report'] || '-', margin + colW * 2, y);
+
+      // Line 2 — Process Start | Process End
+      y += 7;
+      const colHalf = usableW / 2;
+      kv('Process Start:', this.formatReportDate(row.ProcessStart), margin,            y, 28);
+      kv('Process End:',   this.formatReportDate(row.ProcessEnd),   margin + colHalf,  y, 28);
+
+      // ─── DG Sr No banner (Machine Code) with its own QR ──────
+      y += 8;
+      pdf.setDrawColor(160);
+      pdf.setLineWidth(0.4);
+      pdf.line(margin, y, pageW - margin, y);
+
+      const bannerH = 26;
+      const bannerY = y + 3;
+      pdf.setFillColor(232, 244, 250);
+      pdf.rect(margin, bannerY, usableW, bannerH, 'F');
+      pdf.setDrawColor(200);
+      pdf.rect(margin, bannerY, usableW, bannerH);
+
+      const dgQrSize = bannerH - 6;
+      const dgQrX    = margin + usableW - dgQrSize - 4;
+      const dgQrY    = bannerY + 3;
+      if (machineCode) {
+        const dgQr = qrcode(0, 'H');
+        dgQr.addData(machineCode);
+        dgQr.make();
+        pdf.addImage(dgQr.createDataURL(10, 0), 'PNG', dgQrX, dgQrY, dgQrSize, dgQrSize);
+      }
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text('DG Sr No', margin + 4, bannerY + 9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text(machineCode || '-', margin + 4, bannerY + 19);
+
+      y = bannerY + bannerH + 4;
+
+      // ─── COMPONENT TABLE ─────────────────────────────────────
+      // 5-column layout matching the jobcard1 PDF idiom:
+      //   Component | Description | Serial No | QR Code | Remark
+      // Remark is intentionally blank in the body — provides handwriting
+      // space for any post-print operator notes, same as jobcard1.
+      const colComp   = 24;
+      const colDesc   = 60;
+      const colSerial = 34;
+      const colQr     = 30;
+      const colRemark = usableW - (colComp + colDesc + colSerial + colQr);
+      const xComp     = margin;
+      const xDesc     = xComp + colComp;
+      const xSerial   = xDesc + colDesc;
+      const xQr       = xSerial + colSerial;
+      const xRemark   = xQr + colQr;
+
+      const thY = y + 6;
+      pdf.setFillColor(21, 101, 192);
+      pdf.rect(margin, thY - 5, usableW, 7, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      pdf.setTextColor(255);
+      pdf.text('Component',   xComp + 2,                  thY);
+      pdf.text('Description', xDesc + 2,                  thY);
+      pdf.text('Serial No',   xSerial + 2,                thY);
+      pdf.text('QR Code',     xQr + colQr / 2,            thY, { align: 'center' });
+      pdf.text('Remark',      xRemark + colRemark / 2,    thY, { align: 'center' });
+      pdf.setTextColor(0);
+
+      const bodyTop    = thY + 2;
+      const bodyBottom = pageH - margin;
+      const availH     = bodyBottom - bodyTop;
+      const rowsCount  = Math.max(1, items.length);
+      const rowH       = Math.min(34, Math.max(22, availH / rowsCount));
+      const qrSize     = Math.min(rowH - 6, colQr - 8, 22);
+
+      let rowY = bodyTop;
+      for (const item of items) {
+        pdf.setDrawColor(220);
+        pdf.setLineWidth(0.2);
+        pdf.rect(margin, rowY, usableW, rowH);
+        pdf.line(xDesc,   rowY, xDesc,   rowY + rowH);
+        pdf.line(xSerial, rowY, xSerial, rowY + rowH);
+        pdf.line(xQr,     rowY, xQr,     rowY + rowH);
+        pdf.line(xRemark, rowY, xRemark, rowY + rowH);
+
+        // Component label — wrap inside its narrow column so long labels
+        // like "Control Panel 1" break across two lines ("Control" / "Panel 1")
+        // instead of overflowing into the Description column.
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        const lLines: string[] = pdf.splitTextToSize(item.label, colComp - 6);
+        const lLineH = 4;
+        const lBlockH = lLines.length * lLineH;
+        const lStartY = rowY + (rowH - lBlockH) / 2 + 3;
+        pdf.text(lLines, xComp + 2, lStartY);
+
+        // Description — vertically centred, wraps within its column
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        const dLines: string[] = pdf.splitTextToSize(item.desc || '-', colDesc - 4);
+        const dBlockH = dLines.length * 3.5;
+        const dStartY = rowY + (rowH - dBlockH) / 2 + 3;
+        pdf.text(dLines, xDesc + 2, dStartY);
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        const sLines: string[] = pdf.splitTextToSize(item.serial, colSerial - 4);
+        const sBlockH = sLines.length * 3.8;
+        const sStartY = rowY + (rowH - sBlockH) / 2 + 3;
+        pdf.text(sLines, xSerial + 2, sStartY);
+
+        const qr = qrcode(0, 'H');
+        qr.addData(item.serial);
+        qr.make();
+        const qX = xQr + (colQr - qrSize) / 2;
+        const qY = rowY + (rowH - qrSize) / 2;
+        pdf.addImage(qr.createDataURL(10, 0), 'PNG', qX, qY, qrSize, qrSize);
+
+        // Remark cell intentionally left empty — handwriting space.
+
+        rowY += rowH;
+      }
+
+      // Filename safe-version: PFB Code  →  PSH_26-27_01014838.pdf
+      const safeName = (row.PFBCode || 'TestReport')
+        .replace(/\//g, '_')
+        .replace(/[\\:*?"<>|]/g, '-');
+      pdf.save(`${safeName}.pdf`);
+    } catch (err) {
+      console.error('[DgTestReport] failed to generate QR PDF', err);
+      this.errorMessage = 'Failed to generate PDF. Please try again.';
+    } finally {
+      this.qrPdfRowIndex = -1;
+    }
+  }
+
+  private loadScript(src: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
+      if (existing) {
+        if ((existing as any).dataset.loaded === '1') { resolve(); return; }
+        existing.addEventListener('load', () => resolve());
+        existing.addEventListener('error', () => reject(new Error(`Failed to load: ${src}`)));
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload  = () => { (script as any).dataset.loaded = '1'; resolve(); };
+      script.onerror = () => reject(new Error(`Failed to load: ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  loadTestReportStatus(): void {
+    const assemblyLine = this.selectedLineRight?.LineWisePC ?? '';
+    if (!assemblyLine) {
+      this.reportError = 'Please select a line before searching.';
+      return;
+    }
+    if (!this.reportFromDate || !this.reportToDate) {
+      this.reportError = 'Please choose both From Date and To Date.';
+      return;
+    }
+    if (this.reportFromDate > this.reportToDate) {
+      this.reportError = 'From Date cannot be later than To Date.';
+      return;
+    }
+
+    this.isLoadingReport = true;
+    this.reportError = '';
+    this.reportRows = [];
+    this.reportCurrentPage = 1;
+
+    this.dgAssemblyService
+      .getTestReportStatus(assemblyLine, this.reportFromDate, this.reportToDate)
+      .subscribe({
+        next: (rows) => {
+          this.reportRows = Array.isArray(rows) ? rows : [];
+          this.isLoadingReport = false;
+        },
+        error: (err) => {
+          this.isLoadingReport = false;
+          this.reportError = this.extractApiErrorMessage(err);
+          console.error('[DgTestReport] report fetch error', err);
+        },
+      });
   }
 
   ngOnDestroy(): void {
