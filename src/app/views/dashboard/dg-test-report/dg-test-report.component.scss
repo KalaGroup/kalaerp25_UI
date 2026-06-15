@@ -1,3 +1,300 @@
+// ══════════════════════════════════════════════════════════════════
+//  Test Report Status tab
+//  Self-contained — `trs-*` prefix avoids collisions with the existing
+//  scan-section styles. No existing rule is touched.
+// ══════════════════════════════════════════════════════════════════
+.trs-report-tab {
+  padding: 16px 24px;
+  font-family: inherit;
+  color: #333;
+  position: relative;          // anchors the in-tab loader bar
+}
+
+// ── Tab-scoped loader bar (pure CSS, no Material dependency) ──
+.trs-load-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: rgba(23, 162, 184, 0.18);  // tinted with the search-button colour
+  overflow: hidden;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.trs-load-loader-bar {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #17a2b8 0%, #6fb3c9 50%, #17a2b8 100%);
+  border-radius: 3px;
+  animation: trs-load-indeterminate 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes trs-load-indeterminate {
+  0%   { left: -40%; }
+  50%  { left: 30%; }
+  100% { left: 100%; }
+}
+
+// ── In-table loading state (centred spinner + animated dots) ──
+.trs-table-loading {
+  padding: 40px 14px;
+  text-align: center;
+  color: #4a4a4a;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fbfdfe;
+}
+
+.trs-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  vertical-align: middle;
+  border: 2px solid #e0e4e8;
+  border-top-color: #17a2b8;
+  border-radius: 50%;
+  animation: trs-spin 0.9s linear infinite;
+}
+
+@keyframes trs-spin {
+  to { transform: rotate(360deg); }
+}
+
+.trs-dots {
+  display: inline-block;
+  margin-left: 1px;
+
+  span {
+    display: inline-block;
+    opacity: 0;
+    animation: trs-dot-fade 1.4s infinite both;
+
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+@keyframes trs-dot-fade {
+  0%, 80%, 100% { opacity: 0; }
+  40%           { opacity: 1; }
+}
+
+.trs-filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.trs-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 4px;
+  }
+}
+
+.trs-field-filter { flex: 1; min-width: 220px; }
+
+.trs-input {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+
+  &:focus {
+    border-color: #4ba3c7;
+    box-shadow: 0 0 0 2px rgba(75, 163, 199, 0.18);
+  }
+}
+
+.trs-input-sm {
+  height: 28px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.trs-btn {
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 20px;
+  height: 36px;
+  min-width: 100px;
+  transition: background-color 0.15s ease;
+
+  &:disabled { background: #d8dee5 !important; color: #777 !important; cursor: not-allowed; }
+}
+
+.trs-btn-search {
+  background: #17a2b8;
+  color: #fff;
+  &:hover { background: #138496; }
+}
+
+// Per-row "Download QR PDF" button — small, neutral so it doesn't draw the
+// eye away from the data; idle text "⬇ PDF", spinner-equivalent "…" while
+// jsPDF + qrcode-generator are mid-generation.
+.trs-btn-qr {
+  background: #0d6efd;
+  color: #fff;
+  height: 28px;
+  min-width: 0;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled):not(.trs-btn-locked) { background: #0b5ed7; }
+  &:disabled                                  { background: #b9bcc0; cursor: progress; }
+
+  // Visually-disabled state used when the row's Test Report is "Done".
+  // Renders identically to a real disabled button but accepts clicks so
+  // the click handler can surface a friendly "already done" alert.
+  // To revert: remove this class block + the `[class.trs-btn-locked]` binding
+  // in the template + the gate `if` in `downloadReportQrPdf`.
+  &.trs-btn-locked {
+    background: #b9bcc0;
+    cursor: not-allowed;
+    &:hover { background: #b9bcc0; }
+  }
+}
+
+.trs-qr-cell { white-space: nowrap; }
+
+.trs-error {
+  background: #fdecec;
+  border: 1px solid #f5c2c7;
+  color: #b02a37;
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.trs-table-wrapper {
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  background: #fff;
+  max-height: calc(100vh - 360px);
+  min-height: 220px;
+  overflow: auto;
+}
+
+.trs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead th {
+    background: #f5f5f5;
+    color: #4a4a4a;
+    font-weight: 600;
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    white-space: nowrap;
+    color: #333;
+  }
+
+  tbody tr:nth-child(even) td { background: #f9fbfd; }
+  tbody tr:last-child  td     { border-bottom: none; }
+  tbody tr:hover       td     { background: #eef5ff; }
+}
+
+.trs-empty {
+  text-align: left;
+  color: #8a8a8a;
+  font-style: italic;
+  padding: 14px;
+}
+
+.trs-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: #eef0f3;
+  color: #6b7280;
+  border: 1px solid #e0e3e8;
+
+  &.is-done    { background: #e6f6ec; color: #1d643b; border-color: #c6e8d2; }
+  &.is-pending { background: #fff7d6; color: #856404; border-color: #f3e3a8; }
+}
+
+.trs-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  padding: 14px 0 0;
+  font-size: 12px;
+  color: #555;
+}
+
+.trs-pagination-pages { display: flex; gap: 4px; }
+
+.trs-page-btn {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+
+  &:hover:not(:disabled) { background: #f0f3f6; }
+  &.is-current           { background: #0d6efd; border-color: #0d6efd; color: #fff; }
+  &:disabled             { color: #bbb; cursor: not-allowed; }
+}
+
+.trs-pagination-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  label { display: inline-flex; align-items: center; gap: 6px; }
+}
+
+.trs-sep { color: #aaa; }
+
 .save-button {
     position: absolute;
     right: 20px;

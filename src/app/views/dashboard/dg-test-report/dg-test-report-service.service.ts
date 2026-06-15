@@ -9,6 +9,26 @@ export interface LineRight {
   ParentDgPC: string;
 }
 
+/**
+ * Each row from usp_GetTestReportStatus.
+ * The fixed columns are typed; the per-row `ControlPanelSrNoN` and `BatterySrNoN`
+ * keys are dynamic (the SP emits as many as the largest record has) so we
+ * model them via the index signature.
+ */
+export interface TestReportStatusRow {
+  PFBCode:        string;
+  MachineCode:    string;
+  DGPartCode:     string;
+  ProcessStart:   string;
+  ProcessEnd:     string;
+  PrcBOMCode:     string;
+  'Test Report':  string;
+  EngineSrNo:     string;
+  AlternatorSrNo: string;
+  CanopySrNo:     string;
+  [key: string]:  any;   // ControlPanelSrNo1..N, BatterySrNo1..N
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -41,6 +61,20 @@ export class DgTestReportService {
   getLineRights(prmCode: string): Observable<LineRight[]> {
     const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
     return this.http.get<LineRight[]>(url);
+  }
+
+  // GET — Test Report Status report (usp_GetTestReportStatus). Schema is
+  // dynamic for CP/Battery serials, so we type it loosely as a record bag.
+  getTestReportStatus(
+    assemblyLine: string,
+    fromDate: string,   // 'YYYY-MM-DD'
+    toDate: string,     // 'YYYY-MM-DD'
+  ): Observable<TestReportStatusRow[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetTestReportStatus`
+      + `?assemblyLine=${encodeURIComponent(assemblyLine)}`
+      + `&fromDate=${encodeURIComponent(fromDate)}`
+      + `&toDate=${encodeURIComponent(toDate)}`;
+    return this.http.get<TestReportStatusRow[]>(url);
   }
 
   fetchSelect6MData(): Observable<any> {
