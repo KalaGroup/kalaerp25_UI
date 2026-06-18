@@ -1,0 +1,135 @@
+<div class="fcp-container">
+
+  <!-- Top loading bar -->
+  <div class="fcp-loader" *ngIf="isLoading">
+    <div class="fcp-loader-bar"></div>
+  </div>
+
+  <!-- Header strip -->
+  <div class="fcp-header">
+    <div class="fcp-title">Flat Pack Canopy Report</div>
+    <div class="fcp-header-actions">
+      <button class="fcp-btn fcp-btn-add"
+              type="button"
+              (click)="onAddNew()">
+        + Add New
+      </button>
+      <button class="fcp-btn fcp-btn-export"
+              type="button"
+              (click)="onExportExcel()"
+              [disabled]="filteredRows.length === 0">
+        Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter strip -->
+  <div class="fcp-filters">
+    <div class="fcp-field">
+      <label>Profit Center</label>
+      <input class="fcp-input fcp-input-readonly" type="text"
+             [value]="pcName && pcCode ? pcName + ' (' + pcCode + ')' : (pcName || pcCode || '—')"
+             readonly />
+    </div>
+    <div class="fcp-field" *ngIf="lineRights.length > 0">
+      <label>Select Line <span class="fcp-required">*</span></label>
+      <select class="fcp-input" [(ngModel)]="selectedLineWisePC">
+        <option value="" disabled>Select Line</option>
+        <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+          {{ l.LineDesc }} ({{ l.LineWisePC }})
+        </option>
+      </select>
+    </div>
+    <div class="fcp-field">
+      <label>From Date</label>
+      <input class="fcp-input" type="date" [(ngModel)]="fromDate" />
+    </div>
+    <div class="fcp-field">
+      <label>To Date</label>
+      <input class="fcp-input" type="date" [(ngModel)]="toDate" />
+    </div>
+    <div class="fcp-field fcp-field-action">
+      <label>&nbsp;</label>
+      <button class="fcp-btn fcp-btn-search"
+              type="button"
+              [disabled]="isLoading"
+              (click)="onSearch()">Search</button>
+    </div>
+  </div>
+
+  <!-- Results table -->
+  <div class="fcp-table-wrapper">
+    <table class="fcp-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of reportColumns">{{ col }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="pagedRows.length === 0">
+          <td [attr.colspan]="reportColumns.length" class="fcp-empty">
+            <ng-container *ngIf="isLoading">Loading…</ng-container>
+            <ng-container *ngIf="!isLoading">No record(s) found.</ng-container>
+          </td>
+        </tr>
+        <tr *ngFor="let row of pagedRows; let i = index">
+          <td>{{ rowDisplayIndex(i) }}</td>
+          <td>{{ row.PFBCode }}</td>
+          <td>{{ row.PrcDt }}</td>
+          <td>{{ row.KVA }}</td>
+          <td>{{ row.Phase }}</td>
+          <td>{{ row.Model }}</td>
+          <td class="fcp-truncate" [title]="row.CanopyPartCode || ''">{{ row.CanopyPartCode }}</td>
+          <td class="fcp-truncate" [title]="row.NestingPartCode || ''">{{ row.NestingPartCode }}</td>
+          <td class="fcp-truncate" [title]="row.ProfitCenter || ''">{{ row.ProfitCenter }}</td>
+          <td>{{ row.BOMCode }}</td>
+          <td class="fcp-num">{{ row.ProcessQty }}</td>
+          <td class="fcp-num">{{ row.Rate }}</td>
+          <td class="fcp-num">{{ row.Amount }}</td>
+        </tr>
+      </tbody>
+      <tfoot *ngIf="filteredRows.length > 0">
+        <tr>
+          <td [attr.colspan]="reportColumns.length - 1" class="fcp-foot-label">Total</td>
+          <td class="fcp-num fcp-foot-total">{{ totalAmount | number:'1.2-2' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="fcp-pagination" *ngIf="filteredRows.length > 0">
+    <div class="fcp-pagination-pages">
+      <button class="fcp-page-btn" type="button" (click)="goToPage(1)"                  [disabled]="currentPage === 1">«</button>
+      <button class="fcp-page-btn" type="button" (click)="goToPage(currentPage - 1)"    [disabled]="currentPage === 1">‹</button>
+      <button *ngFor="let n of pageNumbers"
+              class="fcp-page-btn"
+              [class.is-current]="n === currentPage"
+              type="button"
+              (click)="goToPage(n)">{{ n }}</button>
+      <button class="fcp-page-btn" type="button" (click)="goToPage(currentPage + 1)"    [disabled]="currentPage === totalPages">›</button>
+      <button class="fcp-page-btn" type="button" (click)="goToPage(totalPages)"         [disabled]="currentPage === totalPages">»</button>
+    </div>
+    <div class="fcp-pagination-meta">
+      <span>Records: {{ recordRangeLabel }}</span>
+      <span class="fcp-context-sep">·</span>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="fcp-context-sep">·</span>
+      <label>Page size:
+        <select class="fcp-input fcp-input-sm"
+                [(ngModel)]="pageSize"
+                (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s === 0 ? 'All' : s }}</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- Error overlay — same idiom used in other reports -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="closeErrorModal()">OK</button>
+    </div>
+  </div>
+</div>

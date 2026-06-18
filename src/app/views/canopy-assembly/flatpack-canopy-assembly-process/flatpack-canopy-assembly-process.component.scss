@@ -1,0 +1,338 @@
+// ──────────────────────────────────────────────────────────────
+//  Flat Pack Canopy Assembly Process — styled like the sibling
+//  Flat Pack Canopy Plan Report (.fcp-*) but namespaced .fcap-*.
+// ──────────────────────────────────────────────────────────────
+
+.fcap-container {
+  background: #fff;
+  padding: 0 0 24px;
+  font-family: inherit;
+  color: #333;
+  position: relative;
+}
+
+// Top loader bar
+.fcap-loader {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: #eef2f7;
+  z-index: 5;
+}
+.fcap-loader-bar {
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, #4ba3c7, #0d6efd);
+  animation: fcap-bar 1.2s ease-in-out infinite;
+}
+@keyframes fcap-bar {
+  0%   { margin-left: -30%; }
+  50%  { margin-left:  50%; }
+  100% { margin-left: 100%; }
+}
+
+// Header
+.fcap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(180deg, #fafbfd 0%, #eef2f7 100%);
+  border-top: 1px solid #dde2ea;
+  border-bottom: 1px solid #d6dce6;
+  padding: 12px 24px;
+}
+.fcap-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2b3a4a;
+}
+.fcap-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+// Form
+.fcap-form {
+  padding: 18px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// One grid per row keeps the columns predictable and aligned across
+// different row shapes without relying on flex shrink/grow heuristics.
+.fcap-grid {
+  display: grid;
+  gap: 14px 16px;
+  align-items: end;
+}
+
+// 3 equal columns — top context row + part-desc row
+.fcap-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+// 6 equal columns — metric row
+.fcap-grid-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+// 1 column — full-width part desc
+.fcap-grid-1 { grid-template-columns: minmax(0, 1fr); }
+// Canopy dropdown gets ~60%, rate + amount split the rest.
+.fcap-grid-canopy {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+// Process Type wider, Line + Qty + Search fixed and right-grouped.
+.fcap-grid-type {
+  grid-template-columns: minmax(0, 5fr) 140px 140px 130px;
+}
+
+@media (max-width: 1100px) {
+  .fcap-grid-3,
+  .fcap-grid-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fcap-grid-canopy {
+    grid-template-columns: minmax(0, 1fr) 130px 130px;
+  }
+  .fcap-grid-type {
+    grid-template-columns: minmax(0, 1fr) 120px 120px 120px;
+  }
+}
+
+.fcap-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fcap-field-action { justify-content: flex-end; }
+
+.fcap-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.fcap-required {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.fcap-input {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: #4ba3c7;
+    box-shadow: 0 0 0 2px rgba(75, 163, 199, 0.18);
+  }
+}
+.fcap-input-readonly {
+  background: #f4f6f9;
+  color: #444;
+  font-weight: 500;
+  cursor: default;
+}
+.fcap-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+// Selects truncate long option labels in the closed state so a 200-char
+// canopy description doesn't blow the row apart; full text is available
+// via the [title] tooltip.
+.fcap-select {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23555' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+// Buttons
+.fcap-btn {
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+  padding: 0 20px;
+  height: 36px;
+  min-width: 100px;
+
+  &:active { transform: translateY(1px); }
+  &:disabled {
+    background: #d8dee5 !important;
+    color: #777 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+.fcap-btn-search { background: #17a2b8; color: #fff; &:hover { background: #138496; } }
+.fcap-btn-save   { background: #198754; color: #fff; &:hover { background: #146c43; } }
+.fcap-btn-cancel { background: #e9ecef; color: #333; &:hover { background: #d6dade; } }
+.fcap-btn-back   { background: #6c757d; color: #fff; &:hover { background: #5c636a; } }
+
+// Section
+.fcap-section { padding: 0 24px; }
+.fcap-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b3a4a;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+// Table
+.fcap-table-wrapper {
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  background: #fff;
+  max-height: 360px;
+  min-height: 220px;
+  overflow: auto;
+}
+.fcap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+
+  thead th {
+    background: #f5f5f5;
+    color: #4a4a4a;
+    font-weight: 600;
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    &.fcap-th-num {
+      text-align: right;
+    }
+  }
+
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #333;
+  }
+
+  tbody tr:nth-child(even) td { background: #f9fbfd; }
+  tbody tr:last-child td      { border-bottom: none; }
+  tbody tr:hover td           { background: #eef5ff; }
+}
+
+.fcap-empty {
+  text-align: left;
+  color: #8a8a8a;
+  font-style: italic;
+  padding: 14px;
+}
+
+.fcap-truncate {
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.fcap-neg { color: #dc3545; font-weight: 600; }
+
+// Action bar
+.fcap-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px 24px 0;
+}
+
+// Confirm modal
+.confirmModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1150;
+}
+.confirmModal-content {
+  background: #fff;
+  padding: 22px 24px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+
+  p { margin: 0 0 14px 0; }
+}
+.confirmModal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+// Status modals — match sibling component pattern
+.errorModal,
+.successModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1100;
+}
+.errorModal-content,
+.successModal_content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+}
+.successModal_content p { white-space: pre-line; }
+
+.error-ok-button {
+  padding: 8px 16px;
+  background: #f51202;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.success-ok-button {
+  padding: 8px 16px;
+  background: #0d6efd;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}

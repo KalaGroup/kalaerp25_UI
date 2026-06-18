@@ -1,0 +1,341 @@
+// ──────────────────────────────────────────────────────────────
+//  Flat Pack Canopy Plan Report
+//  Same visual idiom as eng-alt-certificate / dg-reverse-process.
+// ──────────────────────────────────────────────────────────────
+
+.fcp-container {
+  background: #fff;
+  padding: 0 0 24px;
+  font-family: inherit;
+  color: #333;
+  position: relative;
+}
+
+// ── Top loader bar ───────────────────────────────────────────
+.fcp-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: #eef2f7;
+  z-index: 5;
+}
+.fcp-loader-bar {
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, #4ba3c7, #0d6efd);
+  animation: fcp-bar 1.2s ease-in-out infinite;
+}
+@keyframes fcp-bar {
+  0%   { margin-left: -30%; }
+  50%  { margin-left:  50%; }
+  100% { margin-left: 100%; }
+}
+
+// ── Header strip ─────────────────────────────────────────────
+.fcp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(180deg, #fafbfd 0%, #eef2f7 100%);
+  border-top: 1px solid #dde2ea;
+  border-bottom: 1px solid #d6dce6;
+  padding: 12px 24px;
+}
+
+.fcp-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2b3a4a;
+  letter-spacing: 0.2px;
+}
+
+.fcp-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+// ── Filter strip ─────────────────────────────────────────────
+.fcp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  padding: 18px 24px 4px;
+}
+
+.fcp-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fcp-field-action {
+  justify-content: flex-end;
+}
+
+.fcp-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.fcp-input {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: #4ba3c7;
+    box-shadow: 0 0 0 2px rgba(75, 163, 199, 0.18);
+  }
+}
+
+.fcp-input-sm {
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.fcp-input-readonly {
+  background: #f4f6f9;
+  color: #444;
+  font-weight: 500;
+  cursor: default;
+  min-width: 220px;
+}
+
+.fcp-required {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.fcp-context-sep {
+  color: #aaa;
+}
+
+// ── Buttons ──────────────────────────────────────────────────
+.fcp-btn {
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.05s ease;
+  padding: 0 20px;
+  height: 36px;
+  min-width: 100px;
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    background: #d8dee5 !important;
+    color: #777 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.fcp-btn-search {
+  background: #17a2b8;
+  color: #fff;
+  &:hover { background: #138496; }
+}
+
+.fcp-btn-export {
+  background: #0d6efd;
+  color: #fff;
+  &:hover { background: #0b5ed7; }
+}
+
+.fcp-btn-add {
+  background: #198754;
+  color: #fff;
+  &:hover { background: #146c43; }
+}
+
+// ── Table ────────────────────────────────────────────────────
+.fcp-table-wrapper {
+  margin: 0 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  background: #fff;
+  max-height: calc(100vh - 360px);
+  min-height: 220px;
+  overflow: auto;
+}
+
+.fcp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead th {
+    background: #f5f5f5;
+    color: #4a4a4a;
+    font-weight: 600;
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    white-space: nowrap;
+    color: #333;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: #f9fbfd;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover td {
+    background: #eef5ff;
+  }
+
+  tfoot td {
+    padding: 9px 12px;
+    background: #f5f7fa;
+    border-top: 1px solid #d6dce6;
+    font-weight: 600;
+    color: #2b3a4a;
+  }
+}
+
+.fcp-empty {
+  text-align: left;
+  color: #8a8a8a;
+  font-style: italic;
+  padding: 14px;
+}
+
+.fcp-truncate {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.fcp-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcp-foot-label {
+  text-align: right;
+}
+
+.fcp-foot-total {
+  color: #0d6efd;
+}
+
+// ── Pagination ───────────────────────────────────────────────
+.fcp-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  padding: 14px 24px 0;
+  font-size: 12px;
+  color: #555;
+}
+
+.fcp-pagination-pages {
+  display: flex;
+  gap: 4px;
+}
+
+.fcp-page-btn {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+
+  &:hover:not(:disabled) {
+    background: #f0f3f6;
+  }
+  &.is-current {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+  }
+  &:disabled {
+    color: #bbb;
+    cursor: not-allowed;
+  }
+}
+
+.fcp-pagination-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+// ── Error modal ──────────────────────────────────────────────
+.errorModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1100;
+}
+
+.errorModal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.error-ok-button {
+  padding: 8px 16px;
+  background: #f51202;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
