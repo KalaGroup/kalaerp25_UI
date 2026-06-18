@@ -1,0 +1,218 @@
+<div class="fcap-container">
+
+  <!-- Top loading bar (Search / Save / dropdown load) -->
+  <div class="fcap-loader" *ngIf="isLoadingOptions || isSearching || isSaving">
+    <div class="fcap-loader-bar"></div>
+  </div>
+
+  <!-- Header strip -->
+  <div class="fcap-header">
+    <div class="fcap-title">Flat Pack Canopy Assembly Process</div>
+    <div class="fcap-header-actions">
+      <button class="fcap-btn fcap-btn-back"
+              type="button"
+              (click)="onBackToReport()">
+        ← Back to Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Form grid (CSS-Grid, predictable column widths) -->
+  <div class="fcap-form">
+
+    <!-- Row 1: 3 equal context fields -->
+    <div class="fcap-grid fcap-grid-3">
+      <div class="fcap-field">
+        <label>Process Code</label>
+        <input class="fcap-input fcap-input-readonly" type="text" [value]="pfbCode" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>Profit Center</label>
+        <input class="fcap-input fcap-input-readonly" type="text"
+               [value]="pcName && pcCode ? pcName + ' --> ' + pcCode : (pcName || pcCode || '—')"
+               readonly />
+      </div>
+      <div class="fcap-field">
+        <label>Bom Code</label>
+        <input class="fcap-input fcap-input-readonly" type="text" [value]="bomCode" readonly />
+      </div>
+    </div>
+
+    <!-- Row 2: Canopy dropdown (truncated) + Rate + Amount -->
+    <div class="fcap-grid fcap-grid-canopy">
+      <div class="fcap-field">
+        <label>Canopy Part Desc <span class="fcap-required">*</span></label>
+        <select class="fcap-input fcap-select"
+                [(ngModel)]="selectedCanopyPartCode"
+                (ngModelChange)="onCanopyChange()"
+                [disabled]="isLoadingOptions"
+                [title]="selectedCanopyDescription">
+          <option value="" disabled>Select Canopy</option>
+          <option *ngFor="let c of canopyOptions" [value]="c.PartCode">
+            {{ c.PartDesc }}
+          </option>
+        </select>
+      </div>
+      <div class="fcap-field">
+        <label>Rate</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="overallRate | number:'1.2-2'" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>Amount</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="overallAmount | number:'1.2-2'" readonly />
+      </div>
+    </div>
+
+    <!-- Row 3: Process Type + Line + Qty + Search -->
+    <div class="fcap-grid fcap-grid-type">
+      <div class="fcap-field">
+        <label>Process Type <span class="fcap-required">*</span></label>
+        <select class="fcap-input fcap-select"
+                [(ngModel)]="selectedProcessType"
+                (ngModelChange)="onProcessTypeChange()">
+          <option value="" disabled>Select Type</option>
+          <option *ngFor="let t of processTypeOptions" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="fcap-field">
+        <label>Line</label>
+        <input class="fcap-input fcap-input-readonly" type="text" [value]="heading" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>Process Qty <span class="fcap-required">*</span></label>
+        <input class="fcap-input fcap-num" type="number" min="1" step="1"
+               [(ngModel)]="processQty" />
+      </div>
+      <div class="fcap-field fcap-field-action">
+        <label>&nbsp;</label>
+        <button class="fcap-btn fcap-btn-search" type="button"
+                [disabled]="isSearching || isSaving"
+                (click)="onSearch()">
+          {{ isSearching ? 'Searching…' : 'Search' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 4: Part Desc (full width readonly) -->
+    <div class="fcap-grid fcap-grid-1">
+      <div class="fcap-field">
+        <label>Part Desc</label>
+        <input class="fcap-input fcap-input-readonly" type="text"
+               [value]="partDescDisplay" [title]="partDescDisplay" readonly />
+      </div>
+    </div>
+
+    <!-- Row 5: 6 equal metric fields -->
+    <div class="fcap-grid fcap-grid-6">
+      <div class="fcap-field">
+        <label>Weight</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="wt | number:'1.0-3'" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>SqFt</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="sqFt | number:'1.0-3'" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>CRWt</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="crWt | number:'1.0-2'" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>HRWt</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="hrWt | number:'1.0-2'" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>CRRate</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="crRate | number:'1.0-2'" readonly />
+      </div>
+      <div class="fcap-field">
+        <label>HRRate</label>
+        <input class="fcap-input fcap-input-readonly fcap-num" type="text"
+               [value]="hrRate | number:'1.0-2'" readonly />
+      </div>
+    </div>
+  </div>
+
+  <!-- Part Details grid -->
+  <div class="fcap-section">
+    <div class="fcap-section-title">Part Details</div>
+    <div class="fcap-table-wrapper">
+      <table class="fcap-table">
+        <colgroup>
+          <col *ngFor="let col of gridColumns" [style.width]="col.width || null" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th *ngFor="let col of gridColumns"
+                [class.fcap-th-num]="col.align === 'right'">
+              {{ col.label }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="partDetails.length === 0">
+            <td [attr.colspan]="gridColumns.length" class="fcap-empty">
+              <ng-container *ngIf="isSearching">Loading…</ng-container>
+              <ng-container *ngIf="!isSearching">Run Search to load Part Details.</ng-container>
+            </td>
+          </tr>
+          <tr *ngFor="let r of partDetails; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="fcap-truncate" [title]="r.PartCode">{{ r.PartCode }}</td>
+            <td>{{ r.UName }}</td>
+            <td class="fcap-num">{{ r.Qty }}</td>
+            <td class="fcap-num">{{ r.TotalQty | number:'1.0-2' }}</td>
+            <td class="fcap-num">{{ r.Stk | number:'1.0-2' }}</td>
+            <td class="fcap-num"
+                [class.fcap-neg]="r.QtyAfterProcess < 0">{{ r.QtyAfterProcess | number:'1.0-2' }}</td>
+            <td class="fcap-num">{{ r.Rate | number:'1.0-2' }}</td>
+            <td class="fcap-num">{{ r.Amount | number:'1.0-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Action bar -->
+  <div class="fcap-action-bar">
+    <button class="fcap-btn fcap-btn-save"
+            type="button"
+            [disabled]="isSaving || partDetails.length === 0 || !!pfbCode"
+            (click)="onSaveClick()">
+      {{ isSaving ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="confirmModal" *ngIf="confirmMessage">
+    <div class="confirmModal-content">
+      <p>{{ confirmMessage }}</p>
+      <div class="confirmModal-actions">
+        <button class="fcap-btn fcap-btn-save"   type="button" (click)="onConfirmSave()">Yes, Save</button>
+        <button class="fcap-btn fcap-btn-cancel" type="button" (click)="onCancelConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error modal -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="closeError()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success modal -->
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" type="button" (click)="closeSuccess()">OK</button>
+    </div>
+  </div>
+</div>

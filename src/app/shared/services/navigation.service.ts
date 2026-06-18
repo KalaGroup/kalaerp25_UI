@@ -163,6 +163,17 @@
 //     },
 
 //     {
+//       name: 'Canopy Assembly',
+//       type: 'dropDown',
+//       tooltip: 'Canopy Assembly',
+//       icon: 'factory',
+//       sub: [
+//         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
+//         // Add more items here if needed in future
+//       ],
+//     },
+
+//     {
 //       name: 'Canopy Process',
 //       type: 'dropDown',
 //       tooltip: 'Canopy Process',
@@ -276,6 +287,17 @@
 //             { name: 'Vehicle GateOut(DG)', state: 'account/scan-invoice' },
 //           ],
 //         },
+//       ],
+//     },
+
+//     {
+//       name: 'Canopy Assembly',
+//       type: 'dropDown',
+//       tooltip: 'Canopy Assembly',
+//       icon: 'factory',
+//       sub: [
+//         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
+//         // Add more items here if needed in future
 //       ],
 //     },
 
@@ -509,6 +531,17 @@
 //             { name: 'Vehicle GateOut(DG)', state: 'account/scan-invoice' },
 //           ],
 //         },
+//       ],
+//     },
+
+//     {
+//       name: 'Canopy Assembly',
+//       type: 'dropDown',
+//       tooltip: 'Canopy Assembly',
+//       icon: 'factory',
+//       sub: [
+//         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
+//         // Add more items here if needed in future
 //       ],
 //     },
 

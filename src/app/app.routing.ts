@@ -62,6 +62,11 @@ export const rootRouterConfig: Routes = [
         data: { title: 'Canopy Process', breadcrumb: 'CANOPY PROCESS'}
       },
       {
+        path: 'canopy-assembly',
+        loadChildren: () => import('./views/canopy-assembly/canopy-assembly.module').then(m => m.CanopyAssemblyModule),
+        data: { title: 'Canopy Assembly', breadcrumb: 'CANOPY ASSEMBLY'}
+      },
+      {
         path: 'forms',
         loadChildren: () => import('./views/forms/forms.module').then(m => m.AppFormsModule),
         data: { title: 'Forms', breadcrumb: 'FORMS'}
