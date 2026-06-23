@@ -289,36 +289,55 @@
   }
 }
 
-// Observation values can be multi-line (e.g. "Torque- 5.0 Kg-m\n
-// Torque- 5.5 Kg-m\n..."), so preserve newlines + wrap on overflow
-// when shown in the read-only report sub-table.
-// !important bypasses the higher-specificity ".detail-table tbody td" rule
-// which would otherwise inherit the browser-default "white-space: normal".
+// Report sub-table cell helpers.
+// • .wrap-cell        — never truncate; let text wrap onto multiple visual lines.
+// • .multiline-cell   — preserve stored "\n" line breaks so 1./2./3. numbered
+//                       entries stack vertically as the user typed them.
+.detail-table td.wrap-cell,
+td.wrap-cell {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: clip;
+  min-width: 160px;
+  line-height: 1.45;
+}
+
+.detail-table td.multiline-cell,
+td.multiline-cell {
+  white-space: pre-wrap !important;
+  word-break: break-word;
+  min-width: 220px;
+  line-height: 1.5;
+}
+
+// Back-compat for legacy markup still using .observation-cell.
 .detail-table td.observation-cell,
 td.observation-cell {
   white-space: pre-wrap !important;
   word-break: break-word;
-  min-width: 240px;
+  min-width: 220px;
   line-height: 1.5;
 }
 
-// Dynamic stacked observation inputs (editable checkpoint table).
-// Auto-grows: a trailing empty input is always present; × removes any line.
-.observation-stack {
+// Dynamic stacked inputs — shared by Specification and Observation cells.
+// User-controlled growth (+ Add line) and removal (× per row), capped per
+// component (MAX_*_LINES). One input per stored line — no auto-grow.
+.multiline-stack {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.observation-line-row {
+.multiline-row {
   display: flex;
   align-items: stretch;
   gap: 4px;
 }
-.observation-line {
+.multiline-input {
   flex: 1 1 auto;
   min-width: 0;
 }
-.observation-remove {
+.multiline-remove {
   flex: 0 0 24px;
   width: 24px;
   height: 32px;
@@ -336,8 +355,7 @@ td.observation-cell {
     border-color: #e74c3c;
   }
 }
-
-.observation-add-line {
+.multiline-add {
   align-self: flex-start;
   margin-top: 2px;
   padding: 4px 10px;
@@ -361,6 +379,13 @@ td.observation-cell {
     background: transparent;
   }
 }
+
+// Back-compat aliases for any markup still using the old observation-* classes.
+.observation-stack    { @extend .multiline-stack; }
+.observation-line-row { @extend .multiline-row; }
+.observation-line     { @extend .multiline-input; }
+.observation-remove   { @extend .multiline-remove; }
+.observation-add-line { @extend .multiline-add; }
 
 
 .required {
@@ -798,11 +823,17 @@ td.observation-cell {
 }
 
 // Detail row + inner card
+// Exempt the expanded row's wrapper <td> from the master list table's
+// truncation rules so the nested detail-table can wrap and fill the width.
 .detail-row > td {
   background: #eef5fc !important;
   padding: 0 !important;
   border-top: 1px solid #cfe0f1;
   border-bottom: 1px solid #cfe0f1 !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
 }
 .detail-wrap {
   margin: 10px 14px 12px;
