@@ -289,6 +289,79 @@
   }
 }
 
+// Observation values can be multi-line (e.g. "Torque- 5.0 Kg-m\n
+// Torque- 5.5 Kg-m\n..."), so preserve newlines + wrap on overflow
+// when shown in the read-only report sub-table.
+// !important bypasses the higher-specificity ".detail-table tbody td" rule
+// which would otherwise inherit the browser-default "white-space: normal".
+.detail-table td.observation-cell,
+td.observation-cell {
+  white-space: pre-wrap !important;
+  word-break: break-word;
+  min-width: 240px;
+  line-height: 1.5;
+}
+
+// Dynamic stacked observation inputs (editable checkpoint table).
+// Auto-grows: a trailing empty input is always present; × removes any line.
+.observation-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.observation-line-row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+.observation-line {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.observation-remove {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 32px;
+  border: 1px solid #f5b8b8;
+  background: #fff5f5;
+  color: #c0392b;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #fde4e4;
+    border-color: #e74c3c;
+  }
+}
+
+.observation-add-line {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px dashed #3498db;
+  color: #3498db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #ebf5fc;
+  }
+
+  &:disabled {
+    border-color: #cfd6dd;
+    color: #95a0aa;
+    cursor: not-allowed;
+    background: transparent;
+  }
+}
+
 
 .required {
   color: #e74c3c;
