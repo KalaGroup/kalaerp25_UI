@@ -169,13 +169,13 @@ export class QualityMasterCheckerComponent implements OnInit {
       toKVA: this.selectedToKVA,
       makerRemark: this.makerRemark,
       // OK/NOK column removed from UI — always send null so the DB stores NULL.
-      // Observation is numbered client-side so the DB stores "1. ...\n2. ..."
-      // even when the API runs an older binary without NumberObservationLines.
+      // Observation + Specification are numbered client-side so the DB stores
+      // "1. ...\n2. ..." even when the API runs an older binary.
       checkpointItems: this.checkpointItems.map(it => ({
         srNo:                     it.srNo,
         subAssemblyPart:          it.subAssemblyPart,
         qualityProcessCheckpoint: it.qualityProcessCheckpoint,
-        specification:            it.specification,
+        specification:            this.numberSpecificationForSave(it.specification),
         observation:              this.numberObservationForSave(it.observation),
         ok_nok:                   null,
       })),
@@ -203,8 +203,8 @@ export class QualityMasterCheckerComponent implements OnInit {
         stageWiseQcdetailId: it.stageWiseQcdetailId ?? null,
         srNo: it.srNo, subAssemblyPart: it.subAssemblyPart,
         qualityProcessCheckpoint: it.qualityProcessCheckpoint,
-        specification: it.specification,
-        // Numbered client-side; see numberObservationForSave docs.
+        // Numbered client-side; the API re-applies idempotently.
+        specification: this.numberSpecificationForSave(it.specification),
         observation: this.numberObservationForSave(it.observation),
         // OK/NOK column removed from UI — always send null.
         ok_nok: null,
@@ -246,9 +246,9 @@ export class QualityMasterCheckerComponent implements OnInit {
         srNo: i + 1,
         subAssemblyPart: it.SubAssemblyPart,
         qualityProcessCheckpoint: it.QualityProcessCheckpoint,
-        specification: it.Specification,
         // Strip "1. ", "2. " prefixes so input boxes show clean text; the
         // API re-numbers on save (idempotent).
+        specification: this.stripSpecificationNumbering(it.Specification),
         observation: this.stripObservationNumbering(it.Observation),
         ok_nok: it.OkNok,
       }));
@@ -376,70 +376,71 @@ export class QualityMasterCheckerComponent implements OnInit {
     this.warningMessage = '';
   }
 
-  // ── Observation: dynamic stacked inputs backed by a newline-joined string ──
-  // Storage stays a plain string (API/DB contract unchanged). The list grows
-  // as the user types into the trailing empty input; the × button removes any
-  // line; trailing empty lines are trimmed automatically.
-  readonly MAX_OBSERVATION_LINES = 4;
+  // ── Multi-line stacked inputs (Observation + Specification) ────────────
+  // Both fields share the same UX: one input per stored line, explicit
+  // "+ Add line" to grow, × per row to remove, capped at MAX_LINES.
+  readonly MAX_OBSERVATION_LINES   = 4;
+  readonly MAX_SPECIFICATION_LINES = 4;
 
-  getObservationLine(item: any, idx: number): string {
-    const lines = String(item?.observation ?? '').split('\n');
+  // ── Generic primitives (parameterised by item property name) ──────────
+  private getLine(item: any, prop: string, idx: number): string {
+    const lines = String(item?.[prop] ?? '').split('\n');
     return lines[idx] ?? '';
   }
 
-  setObservationLine(item: any, idx: number, value: string): void {
-    const lines = String(item?.observation ?? '').split('\n');
+  private setLine(item: any, prop: string, idx: number, value: string): void {
+    const lines = String(item?.[prop] ?? '').split('\n');
     while (lines.length <= idx) lines.push('');
     lines[idx] = value;
-    // No aggressive trim — user has explicit control via × and "+ Add line".
-    // The API strips trailing empties at save time anyway.
-    item.observation = lines.join('\n');
+    item[prop] = lines.join('\n');
   }
 
-  // Show exactly one input per stored line — no auto-grow. The user explicitly
-  // grows the list with "+ Add line" and shrinks it with the × button per row.
-  // This means a × click on a filled row immediately removes that visible row
-  // (no surprise auto-re-added trailing empty taking its place).
-  // Empty observation still shows a single input as the editing entry point.
-  getObservationLineIndices(item: any): number[] {
-    const raw = String(item?.observation ?? '');
+  private getLineIndices(item: any, prop: string): number[] {
+    const raw = String(item?.[prop] ?? '');
     if (raw.length === 0) return [0];
     const lines = raw.split('\n');
     return Array.from({ length: Math.max(lines.length, 1) }, (_, i) => i);
   }
 
-  removeObservationLine(item: any, idx: number): void {
-    const lines = String(item?.observation ?? '').split('\n');
+  private removeLine(item: any, prop: string, idx: number): void {
+    const lines = String(item?.[prop] ?? '').split('\n');
     if (idx < 0 || idx >= lines.length) return;
     lines.splice(idx, 1);
-    // No cascading trim — only the explicit click on × removes the line at
-    // `idx`. Trailing empties (if any) stay until the user removes them or
-    // the API trims them at save time.
-    item.observation = lines.join('\n');
+    item[prop] = lines.join('\n');
   }
 
-  // Explicit "+ Add line" — appends a blank line so a new input renders.
-  // Without this the user only discovers multi-line by typing in the
-  // trailing input first; the button makes the option obvious.
-  // Capped at MAX_OBSERVATION_LINES.
-  addObservationLine(item: any): void {
-    if (this.isObservationFull(item)) return;
-    const current = String(item?.observation ?? '');
-    item.observation = current.length === 0 ? '\n' : current + '\n';
+  private addLine(item: any, prop: string, max: number): void {
+    if (this.isFull(item, prop, max)) return;
+    const current = String(item?.[prop] ?? '');
+    item[prop] = current.length === 0 ? '\n' : current + '\n';
   }
 
-  // True when the row already has MAX_OBSERVATION_LINES entries.
-  isObservationFull(item: any): boolean {
-    const raw = String(item?.observation ?? '');
+  private isFull(item: any, prop: string, max: number): boolean {
+    const raw = String(item?.[prop] ?? '');
     if (raw.length === 0) return false;
-    return raw.split('\n').length >= this.MAX_OBSERVATION_LINES;
+    return raw.split('\n').length >= max;
   }
 
+  // ── Observation wrappers ──
+  getObservationLine(item: any, idx: number)              { return this.getLine(item, 'observation', idx); }
+  setObservationLine(item: any, idx: number, value: string) { this.setLine(item, 'observation', idx, value); }
+  getObservationLineIndices(item: any)                    { return this.getLineIndices(item, 'observation'); }
+  removeObservationLine(item: any, idx: number)           { this.removeLine(item, 'observation', idx); }
+  addObservationLine(item: any)                           { this.addLine(item, 'observation', this.MAX_OBSERVATION_LINES); }
+  isObservationFull(item: any)                            { return this.isFull(item, 'observation', this.MAX_OBSERVATION_LINES); }
   trackObservationLine = (index: number) => index;
 
-  // Strips any "1. ", "2. " etc. prefix from each line — used when loading a
-  // saved observation into the edit inputs so the user sees clean text.
-  stripObservationNumbering(value: string | null | undefined): string {
+  // ── Specification wrappers ──
+  getSpecificationLine(item: any, idx: number)              { return this.getLine(item, 'specification', idx); }
+  setSpecificationLine(item: any, idx: number, value: string) { this.setLine(item, 'specification', idx, value); }
+  getSpecificationLineIndices(item: any)                    { return this.getLineIndices(item, 'specification'); }
+  removeSpecificationLine(item: any, idx: number)           { this.removeLine(item, 'specification', idx); }
+  addSpecificationLine(item: any)                           { this.addLine(item, 'specification', this.MAX_SPECIFICATION_LINES); }
+  isSpecificationFull(item: any)                            { return this.isFull(item, 'specification', this.MAX_SPECIFICATION_LINES); }
+  trackSpecificationLine = (index: number) => index;
+
+  // ── Numbering helpers ──
+  private stripNumbering(value: string | null | undefined): string {
     if (!value) return '';
     return String(value)
       .replace(/\r\n/g, '\n')
@@ -449,22 +450,21 @@ export class QualityMasterCheckerComponent implements OnInit {
       .join('\n');
   }
 
-  // Mirror of the API's NumberObservationLines — applied client-side at SAVE
-  // so the payload reaches the DB already numbered (belt-and-suspenders even
-  // if the API binary doesn't have the helper yet). Idempotent.
-  numberObservationForSave(value: string | null | undefined): string | null {
+  private numberForSave(value: string | null | undefined): string | null {
     if (value == null) return null;
     if (String(value).length === 0) return value as string;
 
     const normalized = String(value).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    let lines = normalized.split('\n')
-      .map(l => l.replace(/^\s*\d+\.\s*/, ''));
-
+    let lines = normalized.split('\n').map(l => l.replace(/^\s*\d+\.\s*/, ''));
     while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
 
     if (lines.length === 0) return '';
     if (lines.length === 1) return lines[0];
-
     return lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
   }
+
+  stripObservationNumbering(value: string | null | undefined): string  { return this.stripNumbering(value); }
+  numberObservationForSave(value: string | null | undefined)            { return this.numberForSave(value); }
+  stripSpecificationNumbering(value: string | null | undefined): string { return this.stripNumbering(value); }
+  numberSpecificationForSave(value: string | null | undefined)           { return this.numberForSave(value); }
 }
