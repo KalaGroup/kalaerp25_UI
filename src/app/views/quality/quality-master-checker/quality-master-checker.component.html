@@ -90,7 +90,6 @@
             <th class="col-checkpoint">Quality/Process Checkpoint</th>
             <th class="col-spec">Specification</th>
             <th class="col-observation">Observation</th>
-            <th class="col-ok">OK</th>
             <th class="col-action">Action</th>
           </tr>
         </thead>
@@ -100,8 +99,33 @@
             <td><input type="text" class="form-input" placeholder="Enter sub-assembly part" [(ngModel)]="item.subAssemblyPart"></td>
             <td><input type="text" class="form-input" placeholder="Enter checkpoint" [(ngModel)]="item.qualityProcessCheckpoint"></td>
             <td><input type="text" class="form-input" placeholder="Enter specification" [(ngModel)]="item.specification"></td>
-            <td><input type="text" class="form-input" placeholder="Enter observation" [(ngModel)]="item.observation"></td>
-            <td><input type="text" class="form-input" placeholder="Enter" [(ngModel)]="item.ok_nok"></td>
+            <td>
+              <div class="observation-stack">
+                <div class="observation-line-row"
+                     *ngFor="let lineIdx of getObservationLineIndices(item); trackBy: trackObservationLine">
+                  <input type="text"
+                         class="form-input observation-line"
+                         [placeholder]="'Observation line ' + (lineIdx + 1)"
+                         [ngModel]="getObservationLine(item, lineIdx)"
+                         (ngModelChange)="setObservationLine(item, lineIdx, $event)" />
+                  <button type="button"
+                          class="observation-remove"
+                          title="Remove this line"
+                          (click)="removeObservationLine(item, lineIdx)">×</button>
+                </div>
+                <button type="button"
+                        class="observation-add-line"
+                        [disabled]="isObservationFull(item)"
+                        [title]="isObservationFull(item)
+                                  ? 'Maximum ' + MAX_OBSERVATION_LINES + ' observation lines allowed'
+                                  : 'Add another observation line'"
+                        (click)="addObservationLine(item)">
+                  {{ isObservationFull(item)
+                       ? 'Limit reached (' + MAX_OBSERVATION_LINES + ')'
+                       : '+ Add line' }}
+                </button>
+              </div>
+            </td>
             <td class="text-center">
               <button class="btn btn-delete" (click)="deleteRow(i)" title="Delete">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -288,7 +312,6 @@
                           <th>Quality/Process Checkpoint</th>
                           <th>Specification</th>
                           <th>Observation</th>
-                          <th class="text-center">OK/NOK</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -297,8 +320,7 @@
                           <td>{{ it.SubAssemblyPart }}</td>
                           <td>{{ it.QualityProcessCheckpoint }}</td>
                           <td>{{ it.Specification }}</td>
-                          <td>{{ it.Observation }}</td>
-                          <td class="text-center">{{ it.OkNok }}</td>
+                          <td class="observation-cell">{{ it.Observation }}</td>
                         </tr>
                       </tbody>
                     </table>
