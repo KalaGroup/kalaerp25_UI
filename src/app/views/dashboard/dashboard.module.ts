@@ -36,13 +36,19 @@ import { Jobcard1CheckerComponent } from './jobcard1-checker/jobcard1-checker.co
 import { Jobcard2Component } from './jobcard2/jobcard2.component';
 import { DgReverseProcessComponent } from './dg-reverse-process/dg-reverse-process.component';
 import { EngAltCertificateComponent } from './eng-alt-certificate/eng-alt-certificate.component';
-
+//nik
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
+import { DgMachineWiseDownTimeComponent } from './dg-machine-wise-down-time/dg-machine-wise-down-time.component';
+import { DgManpowerStatusComponent } from './dg-manpower-status/dg-manpower-status.component';
+import { DgMaterialStatusComponent } from './dg-material-status/dg-material-status.component';
 
 @NgModule({
   imports: [
     CommonModule,
     MatInputModule,
     FormsModule,
+    ReactiveFormsModule, //nik
     MatIconModule,
     MatCardModule,
     MatMenuModule,
@@ -56,6 +62,7 @@ import { EngAltCertificateComponent } from './eng-alt-certificate/eng-alt-certif
     MatTableModule,
     MatGridListModule,
     MatFormFieldModule,
+    MatSelectModule,        //nik
     NgChartsModule,
     NgxEchartsModule.forRoot({
       echarts
@@ -77,6 +84,9 @@ import { EngAltCertificateComponent } from './eng-alt-certificate/eng-alt-certif
     Jobcard2Component,
     DgReverseProcessComponent,
     EngAltCertificateComponent,
+    DgMachineWiseDownTimeComponent,
+    DgManpowerStatusComponent,
+    DgMaterialStatusComponent,
   ],
 
 })

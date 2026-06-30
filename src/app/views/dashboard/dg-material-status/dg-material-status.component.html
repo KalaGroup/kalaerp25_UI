@@ -1,0 +1,204 @@
+<div class="container" [formGroup]="form">
+
+  <!-- LOADER -->
+  <div *ngIf="isLoading" class="loader-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- HEADER BAR -->
+  <div class="header-bar">
+    <div class="title-wrap">
+      <h2>MATERIAL ENTRY · UNIT-1</h2>
+      <span class="header-sub">Day-wise production material</span>
+    </div>
+    <button *ngIf="!isFormVisible" type="button" (click)="showForm()">+ Add Material</button>
+    <button *ngIf="isFormVisible" type="button" (click)="showList()">👁 View Records</button>
+  </div>
+
+  <!-- MESSAGES -->
+  <div *ngIf="successMessage" class="msg success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="msg error">{{ errorMessage }}</div>
+
+  <!-- ============================================================= -->
+  <!-- VIEW (RECORDS) PAGE                                            -->
+  <!-- ============================================================= -->
+  <div *ngIf="!isFormVisible">
+    <div class="panel">
+      <div class="panel-head" (click)="toggleRecords()">
+        <h3>Records <span class="count" *ngIf="reportRows.length">({{ reportRows.length }})</span></h3>
+        <button class="collapse-btn" type="button" [attr.aria-label]="recordsCollapsed ? 'Expand' : 'Minimize'">{{
+          recordsCollapsed ? '+' : '−' }}</button>
+      </div>
+
+      <div class="panel-body" [@collapse]="recordsCollapsed ? 'closed' : 'open'">
+
+        <!-- filters + exports -->
+        <div class="records-toolbar">
+          <div class="filters">
+            <div class="ctrl">
+              <label>Date</label>
+              <input type="date" formControlName="date" />
+            </div>
+            <div class="ctrl">
+              <label>Department</label>
+              <select formControlName="deptCode">
+                <option value="">All Departments</option>
+                <option *ngFor="let d of departments" [value]="d.deptCode">{{ d.deptName }}</option>
+              </select>
+            </div>
+            <button class="save search-btn" type="button" (click)="searchReport()">Search</button>
+          </div>
+          <div class="exports" *ngIf="reportRows.length > 0">
+            <button class="btn-pdf" type="button" (click)="exportPdf()" [disabled]="isExporting">⤓ PDF</button>
+            <button class="btn-excel" type="button" (click)="exportExcel()" [disabled]="isExporting">⤓ Excel</button>
+          </div>
+        </div>
+
+        <!-- date strip above the grid — shows the searched date so the grid stays narrow -->
+        <div class="grid-datebar">
+          <span class="gd-label">DATE</span>
+          <span class="gd-date">{{ form.get('date')?.value ? niceDate(form.get('date')?.value) : 'All dates' }}</span>
+        </div>
+
+        <!-- records grid -->
+        <div class="table-card">
+          <table>
+            <colgroup>
+              <col style="width:4%" />
+              <col style="width:24%" />
+              <col style="width:13%" />
+              <col style="width:12%" />
+              <col style="width:8%" />
+              <col style="width:19%" />
+              <col style="width:20%" />
+              <col style="width:10%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Department</th>
+                <th>Plan (KVA)</th>
+                <th>Type of material</th>
+                <th>Qty</th>
+                <th>Status / Remark</th>
+                <th>Person to communicate</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of reportRows; let i = index">
+                <td class="idx">{{ i + 1 }}</td>
+                <td>{{ r.deptName }}</td>
+                <td>{{ r.plan }}</td>
+                <td><span class="type-pill">{{ r.materialType }}</span></td>
+                <td class="num">{{ r.quantity }}</td>
+                <td>{{ r.status }}</td>
+                <td>{{ r.person }}</td>
+                <td class="actions">
+                  <button type="button" class="row-edit" (click)="editRecord(r)" title="Edit">✎</button>
+                  <button type="button" class="row-del" (click)="deleteRecord(r)" title="Delete">✕</button>
+                </td>
+              </tr>
+              <tr *ngIf="reportRows.length === 0">
+                <td colspan="8" class="empty">No Data Found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- ADD (ENTRY FORM) PAGE                                          -->
+  <!-- ============================================================= -->
+  <div *ngIf="isFormVisible">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>{{ isEditMode ? 'Edit Material' : 'Add Material' }}</h3>
+      </div>
+      <div class="panel-body">
+
+        <div class="head-row">
+          <div class="ctrl">
+            <label>Date</label>
+            <input type="date" formControlName="date" />
+          </div>
+          <div class="ctrl grow">
+            <label>Department <small>(profit center · line)</small></label>
+            <select formControlName="deptCode">
+              <option value="">Select department…</option>
+              <option *ngFor="let d of departments" [value]="d.deptCode">{{ d.deptName }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- material grid -->
+        <div class="table-card">
+          <table>
+            <colgroup>
+              <col style="width:4%" />
+              <col style="width:22%" />
+              <col style="width:15%" />
+              <col style="width:11%" />
+              <col style="width:21%" />
+              <col style="width:21%" />
+              <col style="width:6%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Plan (KVA) <span class="req">*</span></th>
+                <th>Type of material</th>
+                <th>Quantity <span class="req">*</span></th>
+                <th>Status / Remark <span class="req">*</span></th>
+                <th>Person to communicate</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody formArrayName="rows">
+              <tr *ngFor="let row of rows.controls; let i = index" [formGroupName]="i">
+                <td class="idx">{{ i + 1 }}</td>
+                <td>
+                  <select formControlName="plan">
+                    <option value="">Select KVA…</option>
+                    <option *ngFor="let k of kvaOptions" [value]="k.kva">{{ k.kva }}</option>
+                  </select>
+                </td>
+                <td>
+                  <select formControlName="materialType">
+                    <option *ngFor="let t of materialTypes" [value]="t">{{ t }}</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" min="0" step="1" formControlName="quantity" placeholder="0" />
+                </td>
+                <td>
+                  <input type="text" formControlName="status" placeholder="e.g. OK / note" />
+                </td>
+                <td>
+                  <input type="text" formControlName="person" placeholder="Name" />
+                </td>
+                <td class="actions">
+                  <button type="button" class="row-del" (click)="removeRow(i)" title="Remove row">✕</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-actions">
+          <button type="button" class="add" (click)="addRow()">+ Add Row</button>
+        </div>
+
+        <div class="footer-actions">
+          <button type="button" class="clear" (click)="clear()">Clear</button>
+          <button type="button" class="save" (click)="submit()">{{ isEditMode ? 'Update All' : 'Submit All' }}</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
