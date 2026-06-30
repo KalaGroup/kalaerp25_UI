@@ -114,7 +114,10 @@
 //             {name:'Jobcard 1 Checker Line A',state:'dashboard/jobcard1-checker'},
 //             {name:'Job Card 2 Line A',state:'dashboard/jobcard2'},
 //             {name:'DG Reverse Process',state:'dashboard/dg-reverse-process'},
-//             {name:'EngAltCertiAttachment',state:'dashboard/eng-alt-certificate'}
+//             {name:'EngAltCertiAttachment',state:'dashboard/eng-alt-certificate'},
+//             {name:'Machine Wise Down Time',state:'dashboard/dg-machine-wise-down-time'},
+//             {name:'Groupwise Manpower Status',state:'dashboard/dg-manpower-status'},
+//             {name:'Material Entry',state:'dashboard/dg-material-status'}
 //           ],
 //         },
 //       ],
@@ -364,7 +367,10 @@
 //             {name:'Jobcard 1 Checker Line A',state:'dashboard/jobcard1-checker'},
 //             {name:'Job Card 2 Line A',state:'dashboard/jobcard2'},
 //             {name:'DG Reverse Process',state:'dashboard/dg-reverse-process'},
-//             {name:'EngAltCertiAttachment',state:'dashboard/eng-alt-certificate'}
+//             {name:'EngAltCertiAttachment',state:'dashboard/eng-alt-certificate'},
+//             {name:'Machine Wise Down Time',state:'dashboard/dg-machine-wise-down-time'},
+//             {name:'Groupwise Manpower Status',state:'dashboard/dg-manpower-status'},
+//             {name:'Material Entry',state:'dashboard/dg-material-status'}
 //           ],
 //         },
 //       ],
@@ -486,7 +492,10 @@
 //             {name:'Jobcard 1 Checker Line A',state:'dashboard/jobcard1-checker'},
 //             {name:'Job Card 2 Line A',state:'dashboard/jobcard2'},
 //             {name:'DG Reverse Process',state:'dashboard/dg-reverse-process'},
-//             {name:'EngAltCertiAttachment',state:'dashboard/eng-alt-certificate'}
+//             {name:'EngAltCertiAttachment',state:'dashboard/eng-alt-certificate'},
+//             {name:'Machine Wise Down Time',state:'dashboard/dg-machine-wise-down-time'},
+//             {name:'Groupwise Manpower Status',state:'dashboard/dg-manpower-status'},
+//             {name:'Material Entry',state:'dashboard/dg-material-status'}
 //           ],
 //         },
 //       ],
@@ -628,6 +637,7 @@
 //     }
 //   }
 // }
+
 
 // ************For Admin and common user integrated logic **********/
 // Menu load as per new sp

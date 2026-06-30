@@ -1,0 +1,495 @@
+<div class="container" [formGroup]="form">
+
+  <!-- LOADER -->
+  <div *ngIf="isLoading" class="loader-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- HEADER BAR -->
+  <div class="header-bar">
+    <div class="title-wrap">
+      <h2>MANPOWER STATUS · UNIT-1</h2>
+      <span class="header-sub">Station-wise manning &amp; shortage · daily</span>
+    </div>
+
+    <button *ngIf="!isFormVisible" (click)="showForm()">+ Add Manpower Status</button>
+    <button *ngIf="isFormVisible" (click)="showList()">👁 View Records</button>
+  </div>
+
+  <!-- MESSAGES -->
+  <div *ngIf="successMessage" class="msg success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="msg error">{{ errorMessage }}</div>
+
+  <!-- ============================================================= -->
+  <!-- VIEW (RECORDS) PAGE  — shown first                            -->
+  <!-- ============================================================= -->
+  <div *ngIf="!isFormVisible">
+
+    <!-- ============ RECORDS (filters + exports + grid, collapsible) ============ -->
+    <div class="panel">
+      <div class="panel-head" (click)="toggleRecords()">
+        <h3>Records <span class="count" *ngIf="reportRows.length">({{ reportRows.length }})</span></h3>
+        <button class="collapse-btn" type="button" [attr.aria-label]="recordsCollapsed ? 'Expand' : 'Minimize'">{{ recordsCollapsed ? '+' : '−' }}</button>
+      </div>
+      <div class="panel-body" *ngIf="!recordsCollapsed">
+
+    <!-- FILTERS -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Date</label>
+          <input type="date" formControlName="date" />
+        </div>
+        <div>
+          <label>Shift</label>
+          <select formControlName="shift">
+            <option value="">All Shifts</option>
+            <option *ngFor="let s of shifts" [value]="s.code">{{ s.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label>Department</label>
+          <select formControlName="pcId">
+            <option value="">All Departments</option>
+            <option *ngFor="let d of departments" [value]="d.pcId">{{ d.pcName }}</option>
+          </select>
+        </div>
+        <div class="btn-cell">
+          <button class="save" (click)="searchReport()">Search</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPORT BAR -->
+    <div class="export-bar" *ngIf="reportRows.length > 0">
+      <button class="btn-pdf" (click)="exportPdf()" [disabled]="isExporting">⤓ PDF</button>
+      <button class="btn-excel" (click)="exportExcel()" [disabled]="isExporting">⤓ Excel</button>
+    </div>
+
+    <!-- date strip above the grid — shows the searched date/shift so the grid stays narrow -->
+    <div class="grid-datebar">
+      <span class="gd-label">DATE</span>
+      <span class="gd-date">{{ form.get('date')?.value ? niceDate(form.get('date')?.value) : 'All dates' }}</span>
+      <span class="gd-sep">·</span>
+      <span class="gd-label">SHIFT</span>
+      <span class="gd-date">{{ form.get('shift')?.value ? shiftLabel(form.get('shift')?.value) : 'All shifts' }}</span>
+    </div>
+
+    <!-- REPORT GRID -->
+    <div class="table-card">
+      <table>
+        <colgroup>
+          <col style="width:3%" />   <!-- No -->
+          <col style="width:5%" />   <!-- Shift -->
+          <col style="width:13%" />  <!-- Department -->
+          <col style="width:13%" />  <!-- Station -->
+          <col style="width:5%" /><col style="width:5%" /><col style="width:5%" /> <!-- Sanc -->
+          <col style="width:5%" /><col style="width:5%" /><col style="width:5%" /> <!-- Avail -->
+          <col style="width:5%" /><col style="width:5%" /><col style="width:5%" /> <!-- Short -->
+          <col style="width:5%" />   <!-- Absent -->
+          <col style="width:8%" />   <!-- Remark -->
+          <col style="width:8%" />   <!-- Actions -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2">No</th>
+            <th rowspan="2">Shift</th>
+            <th rowspan="2">Department</th>
+            <th rowspan="2">Station</th>
+            <th colspan="3" class="grp sanc">Sanctioned</th>
+            <th colspan="3" class="grp avail">Available</th>
+            <th colspan="3" class="grp short">Shortage</th>
+            <th rowspan="2" class="absent-col">Absent</th>
+            <th rowspan="2">Remark</th>
+            <th rowspan="2">Actions</th>
+          </tr>
+          <tr>
+            <th class="sanc">Skilled</th><th class="sanc">Semi</th><th class="sanc">Unskilled</th>
+            <th class="avail">Skilled</th><th class="avail">Semi</th><th class="avail">Unskilled</th>
+            <th class="short">Skilled</th><th class="short">Semi</th><th class="short">Unskilled</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of reportRows; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ shiftLabel(r.shift) }}</td>
+            <td class="machine-name">{{ r.pcName }}</td>
+            <td class="machine-name">{{ r.workStationName }}</td>
+            <td>{{ r.sancSkilled }}</td><td>{{ r.sancSemi }}</td><td>{{ r.sancUnskilled }}</td>
+            <td>{{ r.availSkilled }}</td><td>{{ r.availSemi }}</td><td>{{ r.availUnskilled }}</td>
+            <td [class.neg]="r.shortSkilled < 0">{{ r.shortSkilled }}</td>
+            <td [class.neg]="r.shortSemi < 0">{{ r.shortSemi }}</td>
+            <td [class.neg]="r.shortUnskilled < 0">{{ r.shortUnskilled }}</td>
+            <td class="absent-col">{{ r.absent }}</td>
+            <td>{{ r.remark || '—' }}</td>
+            <td class="actions">
+              <button type="button" class="row-edit" title="Edit" (click)="editRecord(r)">✎</button>
+              <button type="button" class="row-del" title="Delete" (click)="deleteRecord(r)">✕</button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!isLoading && reportRows.length === 0">
+            <td colspan="16" class="no-data">No Data Found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+    </div>
+
+    <!-- ============ SUMMARY & CHARTS (collapsible) ============ -->
+    <div class="panel">
+      <div class="panel-head" (click)="toggleAnalytics()">
+        <h3>Summary &amp; Charts</h3>
+        <button class="collapse-btn" type="button" [attr.aria-label]="analyticsCollapsed ? 'Expand' : 'Minimize'">{{ analyticsCollapsed ? '+' : '−' }}</button>
+      </div>
+
+      <div class="panel-body" *ngIf="!analyticsCollapsed">
+
+        <!-- ===== Date + shift picker that drives the Summary table & Station-wise chart ===== -->
+        <div class="analytics-controls">
+          <div class="ctrl">
+            <label>Summary date</label>
+            <input type="date" [value]="summaryDate" (change)="summaryDate = $any($event.target).value; applySummaryDate()" />
+          </div>
+          <div class="ctrl">
+            <label>Shift</label>
+            <select (change)="summaryShift = $any($event.target).value; applySummaryDate()">
+              <option value="F" [selected]="summaryShift === 'F'">Ist Shift</option>
+              <option value="S" [selected]="summaryShift === 'S'">IInd Shift</option>
+            </select>
+          </div>
+          <span class="ctrl-note">Summary table &amp; station-wise chart below are for this date &amp; shift.</span>
+          <span *ngIf="chartLoading" class="chart-hint">Loading...</span>
+        </div>
+
+        <!-- ===== Summary by department: Required / Available / Shortage per skill + Total, Absent at end ===== -->
+        <div class="a-card">
+          <div class="a-card-head">
+            <div class="chart-title">
+              <div class="company">{{ companyName }}</div>
+              <h4>Summary by department <span class="when">{{ shiftLabel(summaryShift) }} · {{ niceDate(summaryDate) }}</span></h4>
+            </div>
+            <span class="summary-pill" *ngIf="summaryRows.length">Total shortage {{ summaryTotals.shT }} Nos.</span>
+          </div>
+          <div class="summary-scroll wide">
+            <table class="summary-table grouped">
+              <thead>
+                <tr>
+                  <th rowspan="2" class="sn-h">Sr.</th>
+                  <th rowspan="2" class="st-h">Department / Profit Center</th>
+                  <th colspan="3" class="grp gk">Skilled</th>
+                  <th colspan="3" class="grp gm">Semi-Skilled</th>
+                  <th colspan="3" class="grp gu">Un-Skilled</th>
+                  <th colspan="3" class="grp gt">Total</th>
+                  <th rowspan="2" class="abs-h">Absent</th>
+                </tr>
+                <tr>
+                  <th class="gk">Req</th><th class="gk">Avail</th><th class="gk">Short</th>
+                  <th class="gm">Req</th><th class="gm">Avail</th><th class="gm">Short</th>
+                  <th class="gu">Req</th><th class="gu">Avail</th><th class="gu">Short</th>
+                  <th class="gt">Req</th><th class="gt">Avail</th><th class="gt">Short</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of summaryRows; let i = index">
+                  <td class="sn">{{ i + 1 }}</td>
+                  <td class="st">{{ s.dept }}</td>
+                  <td class="num">{{ s.reqS }}</td><td class="num">{{ s.avS }}</td><td class="num" [class.neg]="s.shS < 0">{{ s.shS }}</td>
+                  <td class="num">{{ s.reqM }}</td><td class="num">{{ s.avM }}</td><td class="num" [class.neg]="s.shM < 0">{{ s.shM }}</td>
+                  <td class="num">{{ s.reqU }}</td><td class="num">{{ s.avU }}</td><td class="num" [class.neg]="s.shU < 0">{{ s.shU }}</td>
+                  <td class="num tot">{{ s.reqT }}</td><td class="num tot">{{ s.avT }}</td><td class="num tot" [class.neg]="s.shT < 0">{{ s.shT }}</td>
+                  <td class="num abs">{{ s.absent }}</td>
+                </tr>
+                <tr *ngIf="summaryRows.length === 0"><td colspan="15" class="no-data">No records loaded.</td></tr>
+                <tr class="sum-total" *ngIf="summaryRows.length">
+                  <td></td><td>Total</td>
+                  <td class="num">{{ summaryTotals.reqS }}</td><td class="num">{{ summaryTotals.avS }}</td><td class="num" [class.neg]="summaryTotals.shS < 0">{{ summaryTotals.shS }}</td>
+                  <td class="num">{{ summaryTotals.reqM }}</td><td class="num">{{ summaryTotals.avM }}</td><td class="num" [class.neg]="summaryTotals.shM < 0">{{ summaryTotals.shM }}</td>
+                  <td class="num">{{ summaryTotals.reqU }}</td><td class="num">{{ summaryTotals.avU }}</td><td class="num" [class.neg]="summaryTotals.shU < 0">{{ summaryTotals.shU }}</td>
+                  <td class="num tot">{{ summaryTotals.reqT }}</td><td class="num tot">{{ summaryTotals.avT }}</td><td class="num tot" [class.neg]="summaryTotals.shT < 0">{{ summaryTotals.shT }}</td>
+                  <td class="num abs">{{ summaryTotals.absent }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== Station-wise shortage (for the loaded records): chart and/or grid ===== -->
+        <div class="a-card">
+          <div class="a-card-head">
+            <div class="chart-title">
+              <div class="company">{{ companyName }}</div>
+              <h4>Station-wise shortage <span class="when">{{ shiftLabel(summaryShift) }} · {{ niceDate(summaryDate) }}</span></h4>
+            </div>
+            <div class="a-head-right">
+              <span *ngIf="chartLoading" class="chart-hint">Loading...</span>
+              <div class="seg view sm">
+                <button [class.active]="dailyView === 'both'"  (click)="setDailyView('both')">Chart + Grid</button>
+                <button [class.active]="dailyView === 'chart'" (click)="setDailyView('chart')">Chart</button>
+                <button [class.active]="dailyView === 'grid'"  (click)="setDailyView('grid')">Grid</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-body tall" *ngIf="dailyView !== 'grid'"><canvas id="shortageStationCanvas"></canvas></div>
+
+          <div class="bd-grid-scroll" *ngIf="dailyView !== 'chart' && stationRows.length" style="margin-top:6px;">
+            <table class="bd-grid">
+              <thead>
+                <tr>
+                  <th class="st-h" style="width:56%">Work Station</th>
+                  <th class="short-h" style="width:20%">Shortage (Nos.)</th>
+                  <th style="width:24%">Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of stationRows; let i = index">
+                  <td class="st"><span class="rank">{{ i + 1 }}</span>{{ s.station }}</td>
+                  <td class="short">{{ s.short }}</td>
+                  <td>
+                    <div class="bar-wrap"><div class="bar" [style.width.%]="stationDailyShare(s.short)"></div><span class="pct">{{ stationDailyShare(s.short) | number:'1.0-1' }}%</span></div>
+                  </td>
+                </tr>
+                <tr class="sum-total">
+                  <td class="st">Total</td>
+                  <td class="short">{{ stationDailyTotal }}</td>
+                  <td><span class="pct" style="color:#0f6c8d">100%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p *ngIf="!chartLoading && stationRows.length === 0" class="bd-empty">No shortage for this date &amp; shift.</p>
+        </div>
+
+        <!-- ===== Station / Department shortage breakdown (weekly · monthly · all) ===== -->
+        <div class="a-card breakdown-card">
+          <div class="a-card-head">
+            <div class="chart-title">
+              <div class="company">{{ companyName }}</div>
+              <h4>
+                {{ breakdownDim === 'station' ? 'Station-wise shortage report' : 'Department-wise shortage report' }}
+                <span class="when">{{ breakdownPeriodLabel }}</span>
+              </h4>
+            </div>
+            <span *ngIf="chartLoading" class="chart-hint">Loading...</span>
+          </div>
+
+          <div class="breakdown-controls">
+            <div class="seg-block">
+              <span class="seg-label">Group by</span>
+              <div class="seg dim">
+                <button [class.active]="breakdownDim === 'station'"    (click)="setBreakdownDim('station')">By Station</button>
+                <button [class.active]="breakdownDim === 'department'" (click)="setBreakdownDim('department')">By Department</button>
+              </div>
+            </div>
+            <div class="seg-block">
+              <span class="seg-label">Period</span>
+              <div class="seg period">
+                <button *ngFor="let p of breakdownPeriods"
+                        [class.active]="breakdownPeriod === p"
+                        (click)="setBreakdownPeriod(p)">
+                  {{ p === 'weekly' ? 'Weekly' : p === 'monthly' ? 'Monthly' : 'All' }}
+                </button>
+              </div>
+            </div>
+            <div class="bd-dates" [class.active]="breakdownPeriod === 'custom'">
+              <span class="bd-dates-tag">Custom</span>
+              <label>From <input type="date" [value]="breakdownFrom" (change)="breakdownFrom = $any($event.target).value; applyBreakdownDates()" /></label>
+              <label>To <input type="date" [value]="breakdownTo" (change)="breakdownTo = $any($event.target).value; applyBreakdownDates()" /></label>
+            </div>
+            <div class="seg-block view-block">
+              <span class="seg-label">View</span>
+              <div class="seg view">
+                <button [class.active]="breakdownView === 'both'"  (click)="setBreakdownView('both')">Chart + Grid</button>
+                <button [class.active]="breakdownView === 'chart'" (click)="setBreakdownView('chart')">Chart</button>
+                <button [class.active]="breakdownView === 'grid'"  (click)="setBreakdownView('grid')">Grid</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI chips -->
+          <div class="bd-kpis" *ngIf="breakdownRows.length">
+            <div class="kpi short">
+              <span class="kpi-dot"></span>
+              <div class="kpi-text"><span class="kpi-label">Total Shortage</span><span class="kpi-val">{{ breakdownShortTotal }}<i>Nos.</i></span></div>
+            </div>
+            <div class="kpi absent">
+              <span class="kpi-dot"></span>
+              <div class="kpi-text"><span class="kpi-label">Total Absent</span><span class="kpi-val">{{ breakdownAbsentTotal }}<i>Nos.</i></span></div>
+            </div>
+            <div class="kpi count">
+              <div class="kpi-text"><span class="kpi-label">{{ breakdownDim === 'station' ? 'Stations' : 'Departments' }}</span><span class="kpi-val">{{ breakdownRows.length }}</span></div>
+            </div>
+          </div>
+
+          <!-- CHART -->
+          <ng-container *ngIf="breakdownView !== 'grid'">
+            <div class="chart-body tall"><canvas id="shortageBreakdownCanvas"></canvas></div>
+            <p *ngIf="breakdownRows.length > breakdownChartCap" class="bd-cap-note">
+              Chart shows the top {{ breakdownChartCap }} — see the full list in the grid below.
+            </p>
+          </ng-container>
+
+          <p *ngIf="!chartLoading && breakdownRows.length === 0" class="bd-empty">No shortage recorded for this period.</p>
+
+          <!-- RECORDS GRID -->
+          <ng-container *ngIf="breakdownView !== 'chart' && breakdownRows.length">
+            <div class="bd-grid-head">
+              <h5>Records <span class="count">({{ breakdownRows.length }})</span></h5>
+              <span class="bd-grid-sub">Ranked by shortage · {{ breakdownPeriodLabel }}</span>
+            </div>
+            <div class="bd-grid-scroll">
+              <table class="bd-grid">
+                <thead>
+                  <tr>
+                    <th class="st-h" style="width:42%">{{ breakdownDim === 'station' ? 'Station' : 'Department' }}</th>
+                    <th class="short-h" style="width:18%">Shortage (Nos.)</th>
+                    <th class="abs-h" style="width:14%">Absent</th>
+                    <th style="width:26%">Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of breakdownRows; let i = index">
+                    <td class="st"><span class="rank">{{ i + 1 }}</span>{{ r.label }}</td>
+                    <td class="short">{{ r.short }}</td>
+                    <td class="abs">{{ r.absent }}</td>
+                    <td>
+                      <div class="bar-wrap">
+                        <div class="bar" [style.width.%]="breakdownShare(r)"></div>
+                        <span class="pct">{{ breakdownShare(r) | number:'1.0-1' }}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr class="sum-total">
+                    <td class="st">Total</td>
+                    <td class="short">{{ breakdownShortTotal }}</td>
+                    <td class="abs">{{ breakdownAbsentTotal }}</td>
+                    <td><span class="pct" style="color:#0f6c8d">100%</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- ADD (ENTRY FORM) PAGE                                         -->
+  <!-- ============================================================= -->
+  <div *ngIf="isFormVisible">
+
+    <div *ngIf="isEditMode" class="edit-badge">✎ Editing existing entry — Date / Shift / Department are locked. Sanctioned is frozen; edit Available &amp; Remark.</div>
+
+    <!-- FILTERS -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Date <span class="text-red">*</span></label>
+          <input type="date" formControlName="date" />
+        </div>
+        <div>
+          <label>Shift <span class="text-red">*</span></label>
+          <select formControlName="shift">
+            <option *ngFor="let s of shifts" [value]="s.code">{{ s.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label>Department <span class="text-red">*</span></label>
+          <select formControlName="pcId">
+            <option value="">Select Department</option>
+            <option *ngFor="let d of departments" [value]="d.pcId">{{ d.pcName }}</option>
+          </select>
+        </div>
+        <div class="btn-cell">
+          <button class="load" (click)="loadStations()">Load Stations</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATION GRID -->
+    <div class="table-card">
+      <table formArrayName="entries" >
+        <colgroup>
+          <col style="width:5%" />   <!-- SrNo -->
+          <col style="width:16%" />  <!-- Station -->
+          <col style="width:5%" /><col style="width:5%" /><col style="width:5%" />    <!-- Sanc -->
+          <col style="width:7%" /><col style="width:7%" /><col style="width:7%" />    <!-- Avail -->
+          <col style="width:5%" /><col style="width:5%" /><col style="width:5%" />    <!-- Short -->
+          <col style="width:7%" />   <!-- Absent -->
+          <col style="width:21%" />  <!-- Remark -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2">SrNo</th>
+            <th rowspan="2">Station</th>
+            <th colspan="3" class="grp sanc">Sanctioned</th>
+            <th colspan="3" class="grp avail">Available (enter)</th>
+            <th colspan="3" class="grp short">Shortage (auto)</th>
+            <th rowspan="2" class="absent-col">Absent</th>
+            <th rowspan="2">Remark</th>
+          </tr>
+          <tr>
+            <th class="sanc">Skilled</th><th class="sanc">Semi</th><th class="sanc">Unskilled</th>
+            <th class="avail">Skilled</th><th class="avail">Semi</th><th class="avail">Unskilled</th>
+            <th class="short">Skilled</th><th class="short">Semi</th><th class="short">Unskilled</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of entries.controls; let i = index" [formGroupName]="i">
+            <td>{{ i + 1 }}</td>
+            <td class="machine-name">{{ row.get('workStationName')?.value }}</td>
+
+            <td class="sanc-col">{{ row.get('sancSkilled')?.value }}</td>
+            <td class="sanc-col">{{ row.get('sancSemi')?.value }}</td>
+            <td class="sanc-col">{{ row.get('sancUnskilled')?.value }}</td>
+
+            <td><input type="number" min="0" placeholder="0" formControlName="availSkilled" /></td>
+            <td><input type="number" min="0" placeholder="0" formControlName="availSemi" /></td>
+            <td><input type="number" min="0" placeholder="0" formControlName="availUnskilled" /></td>
+
+            <td class="short-col" [class.neg]="shortSkilled(row) < 0">{{ shortSkilled(row) }}</td>
+            <td class="short-col" [class.neg]="shortSemi(row) < 0">{{ shortSemi(row) }}</td>
+            <td class="short-col" [class.neg]="shortUnskilled(row) < 0">{{ shortUnskilled(row) }}</td>
+
+            <td class="absent-col"><input type="number" min="0" placeholder="0" formControlName="absent" /></td>
+            <td [class.cell-error]="rowNeedsRemark(row)"><input type="text" class="remark" placeholder="reason..." formControlName="remark" /></td>
+          </tr>
+
+          <tr *ngIf="entries.length === 0">
+            <td colspan="13" class="no-data">
+              {{ form.get('pcId')?.value
+                  ? 'No stations found for this selection.'
+                  : 'Select a date, shift & department, then click Load Stations.' }}
+            </td>
+          </tr>
+
+          <tr *ngIf="entries.length" class="grand-row">
+            <td colspan="2" class="text-right">Grand Total</td>
+            <td>{{ gSancSkilled }}</td><td>{{ gSancSemi }}</td><td>{{ gSancUnskilled }}</td>
+            <td>{{ gAvailSkilled }}</td><td>{{ gAvailSemi }}</td><td>{{ gAvailUnskilled }}</td>
+            <td [class.neg]="gShortSkilled < 0">{{ gShortSkilled }}</td>
+            <td [class.neg]="gShortSemi < 0">{{ gShortSemi }}</td>
+            <td [class.neg]="gShortUnskilled < 0">{{ gShortUnskilled }}</td>
+            <td class="absent-col">{{ gAbsent }}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="btn-group" align="center">
+      <button class="save" (click)="submit()" [disabled]="isLoading || entries.length === 0">Submit All</button>
+      <button class="clear" (click)="clear()" [disabled]="isLoading">Clear</button>
+    </div>
+
+  </div>
+
+</div>
