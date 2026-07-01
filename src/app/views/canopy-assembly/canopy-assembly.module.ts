@@ -19,12 +19,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FlatpackCanopyAssemblyPlanReportComponent } from './flatpack-canopy-assembly-plan-report/flatpack-canopy-assembly-plan-report.component';
 import { FlatpackCanopyAssemblyProcessComponent } from './flatpack-canopy-assembly-process/flatpack-canopy-assembly-process.component';
+import { CanopyAssemblyPlanComponent } from './canopy-assembly-plan/canopy-assembly-plan.component';
 import { CanopyAssemblyRoutes } from './canopy-assembly.routing';
 
 @NgModule({
   declarations: [
     FlatpackCanopyAssemblyPlanReportComponent,
-    FlatpackCanopyAssemblyProcessComponent
+    FlatpackCanopyAssemblyProcessComponent,
+    CanopyAssemblyPlanComponent
   ],
   imports: [
     CommonModule,
