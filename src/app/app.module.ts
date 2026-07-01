@@ -26,8 +26,11 @@ import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { ErrorHandlerService } from './shared/services/error-handler.service';
 import { TokenInterceptor } from './shared/interceptors/token.interceptor';
 // AoT requires an exported function for factories
+// Explicit relative prefix so the translation file resolves under the deployed
+// <base href> (e.g. /ERPAngularUINew26/). Without this, ngx-translate defaults
+// to '/assets/i18n/' (absolute) and 404s at the root domain in production.
 export function HttpLoaderFactory(httpClient: HttpClient) {
-  return new TranslateHttpLoader(httpClient);
+  return new TranslateHttpLoader(httpClient, './assets/i18n/', '.json');
 }
 
 const DEFAULT_PERFECT_SCROLLBAR_CONFIG: PerfectScrollbarConfigInterface = {

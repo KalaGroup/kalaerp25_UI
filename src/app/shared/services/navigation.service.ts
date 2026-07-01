@@ -172,6 +172,7 @@
 //       icon: 'factory',
 //       sub: [
 //         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
+//         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -300,6 +301,7 @@
 //       icon: 'factory',
 //       sub: [
 //         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
+//         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -550,6 +552,7 @@
 //       icon: 'factory',
 //       sub: [
 //         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
+//         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -637,7 +640,6 @@
 //     }
 //   }
 // }
-
 
 // ************For Admin and common user integrated logic **********/
 // Menu load as per new sp

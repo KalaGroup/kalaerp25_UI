@@ -1,0 +1,224 @@
+<div class="cap-container">
+
+  <!-- Header strip -->
+  <div class="cap-header">
+    <div class="cap-title">Canopy Plan — Manual</div>
+  </div>
+
+  <!-- Top context band -->
+  <div class="cap-context">
+    <div class="cap-grid cap-grid-3">
+      <div class="cap-field">
+        <label>Select Line <span class="cap-required" *ngIf="lineRights.length > 0">*</span></label>
+        <select class="cap-input"
+                [(ngModel)]="selectedLineWisePC"
+                (ngModelChange)="onLineChange()"
+                [disabled]="lineRights.length === 0">
+          <option value="" disabled>
+            {{ lineRights.length === 0 ? 'No lines available' : 'Select Line' }}
+          </option>
+          <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }} ({{ l.LineWisePC }})
+          </option>
+        </select>
+      </div>
+      <div class="cap-field">
+        <label>Date</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="todayIso" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Profit Center</label>
+        <input class="cap-input cap-input-readonly" type="text"
+               [value]="pcName && pcCode ? pcName + ' → ' + pcCode : (pcName || pcCode || '—')"
+               readonly />
+      </div>
+    </div>
+
+    <div class="cap-grid cap-grid-2">
+      <div class="cap-field">
+        <label>From Date <span class="cap-required">*</span></label>
+        <input class="cap-input" type="date" [(ngModel)]="fromDate" />
+      </div>
+      <div class="cap-field">
+        <label>To Date <span class="cap-required">*</span></label>
+        <input class="cap-input" type="date" [(ngModel)]="toDate" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Add-row panel (hidden — kept for future re-enable) ────── -->
+  <div class="cap-section" *ngIf="false">
+    <div class="cap-section-title">Add Canopy Part to Plan</div>
+
+    <div class="cap-add-row">
+      <div class="cap-field cap-field-date">
+        <label>Date <span class="cap-required">*</span></label>
+        <input class="cap-input" type="date" [(ngModel)]="draftDate" />
+      </div>
+
+      <div class="cap-field cap-field-part">
+        <label>Canopy Part Description <span class="cap-required">*</span></label>
+        <div class="cap-picker">
+          <input class="cap-input" type="text"
+                 [value]="partSearchText"
+                 (input)="onPartSearchInput($any($event.target).value)"
+                 (focus)="isDropdownOpen = partOptions.length > 0"
+                 (blur)="onPartSearchBlur()"
+                 placeholder="Type at least 2 characters…"
+                 autocomplete="off" />
+          <div class="cap-picker-menu" *ngIf="isDropdownOpen && partOptions.length > 0">
+            <button *ngFor="let opt of partOptions; trackBy: trackByIndex"
+                    type="button"
+                    class="cap-picker-option"
+                    (mousedown)="onPartSelected(opt)">
+              <div class="cap-picker-desc">{{ opt.PartDesc }}</div>
+              <div class="cap-picker-meta">BOM: {{ opt.BomCode }} · UoM: {{ opt.UName }}</div>
+            </button>
+          </div>
+          <div class="cap-picker-empty"
+               *ngIf="isDropdownOpen && partOptions.length === 0 && !isLoadingOptions && partSearchText.length >= 2">
+            No matching parts.
+          </div>
+        </div>
+      </div>
+
+      <div class="cap-field cap-field-bom">
+        <label>BOM Code</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="draftBomCode" readonly />
+      </div>
+
+      <div class="cap-field cap-field-num">
+        <label>Qty <span class="cap-required">*</span></label>
+        <input class="cap-input cap-num" type="number" min="1" step="1" [(ngModel)]="draftQty" />
+      </div>
+
+      <div class="cap-field cap-field-num">
+        <label>Stock Qty</label>
+        <input class="cap-input cap-input-readonly cap-num" type="text"
+               [value]="draftStkQty | number:'1.0-2'" readonly />
+      </div>
+
+      <div class="cap-field cap-field-num">
+        <label>Pending Qty</label>
+        <input class="cap-input cap-input-readonly cap-num" type="text"
+               [value]="draftPendQty | number:'1.0-2'" readonly />
+      </div>
+
+      <div class="cap-field cap-field-action">
+        <label>&nbsp;</label>
+        <button class="cap-btn cap-btn-add" type="button"
+                [disabled]="isFetchingContext || isSaving"
+                (click)="onAddRow()">
+          + Add Row
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Grid ─────────────────────────────────────────────────── -->
+  <div class="cap-section">
+    <div class="cap-section-title">
+      Plan Rows
+      <span class="cap-row-count" *ngIf="rows.length > 0">{{ rows.length }} candidate{{ rows.length === 1 ? '' : 's' }}</span>
+      <span class="cap-row-count cap-row-count-planned" *ngIf="plannedRows.length > 0">
+        {{ plannedRows.length }} planned
+      </span>
+    </div>
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col *ngFor="let col of gridColumns" [style.width]="col.width || null" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th *ngFor="let col of gridColumns"
+                [class.cap-th-num]="col.align === 'right'"
+                [class.cap-th-center]="col.align === 'center'">
+              {{ col.label }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="rows.length === 0 && !isLoadingPlanRows">
+            <td [attr.colspan]="gridColumns.length" class="cap-empty">
+              <ng-container *ngIf="!selectedLineWisePC">Select a line above to load candidate parts.</ng-container>
+              <ng-container *ngIf="selectedLineWisePC">No matching parts found for this line.</ng-container>
+            </td>
+          </tr>
+          <tr *ngIf="isLoadingPlanRows">
+            <td [attr.colspan]="gridColumns.length" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress">
+                  <div class="cap-progress-bar"></div>
+                </div>
+                <div class="cap-loading-text">Loading candidate parts for this line…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngFor="let r of rows; let i = index; trackBy: trackByIndex"
+              [class.cap-row-planned]="r.Qty > 0">
+            <td class="cap-center">{{ rowDisplayIndex(i) }}</td>
+            <td class="cap-center">{{ r.Dt }}</td>
+            <td class="cap-truncate" [title]="r.PartDesc">{{ r.PartDesc }}</td>
+            <td>{{ r.BomCode }}</td>
+            <td class="cap-num">
+              <input class="cap-input cap-input-qty cap-num"
+                     type="number"
+                     min="0"
+                     [max]="r.PendQty"
+                     step="1"
+                     [ngModel]="r.Qty"
+                     (ngModelChange)="onRowQtyChange(i, $event)"
+                     [disabled]="isSaving || r.PendQty <= 0"
+                     [title]="r.PendQty <= 0 ? 'No pending qty available' : 'Max: ' + r.PendQty" />
+            </td>
+            <td class="cap-num">{{ r.StkQty | number:'1.0-2' }}</td>
+            <td class="cap-num">{{ r.PendQty | number:'1.0-2' }}</td>
+            <td class="cap-center">
+              <button class="cap-btn cap-btn-remove cap-btn-sm" type="button"
+                      title="Remove this row"
+                      [disabled]="isSaving"
+                      (click)="removeRow(i)">×</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Action bar ───────────────────────────────────────────── -->
+  <div class="cap-action-bar">
+    <button class="cap-btn cap-btn-save" type="button"
+            [disabled]="isSaving || rows.length === 0 || !!cpCode"
+            (click)="onSaveClick()">
+      {{ isSaving ? 'Saving…' : 'Save Plan' }}
+    </button>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="confirmModal" *ngIf="confirmMessage">
+    <div class="confirmModal-content">
+      <p>{{ confirmMessage }}</p>
+      <div class="confirmModal-actions">
+        <button class="cap-btn cap-btn-save"   type="button" (click)="onConfirmSave()">Yes, Save</button>
+        <button class="cap-btn cap-btn-cancel" type="button" (click)="onCancelConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error modal -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="closeError()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success modal -->
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" type="button" (click)="closeSuccess()">OK</button>
+    </div>
+  </div>
+</div>
