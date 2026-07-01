@@ -4,6 +4,7 @@ import {
   QualityService,
   DivisionResponse,
   DepartmentResponse,
+  KaizenHistoryEntry,
 } from '../quality.service';
 
 @Component({
@@ -52,7 +53,19 @@ export class KaizenComponent implements OnInit {
   editingId: number | null = null;
   editingRow: any = null;
   showForm = false;
-  isChecker = true; // Toggle: false = Maker, true = Checker (for testing auth flow)
+  isChecker = false; // controls the Auth column; set from logged-in employeeCode in ngOnInit
+
+  // Employee codes allowed to see/use the Auth column and the HOD-scoped list.
+  // Each of these sees ONLY their own direct reports (resolved server-side).
+  // empCode is stored in localStorage under the key 'employeeCode'.
+  private readonly AUTH_EMP_CODES = ['0211', '01230202','1821'];
+
+  // Logged-in user (used to record who authorized / sent back in the history)
+  currentUserName = '';
+  currentEmpCode = '';
+
+  // True while an authorize / send-back / delete request is in flight (shows loader)
+  actionLoading = false;
   previewSheetNo = '';
   previewRecord: any = null;
   isGeneratingPdf = false;
@@ -63,6 +76,13 @@ export class KaizenComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Show the Auth (Authorize) column only for the authorized employee.
+    // empCode is stored in localStorage under 'employeeCode'.
+    const loggedInEmpCode = (localStorage.getItem('employeeCode') || '').trim();
+    this.currentEmpCode = loggedInEmpCode;
+    this.currentUserName = (localStorage.getItem('userName') || '').trim();
+    this.isChecker = this.AUTH_EMP_CODES.includes(loggedInEmpCode);
+
     this.kaizenForm = this.fb.group({
       divisionId: ['', Validators.required],
       departmentCode: ['', Validators.required],
@@ -518,6 +538,7 @@ export class KaizenComponent implements OnInit {
     fd.append('SustenanceFrequency', v.frequency || '');
 
     fd.append('DataSubmittedBy', v.dataSubmittedBy || '');
+    fd.append('EmpCode', this.currentEmpCode || '');
     fd.append('DataSubmittedOn', v.dataSubmittedOn || '');
 
     if (this.beforePhoto) {
@@ -553,7 +574,21 @@ export class KaizenComponent implements OnInit {
   // ── Table Methods ──
 
   loadKaizenRecords(): void {
-    this.qualityService.getAllKaizenSheets().subscribe({
+    // HOD (isChecker): only their direct reports' sheets (+ their own), scoped server-side.
+    // Everyone else: only the sheets they submitted themselves.
+    if (this.isChecker) {
+      this.qualityService.getKaizenSheetsForHod(this.currentEmpCode).subscribe({
+        next: (data) => {
+          this.kaizenRecords = data;
+        },
+        error: () => {
+          this.kaizenRecords = [];
+        },
+      });
+      return;
+    }
+
+    this.qualityService.getKaizenSheetsByEmpCode(this.currentEmpCode).subscribe({
       next: (data) => {
         this.kaizenRecords = data;
       },
@@ -671,10 +706,12 @@ export class KaizenComponent implements OnInit {
   // ── Generic Confirmation Modal ──
   confirmModal = {
     show: false,
-    type: '' as 'delete' | 'authorize',
+    type: '' as 'delete' | 'authorize' | 'sendback',
     message: '',
     confirmText: '',
     row: null as any,
+    requireRemark: false,
+    remark: '',
   };
 
   onDeleteRecord(row: any): void {
@@ -684,6 +721,8 @@ export class KaizenComponent implements OnInit {
       message: `Are you sure you want to delete ${row.KaizenSheetNo}?`,
       confirmText: 'Yes, Delete',
       row: row,
+      requireRemark: false,
+      remark: '',
     };
   }
 
@@ -694,6 +733,20 @@ export class KaizenComponent implements OnInit {
       message: `Are you sure you want to authorize Kaizen Sheet "${row.KaizenSheetNo}"? This action cannot be undone.`,
       confirmText: 'Yes, Authorize',
       row: row,
+      requireRemark: false,
+      remark: '',
+    };
+  }
+
+  onSendBackRecord(row: any): void {
+    this.confirmModal = {
+      show: true,
+      type: 'sendback',
+      message: `Send Kaizen Sheet "${row.KaizenSheetNo}" back to the submitter for rework? Please add a reason below.`,
+      confirmText: 'Send Back',
+      row: row,
+      requireRemark: true,
+      remark: '',
     };
   }
 
@@ -703,6 +756,13 @@ export class KaizenComponent implements OnInit {
       this.executeDelete(this.confirmModal.row);
     } else if (this.confirmModal.type === 'authorize') {
       this.executeAuthorize(this.confirmModal.row);
+    } else if (this.confirmModal.type === 'sendback') {
+      // reason is mandatory — the Send Back button is disabled until one is typed,
+      // so just guard silently here (no message).
+      if (!this.confirmModal.remark || !this.confirmModal.remark.trim()) {
+        return;
+      }
+      this.executeSendBack(this.confirmModal.row, this.confirmModal.remark.trim());
     }
     this.resetConfirmModal();
   }
@@ -712,12 +772,82 @@ export class KaizenComponent implements OnInit {
   }
 
   private resetConfirmModal(): void {
-    this.confirmModal = { show: false, type: '' as any, message: '', confirmText: '', row: null };
+    this.confirmModal = { show: false, type: '' as any, message: '', confirmText: '', row: null, requireRemark: false, remark: '' };
+  }
+
+  // Completion Date cannot be earlier than the Kaizen Initiation Date.
+  // If the initiation date changes to a value after the current completion date,
+  // clear the now-invalid completion date. (The [min] on the input blocks new picks.)
+  onInitiationDateChange(): void {
+    const init = this.kaizenForm.get('kaizenInitiationDate')?.value;
+    const comp = this.kaizenForm.get('completionDate')?.value;
+    // date inputs give ISO 'yyyy-MM-dd' strings, so string compare is safe
+    if (init && comp && comp < init) {
+      this.kaizenForm.get('completionDate')?.setValue('');
+    }
+  }
+
+  // Status label shown in the table: Authorized / Sent Back / Pending
+  getStatusLabel(row: any): string {
+    if (row.IsAuth) return 'Authorized';
+    if (row.IsSentBack) return 'Sent Back';
+    return 'Pending';
+  }
+
+  // ── Kaizen action history (timeline) ──
+  historyModal = {
+    show: false,
+    sheetNo: '',
+    loading: false,
+    entries: [] as KaizenHistoryEntry[],
+    error: '',
+  };
+
+  onViewHistory(row: any): void {
+    this.historyModal = { show: true, sheetNo: row.KaizenSheetNo || '', loading: true, entries: [], error: '' };
+    this.qualityService.getKaizenHistory(row.Id).subscribe({
+      next: (entries) => {
+        this.historyModal.entries = entries || [];
+        this.historyModal.loading = false;
+      },
+      error: (err) => {
+        console.error('History load error:', err);
+        this.historyModal.loading = false;
+        this.historyModal.error = (typeof err.error === 'string' ? err.error : err.error?.message) || 'Failed to load history.';
+      },
+    });
+  }
+
+  closeHistory(): void {
+    this.historyModal = { show: false, sheetNo: '', loading: false, entries: [], error: '' };
+  }
+
+  // Friendly label + icon for a history action
+  historyLabel(action: string): string {
+    switch (action) {
+      case 'Created': return 'Created';
+      case 'Resubmitted': return 'Resubmitted';
+      case 'SentBack': return 'Sent Back';
+      case 'Authorized': return 'Authorized';
+      default: return action;
+    }
+  }
+
+  historyIcon(action: string): string {
+    switch (action) {
+      case 'Created': return '📝';
+      case 'Resubmitted': return '🔁';
+      case 'SentBack': return '↩';
+      case 'Authorized': return '✔';
+      default: return '•';
+    }
   }
 
   private executeDelete(row: any): void {
+    this.actionLoading = true;
     this.qualityService.deleteKaizenSheet(row.Id).subscribe({
       next: () => {
+        this.actionLoading = false;
         this.successMessage = `${row.KaizenSheetNo} deleted successfully.`;
         this.loadKaizenRecords();
         if (this.editingId === row.Id) {
@@ -725,20 +855,40 @@ export class KaizenComponent implements OnInit {
         }
       },
       error: (err) => {
+        this.actionLoading = false;
         this.errorMessage = err.error?.message || 'Failed to delete.';
       },
     });
   }
 
   private executeAuthorize(row: any): void {
-    this.qualityService.authorizeKaizenSheet(row.Id).subscribe({
+    this.actionLoading = true;
+    this.qualityService.authorizeKaizenSheet(row.Id, this.currentUserName || null, this.currentEmpCode || null).subscribe({
       next: () => {
+        this.actionLoading = false;
         this.successMessage = `${row.KaizenSheetNo} authorized successfully.`;
         this.loadKaizenRecords();
       },
       error: (err) => {
+        this.actionLoading = false;
         console.error('Authorize error:', err);
         this.errorMessage = (typeof err.error === 'string' ? err.error : err.error?.message) || 'Failed to authorize.';
+      },
+    });
+  }
+
+  private executeSendBack(row: any, remark: string): void {
+    this.actionLoading = true;
+    this.qualityService.sendBackKaizenSheet(row.Id, remark, this.currentUserName || null, this.currentEmpCode || null).subscribe({
+      next: () => {
+        this.actionLoading = false;
+        this.successMessage = `${row.KaizenSheetNo} sent back to the submitter for rework.`;
+        this.loadKaizenRecords();
+      },
+      error: (err) => {
+        this.actionLoading = false;
+        console.error('Send back error:', err);
+        this.errorMessage = (typeof err.error === 'string' ? err.error : err.error?.message) || 'Failed to send back.';
       },
     });
   }
@@ -1016,7 +1166,7 @@ export class KaizenComponent implements OnInit {
       r.Result, r.Improvement, r.Benefit,
       r.InvestmentArea, r.SavingArea, r.HorizontalDeployment,
       r.SustenanceWhatToDo, r.SustenanceHowToDo, r.SustenanceFrequency,
-      r.DataSubmittedBy, r.DataSubmittedOn, r.IsAuth ? 'Authorized' : 'Pending'
+      r.DataSubmittedBy, r.DataSubmittedOn, this.getStatusLabel(r)
     ]);
 
     const wsData = [headers, ...rows];

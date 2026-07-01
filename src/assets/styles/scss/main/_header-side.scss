@@ -2,16 +2,16 @@
   &.mat-toolbar {
     position: relative;
     min-height: 70px;
-    box-shadow: 0 10px 30px 0 rgba(47,60,74,.08);
+    box-shadow: 0 10px 30px 0 rgba(47, 60, 74, .08);
     z-index: 1001;
   }
 
-    //  .company-name {
-    //    margin-right: 12px;
-    //    font-size: 16px;
-    //    font-weight: 600;
-    //    color: #333;
-    //  }
+  //  .company-name {
+  //    margin-right: 12px;
+  //    font-size: 16px;
+  //    font-weight: 600;
+  //    color: #333;
+  //  }
 
   //   .user-info {
   //   display: flex;
@@ -40,38 +40,38 @@
   // }
 
   .user-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  margin-right: 12px;
-  line-height: 1.4;
-  gap: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 12px;
+    line-height: 1.4;
+    gap: 2px;
 
-  .welcome-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: #1a1a1a;
-    letter-spacing: 0.2px;
+    .welcome-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      letter-spacing: 0.2px;
+    }
+
+    .sub-info {
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+    }
+
+    // .profit-center {
+    //   font-size: 12px;
+    //   font-weight: 500;
+    //   color: #666;
+    // }
+
+    // .company-name {
+    //   font-size: 12px;
+    //   font-weight: 500;
+    //   color: #444;
+    // }
   }
-
-  .sub-info {
-    font-size: 12px;
-    font-weight: 500;
-    color: #666;
-  }
-
-  // .profit-center {
-  //   font-size: 12px;
-  //   font-weight: 500;
-  //   color: #666;
-  // }
-
-  // .company-name {
-  //   font-size: 12px;
-  //   font-weight: 500;
-  //   color: #444;
-  // }
-}
 
   .mat-select-value {
     font-weight: 400;
@@ -79,11 +79,68 @@
   }
 }
 
+
+/* Kaizen Sheet quick link in the top bar (beside the menu icon) */
+.kaizen-topbar-link {
+  &.mat-mdc-button {
+    margin-left: 6px;
+    height: 40px;
+    min-width: auto;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: #1a1a1a;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+
+    .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    &:hover {
+      background: rgba(63, 81, 181, 0.08);
+      border-color: rgba(63, 81, 181, 0.30);
+    }
+
+    /* highlighted when the Kaizen page is open */
+    &.active {
+      background: #3f51b5;
+      color: #fff;
+      border-color: #3f51b5;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .kaizen-topbar-link {
+    &.mat-mdc-button {
+      padding: 0 10px;
+
+      .mat-icon {
+        margin-right: 0;
+      }
+
+      .kaizen-topbar-label {
+        display: none;
+        /* icon-only on small screens */
+      }
+    }
+  }
+}
+
+
 .toggle-collapsed {
   transform: rotate(0deg);
-  -webkit-transition: transform .3s cubic-bezier(.35,0,.25,1);
-  transition: transform .3s cubic-bezier(.35,0,.25,1);
+  -webkit-transition: transform .3s cubic-bezier(.35, 0, .25, 1);
+  transition: transform .3s cubic-bezier(.35, 0, .25, 1);
 }
+
 .sidebar-compact .toggle-collapsed {
   transform: rotate(180deg);
 }
@@ -104,8 +161,9 @@
       top: 50%;
       left: 10px;
       margin-top: -12px;
-      color: rgba(0,0,0,.87);
+      color: rgba(0, 0, 0, .87);
     }
+
     input {
       font-size: 1rem;
       padding: .6rem .75rem;
