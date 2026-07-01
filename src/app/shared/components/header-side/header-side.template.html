@@ -5,6 +5,21 @@
     <mat-icon>menu</mat-icon>
   </button>
 
+  <!-- Top nav quick link -->
+  <!-- <a mat-button [routerLink]="['/quality/kaizen']" routerLinkActive="mat-primary"
+    matTooltip="Kaizen Sheet" class="topbar-nav-link">
+    <mat-icon>assignment</mat-icon>
+    <span>Kaizen Sheet</span>
+  </a> -->
+
+    <!-- Kaizen Sheet quick link (beside the menu / three-line icon) -->
+  <button mat-button class="kaizen-topbar-link" [routerLink]="['/quality/kaizen']"
+    routerLinkActive="active" matTooltip="Open Kaizen Sheet">
+    <mat-icon>fact_check</mat-icon>
+    <span class="kaizen-topbar-label">Kaizen Sheet</span>
+  </button>
+
+
   <span class="flex-grow"></span>
   <!-- Language Switcher -->
   <!-- <button mat-button [matMenuTriggerFor]="menu">

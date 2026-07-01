@@ -46,16 +46,31 @@ export interface KaizenSheetRecord {
   sustenanceHowToDo: string | null;
   sustenanceFrequency: string | null;
   dataSubmittedBy: string | null;
+  empCode: string | null;
   dataSubmittedOn: string | null;
   isActive: boolean;
   isDiscard: boolean;
   isAuth: boolean;
+  isSentBack: boolean;
+  authRemark: string | null;
 }
 
 export interface CreateKaizenSheetResponse {
  // id: number;
   kaizenSheetNo: string;
   message: string;
+}
+
+// One row of the Kaizen action timeline (API returns PascalCase)
+export interface KaizenHistoryEntry {
+  Id: number;
+  KaizenSheetMasterId: number;
+  KaizenSheetNo: string | null;
+  Action: string;            // Created | Resubmitted | SentBack | Authorized
+  Remark: string | null;
+  ActionBy: string | null;
+  ActionByCode: string | null;
+  ActionOn: string;          // "yyyy-MM-dd HH:mm"
 }
 
 export interface DivisionResponse {
@@ -433,6 +448,19 @@ export class QualityService {
     return this.http.get<KaizenSheetRecord[]>(url);
   }
 
+  // HOD view: only sheets from THIS HOD's direct reports (+ the HOD's own sheets).
+  // Pass the logged-in employee's code; the SP resolves their PositionRoleID.
+  getKaizenSheetsForHod(empCode: string): Observable<KaizenSheetRecord[]> {
+    const url = `${this.baseUrl}Quality/GetKaizenSheetsForHod`;
+    return this.http.get<KaizenSheetRecord[]>(url, { params: { empCode: empCode || '' } });
+  }
+
+  // Normal employee view: only the sheets this employee submitted.
+  getKaizenSheetsByEmpCode(empCode: string): Observable<KaizenSheetRecord[]> {
+    const url = `${this.baseUrl}Quality/GetKaizenSheetsByEmpCode`;
+    return this.http.get<KaizenSheetRecord[]>(url, { params: { empCode: empCode || '' } });
+  }
+
   deleteKaizenSheet(id: number): Observable<any> {
     const url = `${this.baseUrl}Quality/DeleteKaizenSheet/${id}`;
     return this.http.delete<any>(url);
@@ -449,9 +477,21 @@ export class QualityService {
     return `${this.baseUrl}Quality/GetKaizenFile?path=${encodeURIComponent(filePath)}`;
   }
 
-  authorizeKaizenSheet(id: number): Observable<any> {
+  authorizeKaizenSheet(id: number, performedBy: string | null, performedByCode: string | null): Observable<any> {
     const url = `${this.baseUrl}Quality/AuthorizeKaizenSheet/${id}`;
-    return this.http.put<any>(url, {});
+    return this.http.put<any>(url, { performedBy, performedByCode });
+  }
+
+  // Send a Kaizen sheet back to the submitter for rework, with a reason.
+  sendBackKaizenSheet(id: number, remark: string, performedBy: string | null, performedByCode: string | null): Observable<any> {
+    const url = `${this.baseUrl}Quality/SendBackKaizenSheet/${id}`;
+    return this.http.put<any>(url, { remark, performedBy, performedByCode });
+  }
+
+  // Full action timeline for one Kaizen sheet (id = master Id).
+  getKaizenHistory(id: number): Observable<KaizenHistoryEntry[]> {
+    const url = `${this.baseUrl}Quality/GetKaizenHistory/${id}`;
+    return this.http.get<KaizenHistoryEntry[]>(url);
   }
 
 }

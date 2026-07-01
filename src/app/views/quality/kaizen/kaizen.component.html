@@ -21,14 +21,56 @@
     </div>
   </div>
 
-  <!-- Warning / Delete Confirm Modal -->
+  <!-- Warning / Delete / Send-back Confirm Modal -->
   <div *ngIf="confirmModal.show" class="warningModal">
     <div class="warningModal_content">
       <p>{{ confirmModal.message }}</p>
+      <textarea *ngIf="confirmModal.requireRemark" class="sendback-remark-input"
+        [(ngModel)]="confirmModal.remark" rows="3"
+        placeholder="Reason for sending back (required)"></textarea>
       <div class="warning-btn-group">
         <button [class]="confirmModal.type === 'delete' ? 'warning-confirm-button' : 'warning-auth-button'"
+          [disabled]="(confirmModal.requireRemark && !confirmModal.remark.trim()) || actionLoading"
           (click)="onConfirmAction()">{{ confirmModal.confirmText }}</button>
         <button class="warning-cancel-button" (click)="onCancelAction()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action loader overlay (authorize / send back / delete in progress) -->
+  <div *ngIf="actionLoading" class="action-loader-overlay">
+    <div class="action-loader-spinner"></div>
+  </div>
+
+  <!-- Kaizen Action History Modal -->
+  <div *ngIf="historyModal.show" class="historyModal" (click)="closeHistory()">
+    <div class="historyModal_content" (click)="$event.stopPropagation()">
+      <div class="history-head">
+        <h3>🕘 History — {{ historyModal.sheetNo }}</h3>
+        <button class="history-close" (click)="closeHistory()">✕</button>
+      </div>
+
+      <div *ngIf="historyModal.loading" class="history-loading">Loading…</div>
+      <div *ngIf="historyModal.error" class="history-error">{{ historyModal.error }}</div>
+
+      <div *ngIf="!historyModal.loading && !historyModal.error">
+        <div *ngIf="historyModal.entries.length === 0" class="history-empty">No history recorded yet.</div>
+
+        <ul class="history-timeline" *ngIf="historyModal.entries.length > 0">
+          <li *ngFor="let h of historyModal.entries" class="history-item" [ngClass]="'hist-' + h.Action">
+            <span class="history-dot">{{ historyIcon(h.Action) }}</span>
+            <div class="history-body">
+              <div class="history-row1">
+                <span class="history-action">{{ historyLabel(h.Action) }}</span>
+                <span class="history-date">{{ h.ActionOn }}</span>
+              </div>
+              <div class="history-by" *ngIf="h.ActionBy || h.ActionByCode">
+                by {{ h.ActionBy || '—' }}<span *ngIf="h.ActionByCode"> ({{ h.ActionByCode }})</span>
+              </div>
+              <div class="history-remark" *ngIf="h.Remark">"{{ h.Remark }}"</div>
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
   </div>
@@ -94,21 +136,37 @@
                 class="pqcdsm-mini" [ngClass]="'pqcdsm-' + letter">{{ letter }}</span>
               <span *ngIf="!row.Improvement">—</span>
             </td>
-            <td>{{ row.DataSubmittedBy || '—' }}</td>
+            <td>
+              <div class="submitted-by">{{ row.DataSubmittedBy || '—' }}</div>
+              <div class="submitted-by-code" *ngIf="row.EmpCode">Emp Id : {{ row.EmpCode }}</div>
+            </td>
             <td class="td-status">
               <span class="status-badge" [ngClass]="{
                 'status-active': row.IsAuth,
-                'status-pending': !row.IsAuth
-              }">{{ row.IsAuth ? 'Authorized' : 'Pending' }}</span>
+                'status-sentback': !row.IsAuth && row.IsSentBack,
+                'status-pending': !row.IsAuth && !row.IsSentBack
+              }" [title]="(!row.IsAuth && row.IsSentBack && row.AuthRemark) ? ('Reason: ' + row.AuthRemark) : ''">{{ getStatusLabel(row) }}</span>
+              <div class="sentback-reason" *ngIf="!row.IsAuth && row.IsSentBack && row.AuthRemark"
+                [title]="row.AuthRemark">↩ {{ row.AuthRemark }}</div>
             </td>
             <td class="td-auth" *ngIf="isChecker">
-              <button *ngIf="!row.IsAuth" type="button" class="action-btn-auth"
-                (click)="onAuthorizeRecord(row)">🛡️ Authorize</button>
+              <!-- Pending: HOD can authorize or send back -->
+              <div class="auth-btn-group" *ngIf="!row.IsAuth && !row.IsSentBack">
+                <button type="button" class="action-btn-auth" [disabled]="actionLoading"
+                  (click)="onAuthorizeRecord(row)">🛡️ Authorize</button>
+                <button type="button" class="action-btn-sendback" [disabled]="actionLoading"
+                  (click)="onSendBackRecord(row)">↩ Send Back</button>
+              </div>
+              <!-- Sent back: with the submitter for rework — no HOD action until they resubmit -->
+              <span *ngIf="!row.IsAuth && row.IsSentBack" class="auth-awaiting">↩ Awaiting rework</span>
+              <!-- Authorized -->
               <span *ngIf="row.IsAuth" class="auth-done">✔</span>
             </td>
             <td class="td-actions">
               <button type="button" class="action-btn action-view" title="Preview"
                 (click)="onPreviewRecord(row)">👁️</button>
+              <button type="button" class="action-btn action-history" title="History"
+                (click)="onViewHistory(row)">🕘</button>
               <button type="button" class="action-btn action-edit" title="Edit"
                 (click)="onEditRecord(row)" [disabled]="row.IsAuth && !isChecker">✏️</button>
               <button type="button" class="action-btn action-delete" title="Delete"
@@ -185,12 +243,12 @@
         <div class="dropdown-wrapper dropdown-date-sm">
           <label for="kaizenInitiationDate">* Kaizen Initiation Date Time</label>
           <input type="date" id="kaizenInitiationDate" formControlName="kaizenInitiationDate"
-            class="form-date" />
+            class="form-date" (change)="onInitiationDateChange()" />
         </div>
         <div class="dropdown-wrapper dropdown-date-sm">
           <label for="completionDate">Completion Date</label>
           <input type="date" id="completionDate" formControlName="completionDate"
-            class="form-date" />
+            class="form-date" [min]="kaizenForm.get('kaizenInitiationDate')?.value || null" />
         </div>
       </div>
     </div>
