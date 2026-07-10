@@ -173,6 +173,8 @@
 //       sub: [
 //         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
 //         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
+//         {name:'Canopy Assembly Process',state:'canopy-assembly/canopy-assembly-process'},
+//         {name:'Canopy Assembly Process Checker',state:'canopy-assembly/canopy-assembly-process-checker'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -302,6 +304,8 @@
 //       sub: [
 //         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
 //         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
+//         {name:'Canopy Assembly Process',state:'canopy-assembly/canopy-assembly-process'},
+//         {name:'Canopy Assembly Process Checker',state:'canopy-assembly/canopy-assembly-process-checker'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -553,6 +557,8 @@
 //       sub: [
 //         { name: 'Flatpack Canopy Report', state: 'canopy-assembly/flatpack-canopy-assembly-plan' },
 //         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
+//         {name:'Canopy Assembly Process',state:'canopy-assembly/canopy-assembly-process'},
+//         {name:'Canopy Assembly Process Checker',state:'canopy-assembly/canopy-assembly-process-checker'},
 //         // Add more items here if needed in future
 //       ],
 //     },

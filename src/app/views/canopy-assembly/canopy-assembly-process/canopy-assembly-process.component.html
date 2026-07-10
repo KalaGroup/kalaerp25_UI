@@ -1,0 +1,323 @@
+<div class="cap-container">
+
+  <!-- Header strip -->
+  <div class="cap-header">
+    <div class="cap-title">Canopy Assembly Process</div>
+    <div class="cap-header-actions" *ngIf="pfbCode">
+      <span class="cap-badge" [class.cap-badge-end]="isEndMode" [class.cap-badge-new]="isNewMode">
+        {{ isEndMode ? 'PSH (End Mode)' : (isNewMode ? 'NEW (Start Mode)' : pfbCode) }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Top context band -->
+  <div class="cap-context">
+    <div class="cap-grid cap-grid-3">
+      <div class="cap-field">
+        <label>Select Line <span class="cap-required" *ngIf="lineRights.length > 0">*</span></label>
+        <select class="cap-input"
+                [(ngModel)]="selectedLineWisePC"
+                (ngModelChange)="onLineChange()"
+                [disabled]="lineRights.length === 0">
+          <option value="" disabled>
+            {{ lineRights.length === 0 ? 'No lines available' : 'Select Line' }}
+          </option>
+          <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }} ({{ l.LineWisePC }})
+          </option>
+        </select>
+      </div>
+      <div class="cap-field">
+        <label>Date</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="todayIso" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Profit Center</label>
+        <input class="cap-input cap-input-readonly" type="text"
+               [value]="pcName && pcCode ? pcName + ' → ' + pcCode : (pcName || pcCode || '—')"
+               readonly />
+      </div>
+    </div>
+
+    <div class="cap-grid cap-grid-3">
+      <div class="cap-field">
+        <label>Select Canopy Type</label>
+        <select class="cap-input"
+                [(ngModel)]="selectedMachine"
+                (ngModelChange)="onMachineChange()"
+                [disabled]="!selectedLineWisePC || machines.length === 0">
+          <option value="" disabled>
+            {{ machines.length === 0 ? 'Pick a line first' : 'Select Canopy Type' }}
+          </option>
+          <option *ngFor="let m of machines" [value]="m.PartCode">
+            {{ m.Part }}
+          </option>
+        </select>
+      </div>
+      <div class="cap-field">
+        <label>Select KVA</label>
+        <select class="cap-input"
+                [(ngModel)]="selectedKVA"
+                (ngModelChange)="onKvaChange()"
+                [disabled]="!selectedMachine || kvaList.length === 0">
+          <option value="" disabled>
+            {{ kvaList.length === 0 ? 'Pick a canopy type first' : 'Select KVA' }}
+          </option>
+          <option *ngFor="let k of kvaList" [value]="k.KVA1">{{ k.KVA }}</option>
+        </select>
+      </div>
+      <div class="cap-field">
+        <label>Select Model</label>
+        <select class="cap-input"
+                [(ngModel)]="selectedModel"
+                (ngModelChange)="onModelChange()"
+                [disabled]="!selectedKVA || modelList.length === 0">
+          <option value="" disabled>
+            {{ modelList.length === 0 ? 'Pick a KVA first' : 'Select Model' }}
+          </option>
+          <option *ngFor="let m of modelList" [value]="m.Model1">{{ m.Model }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Plan header (read-only, auto-filled after model pick) -->
+    <div class="cap-grid cap-grid-2">
+      <div class="cap-field">
+        <label>Plan No</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="planCode" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Plan Date</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="planDt" readonly />
+      </div>
+    </div>
+
+    <div class="cap-grid cap-grid-3">
+      <div class="cap-field">
+        <label>Batch Qty</label>
+        <input class="cap-input cap-input-readonly cap-num" type="text"
+               [value]="batchQty | number:'1.0-2'" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Balance Qty</label>
+        <input class="cap-input cap-input-readonly cap-num" type="text"
+               [value]="planQtyBal | number:'1.0-2'" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Process Qty <span class="cap-required">*</span></label>
+        <input class="cap-input cap-num" type="number" min="0" step="1"
+               [(ngModel)]="prcQty" [disabled]="!pfbCode || isSaving" />
+      </div>
+    </div>
+
+    <!-- Kit picker — only in PSH (End) mode -->
+    <div class="cap-grid cap-grid-2" *ngIf="isEndMode && kitList.length > 0">
+      <div class="cap-field">
+        <label>Kit</label>
+        <select class="cap-input"
+                [(ngModel)]="selectedKit"
+                (ngModelChange)="onKitChange()">
+          <option value="" disabled>Select Kit</option>
+          <option *ngFor="let k of kitList" [value]="k.KitCode">{{ k.KitDesc }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Action buttons: Search / Save (dynamic Start/End) ──── -->
+  <div class="cap-section" *ngIf="pfbCode">
+    <div class="cap-inline-actions">
+      <button class="cap-btn cap-btn-search" type="button"
+              [disabled]="isSearching || isSaving"
+              (click)="onClickSearch()">
+        {{ isSearching ? 'Searching…' : 'Search' }}
+      </button>
+      <button class="cap-btn" [class.cap-btn-save]="isNewMode" [class.cap-btn-end]="isEndMode"
+              type="button"
+              [disabled]="isSaving || partRows.length === 0"
+              (click)="onSaveClick()">
+        {{ saveButtonLabel }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Attachment Details ────────────────────────────────── -->
+  <div class="cap-section" *ngIf="pfbCode">
+    <div class="cap-section-title">Attachment Details</div>
+    <div class="cap-table-wrapper cap-table-wrapper-small">
+      <table class="cap-table">
+        <colgroup>
+          <col style="width: 60px" />
+          <col />
+          <col style="width: 100px" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="cap-th-center">SrNo</th>
+            <th>Attachment</th>
+            <th class="cap-th-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of attachments; let i = index; trackBy: trackByIndex">
+            <td class="cap-center">{{ a.SrNo }}</td>
+            <td>{{ a.FileName }}</td>
+            <td class="cap-center">
+              <button class="cap-btn cap-btn-remove cap-btn-sm" type="button"
+                      [disabled]="isSaving"
+                      (click)="onRemoveAttachment(i)">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="attachments.length === 0">
+            <td colspan="3" class="cap-empty">No attachments yet.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+              <input id="attachmentInput" type="file"
+                     (change)="onFileSelected($event)"
+                     [disabled]="isUploading" />
+              <div class="cap-progress" *ngIf="isUploading">
+                <div class="cap-progress-bar" [style.width.%]="uploadProgress"
+                     style="animation: none; position: static;"></div>
+              </div>
+            </td>
+            <td class="cap-center">
+              <button class="cap-btn cap-btn-add cap-btn-sm" type="button"
+                      [disabled]="!pendingFile || isUploading || isSaving"
+                      (click)="onAddAttachment()">
+                {{ isUploading ? 'Uploading…' : 'Add' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Part Details (top table) ────────────────────────────── -->
+  <div class="cap-section" *ngIf="pfbCode">
+    <div class="cap-section-title">
+      Part Details
+      <span class="cap-row-count" *ngIf="partRows.length > 0">{{ partRows.length }} rows</span>
+    </div>
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col style="width: 60px" />
+          <col />
+          <col style="width: 100px" />
+          <col style="width: 100px" />
+          <col style="width: 110px" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="cap-th-center">SrNo</th>
+            <th>Part Description</th>
+            <th class="cap-th-num">Kit Qty</th>
+            <th class="cap-th-num">Prc Qty</th>
+            <th class="cap-th-num">Stock Qty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isSearching">
+            <td colspan="5" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+                <div class="cap-loading-text">Loading part details…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isSearching && partRows.length === 0">
+            <td colspan="5" class="cap-empty">No Record(s) Found</td>
+          </tr>
+          <tr *ngFor="let r of partRows; let i = index; trackBy: trackByIndex">
+            <td class="cap-center">{{ i + 1 }}</td>
+            <td class="cap-truncate" [title]="r.Part">{{ r.Part }}</td>
+            <td class="cap-num">{{ r.KitQty | number:'1.0-2' }}</td>
+            <td class="cap-num" [class.cap-num-short]="r.PrcQty > r.StkQty">
+              {{ r.PrcQty | number:'1.0-2' }}
+            </td>
+            <td class="cap-num">{{ r.StkQty | number:'1.0-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Assembly Kit Details (bottom table) ─────────────────── -->
+  <div class="cap-section" *ngIf="pfbCode">
+    <div class="cap-section-title">
+      Assembly Kit Details
+      <span class="cap-row-count" *ngIf="assemblyKitRows.length > 0">{{ assemblyKitRows.length }} rows</span>
+    </div>
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col />
+          <col style="width: 100px" />
+          <col style="width: 100px" />
+          <col style="width: 110px" />
+          <col style="width: 220px" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Part</th>
+            <th class="cap-th-num">Qty</th>
+            <th class="cap-th-num">Prc Qty</th>
+            <th class="cap-th-num">Stock Qty</th>
+            <th>Part Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isSearching">
+            <td colspan="5" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+                <div class="cap-loading-text">Loading assembly kit…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isSearching && assemblyKitRows.length === 0">
+            <td colspan="5" class="cap-empty">No Record(s) Found</td>
+          </tr>
+          <tr *ngFor="let r of assemblyKitRows; let i = index; trackBy: trackByIndex">
+            <td class="cap-truncate" [title]="r.Part">{{ r.Part }}</td>
+            <td class="cap-num">{{ r.Qty | number:'1.0-2' }}</td>
+            <td class="cap-num">{{ r.PrcQty | number:'1.0-2' }}</td>
+            <td class="cap-num">{{ r.StkQty | number:'1.0-2' }}</td>
+            <td class="cap-truncate">{{ r.PartCode }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="confirmModal" *ngIf="confirmMessage">
+    <div class="confirmModal-content">
+      <p>{{ confirmMessage }}</p>
+      <div class="confirmModal-actions">
+        <button class="cap-btn" [class.cap-btn-save]="isNewMode" [class.cap-btn-end]="isEndMode"
+                type="button" (click)="onConfirmSave()">Yes, {{ isEndMode ? 'End' : 'Start' }}</button>
+        <button class="cap-btn cap-btn-cancel" type="button" (click)="onCancelConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error modal -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p>{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="closeError()">OK</button>
+    </div>
+  </div>
+
+  <!-- Success modal -->
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p>{{ successMessage }}</p>
+      <button class="success-ok-button" type="button" (click)="closeSuccess()">OK</button>
+    </div>
+  </div>
+</div>
