@@ -1,0 +1,613 @@
+// ──────────────────────────────────────────────────────────────
+//  Canopy Assembly Process Checker
+//  Same visual idiom as the Maker page + modal for the check panel.
+// ──────────────────────────────────────────────────────────────
+
+.cap-container {
+  background: #fff;
+  padding: 0 0 28px;
+  font-family: inherit;
+  color: #2c3e50;
+  position: relative;
+}
+
+// ── Header ────────────────────────────────────────────────────
+.cap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #fafbfd 0%, #eef2f7 100%);
+  border-top: 1px solid #dde2ea;
+  border-bottom: 1px solid #d6dce6;
+  padding: 14px 24px;
+}
+.cap-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2d3d;
+  letter-spacing: 0.2px;
+}
+
+// ── Layout helpers ────────────────────────────────────────────
+.cap-context { padding: 18px 24px 0; }
+.cap-section { padding: 16px 24px 0; }
+.cap-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b3a4a;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cap-row-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  background: #e8f4ff;
+  color: #0d6efd;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+}
+.cap-row-count-pending    { background: #fff4d6; color: #b8860b; }
+.cap-row-count-authorized { background: #e7f6ec; color: #198754; }
+
+.cap-progress-cell { color: #556; font-size: 11px; }
+.cap-progress-text {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #eef2f7;
+  color: #38597a;
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+// Authorized rows dim slightly so the checker's eye lands on the pending
+// rows first. Still clickable (read-only modal view).
+.cap-row-authorized td {
+  color: #78889b !important;
+  background: #f5f8fb !important;
+}
+.cap-row-authorized:hover td { background: #eaf0f7 !important; }
+
+// ── Date-range Report section ─────────────────────────────────
+.cap-report-filters {
+  display: flex;
+  align-items: flex-end;      // labels above inputs push the row taller;
+  gap: 12px;                  // aligning to flex-end keeps buttons + inputs
+  padding: 8px 0 14px;        // bottoms flush.
+  flex-wrap: wrap;
+}
+.cap-report-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6c7a89;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  input { min-width: 160px; }
+}
+.cap-report-search {
+  flex: 1;
+  min-width: 260px;
+  max-width: 420px;
+  height: 36px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+// ── Action buttons (Search + Excel) ──────────────────────────
+// Sit flush with the date inputs (flex-end alignment above), tall enough
+// to feel like a real primary action, with subtle icon + colour weight.
+.cap-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  min-width: 110px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+  &:active:not(:disabled) { transform: translateY(0); box-shadow: 0 1px 2px rgba(0,0,0,0.10); }
+  &:disabled {
+    background: #d8dee5 !important;
+    color: #8892a0 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+.cap-report-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.95;
+}
+
+// Primary Search — deep blue with an accent gradient.
+.cap-report-btn-search {
+  background: linear-gradient(180deg, #1f7ae0 0%, #0d6efd 100%);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(180deg, #0d6efd 0%, #0b5ed7 100%);
+  }
+}
+
+// Excel — office-green with the same treatment.
+.cap-report-btn-excel {
+  background: linear-gradient(180deg, #2a8a56 0%, #1d6f42 100%);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(180deg, #1d6f42 0%, #145730 100%);
+  }
+}
+
+.cap-report-error {
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: #fde4e4;
+  color: #c0392b;
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid #f5b8b8;
+}
+
+// Colored count cells in the report table.
+.cap-num-accept { color: #198754; font-weight: 600; }
+.cap-num-rework { color: #b8860b; font-weight: 600; }
+.cap-num-reject { color: #c0392b; font-weight: 600; }
+
+.cap-grid {
+  display: grid;
+  gap: 14px 16px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.cap-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cap-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cap-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 1100px) {
+  .cap-grid-4, .cap-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .cap-grid-4, .cap-grid-3, .cap-grid-2 { grid-template-columns: 1fr; }
+}
+
+// ── Fields ────────────────────────────────────────────────────
+.cap-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cap-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 4px;
+}
+.cap-required { color: #dc3545; font-weight: bold; }
+
+.cap-input {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  color: #2c3e50;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: #4ba3c7;
+    box-shadow: 0 0 0 2px rgba(75, 163, 199, 0.18);
+  }
+  &:disabled { background: #f4f6f9; cursor: not-allowed; }
+}
+.cap-input-readonly {
+  background: #f4f6f9;
+  color: #555;
+  font-weight: 500;
+  cursor: default;
+}
+.cap-input-inline {
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.cap-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+// ── Pagination ────────────────────────────────────────────────
+.cap-pagination-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 10px;
+
+  label { font-size: 12px; color: #555; }
+  select { height: 30px; padding: 4px 8px; font-size: 12px; }
+}
+.cap-pagination-left { display: flex; align-items: center; gap: 8px; }
+.cap-record-range { font-size: 12px; color: #556; }
+
+.cap-pagination-bottom {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 0;
+}
+.cap-page-btn {
+  height: 30px;
+  min-width: 30px;
+  padding: 0 10px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #2c3e50;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover:not([disabled]) { background: #f0f5fa; border-color: #4ba3c7; }
+  &:disabled { color: #aaa; background: #f8f9fa; cursor: not-allowed; }
+}
+.cap-page-btn-active {
+  background: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+}
+
+// ── Buttons ───────────────────────────────────────────────────
+.cap-btn {
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+  padding: 0 18px;
+  height: 36px;
+  min-width: 100px;
+
+  &:active { transform: translateY(1px); }
+  &:disabled {
+    background: #d8dee5 !important;
+    color: #777 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+.cap-btn-sm     { height: 28px; min-width: 68px; padding: 0 10px; font-size: 12px; }
+.cap-btn-save   { background: #198754; color: #fff; &:hover { background: #146c43; } }
+.cap-btn-cancel { background: #e9ecef; color: #333; &:hover { background: #d6dade; } }
+.cap-btn-accept { background: #198754; color: #fff; &:hover { background: #146c43; } }
+.cap-btn-rework { background: #b8860b; color: #fff; &:hover { background: #9c7009; } }
+.cap-btn-reject { background: #c0392b; color: #fff; &:hover { background: #a12e22; } }
+
+// ── Table ─────────────────────────────────────────────────────
+.cap-table-wrapper {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  overflow: auto;
+  max-height: calc(100vh - 340px);
+  min-height: 200px;
+}
+.cap-table-wrapper-small { max-height: 260px; min-height: 100px; }
+
+.cap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  table-layout: fixed;
+
+  thead th {
+    background: #f3f7fb;
+    color: #455a64;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #dde6ef;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    &.cap-th-num    { text-align: right; }
+    &.cap-th-center { text-align: center; }
+  }
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f1f4f8;
+    color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) td { background: #fafcfe; }
+  tbody tr:last-child td      { border-bottom: none; }
+  tbody tr:hover td           { background: #eef5fb; }
+}
+
+// Units table lets each cell breathe a bit more (embedded inputs).
+.cap-table-units {
+  tbody td { padding: 6px 8px; }
+}
+
+.cap-center   { text-align: center; }
+.cap-mono     { font-family: 'Courier New', Consolas, monospace; font-size: 12px; }
+.cap-truncate { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cap-muted    { color: #aaa; font-size: 11px; }
+
+.cap-row-clickable {
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  &:hover td { background: #dde8f4 !important; }
+}
+.cap-row-checked td {
+  background: #f0f4f8 !important;
+  color: #78889b !important;
+}
+
+.cap-empty {
+  text-align: center;
+  color: #97a3b3;
+  font-style: italic;
+  padding: 20px;
+}
+.cap-loading-cell {
+  padding: 18px 24px !important;
+  background: #f8fbff !important;
+  border-bottom: 1px solid #e3eaf2 !important;
+}
+.cap-inline-loader { display: flex; flex-direction: column; gap: 8px; }
+.cap-loading-text { font-size: 12.5px; color: #38597a; font-weight: 500; text-align: center; }
+
+.cap-progress {
+  position: relative;
+  height: 6px;
+  width: 100%;
+  background: #e3eef9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.cap-progress-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(90deg, #4ba3c7, #0d6efd);
+  border-radius: 3px;
+  animation: cap-progress 1.3s ease-in-out infinite;
+}
+@keyframes cap-progress {
+  0%   { left: -35%; }
+  50%  { left: 50%;  }
+  100% { left: 100%; }
+}
+
+// Pending count pill
+.cap-pending-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #fff4d6;
+  color: #b8860b;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 11px;
+}
+.cap-status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+  &.cap-status-p  { background: #fff4d6; color: #b8860b; }
+  &.cap-status-d  { background: #e7f6ec; color: #198754; }
+  &.cap-status-rw { background: #ffe4d0; color: #cc6600; }
+  &.cap-status-r  { background: #fde4e4; color: #c0392b; }
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+.cap-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 20px;
+}
+.cap-modal-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1360px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+.cap-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e3eaf2;
+  background: linear-gradient(180deg, #fafbfd 0%, #eef2f7 100%);
+  border-radius: 8px 8px 0 0;
+}
+.cap-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2d3d;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cap-modal-subtitle {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 12px;
+  color: #6c7a89;
+  background: #e8f4ff;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+.cap-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #6c7a89;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 8px;
+  border-radius: 4px;
+
+  &:hover { background: #e8ecf2; }
+}
+.cap-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.cap-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e3eaf2;
+  background: #fafbfd;
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cap-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+.cap-summary { display: flex; gap: 8px; flex-wrap: wrap; }
+.cap-summary-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cap-chip-accept { background: #e7f6ec; color: #198754; }
+.cap-chip-rework { background: #fff4d6; color: #b8860b; }
+.cap-chip-reject { background: #fde4e4; color: #c0392b; }
+
+.cap-panel {
+  border: 1px solid #e3eaf2;
+  border-radius: 6px;
+  padding: 12px 14px 4px;
+  margin-bottom: 14px;
+  background: #fbfcfe;
+}
+.cap-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #38597a;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cap-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.cap-bulk-label {
+  font-size: 11px;
+  color: #6c7a89;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+// ── Confirm / Success / Error modals ──────────────────────────
+.confirmModal,
+.errorModal,
+.successModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1200;
+}
+.confirmModal-content,
+.errorModal-content,
+.successModal_content {
+  background: #fff;
+  padding: 22px 24px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 460px;
+  text-align: center;
+
+  p { margin: 0 0 14px 0; font-size: 14px; color: #2c3e50; }
+}
+.confirmModal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.error-ok-button {
+  padding: 8px 18px;
+  background: #f51202;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.success-ok-button {
+  padding: 8px 18px;
+  background: #0d6efd;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}

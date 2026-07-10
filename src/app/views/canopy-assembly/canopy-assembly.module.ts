@@ -20,13 +20,17 @@ import { MatSelectModule } from '@angular/material/select';
 import { FlatpackCanopyAssemblyPlanReportComponent } from './flatpack-canopy-assembly-plan-report/flatpack-canopy-assembly-plan-report.component';
 import { FlatpackCanopyAssemblyProcessComponent } from './flatpack-canopy-assembly-process/flatpack-canopy-assembly-process.component';
 import { CanopyAssemblyPlanComponent } from './canopy-assembly-plan/canopy-assembly-plan.component';
+import { CanopyAssemblyProcessComponent } from './canopy-assembly-process/canopy-assembly-process.component';
+import { CanopyAssemblyProcessCheckerComponent } from './canopy-assembly-process-checker/canopy-assembly-process-checker.component';
 import { CanopyAssemblyRoutes } from './canopy-assembly.routing';
 
 @NgModule({
   declarations: [
     FlatpackCanopyAssemblyPlanReportComponent,
     FlatpackCanopyAssemblyProcessComponent,
-    CanopyAssemblyPlanComponent
+    CanopyAssemblyPlanComponent,
+    CanopyAssemblyProcessComponent,
+    CanopyAssemblyProcessCheckerComponent
   ],
   imports: [
     CommonModule,

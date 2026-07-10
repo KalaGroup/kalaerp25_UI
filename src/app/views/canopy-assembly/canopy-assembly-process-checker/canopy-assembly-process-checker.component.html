@@ -1,0 +1,559 @@
+<div class="cap-container">
+
+  <!-- Header strip -->
+  <div class="cap-header">
+    <div class="cap-title">Canopy Assembly Process — Checker</div>
+  </div>
+
+  <!-- Top context band -->
+  <div class="cap-context">
+    <div class="cap-grid cap-grid-3">
+      <div class="cap-field">
+        <label>Select Line <span class="cap-required" *ngIf="lineRights.length > 0">*</span></label>
+        <select class="cap-input"
+                [(ngModel)]="selectedLineWisePC"
+                (ngModelChange)="onLineChange()"
+                [disabled]="lineRights.length === 0">
+          <option value="" disabled>
+            {{ lineRights.length === 0 ? 'No lines available' : 'Select Line' }}
+          </option>
+          <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }} ({{ l.LineWisePC }})
+          </option>
+        </select>
+      </div>
+      <div class="cap-field">
+        <label>Date</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="todayIso" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Profit Center</label>
+        <input class="cap-input cap-input-readonly" type="text"
+               [value]="pcName && pcCode ? pcName + ' → ' + pcCode : (pcName || pcCode || '—')"
+               readonly />
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending list -->
+  <div class="cap-section">
+    <div class="cap-section-title">
+      Process Records
+      <span class="cap-row-count cap-row-count-pending"
+            *ngIf="pending.length > 0 && pendingCount > 0">
+        {{ pendingCount }} pending
+      </span>
+      <span class="cap-row-count cap-row-count-authorized"
+            *ngIf="pending.length > 0 && authorizedCount > 0">
+        {{ authorizedCount }} authorized
+      </span>
+    </div>
+
+    <!-- Page-size + range strip -->
+    <div class="cap-pagination-top" *ngIf="pending.length > 0">
+      <div class="cap-pagination-left">
+        <label>Rows per page:</label>
+        <select class="cap-input cap-input-inline"
+                [(ngModel)]="pageSize"
+                (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">
+            {{ s === 0 ? 'All' : s }}
+          </option>
+        </select>
+      </div>
+      <div class="cap-pagination-right">
+        <span class="cap-record-range">{{ recordRangeLabel }}</span>
+      </div>
+    </div>
+
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col style="width: 60px" />
+          <col style="width: 190px" />
+          <col style="width: 150px" />
+          <col />
+          <col style="width: 180px" />
+          <col style="width: 80px" />
+          <col style="width: 200px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 120px" />
+          <col style="width: 110px" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="cap-th-center">SrNo</th>
+            <th>PFB Code</th>
+            <th>Date</th>
+            <th>Canopy (Product)</th>
+            <th>Part Code</th>
+            <th class="cap-th-num">KVA</th>
+            <th>Model</th>
+            <th class="cap-th-num">Batch</th>
+            <th class="cap-th-num">Prc Qty</th>
+            <th>Canopy Type</th>
+            <th class="cap-th-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoadingPending">
+            <td colspan="11" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+                <div class="cap-loading-text">Loading process records…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingPending && pending.length === 0">
+            <td colspan="11" class="cap-empty">
+              <ng-container *ngIf="!selectedLineWisePC">Select a line above to load process records.</ng-container>
+              <ng-container *ngIf="selectedLineWisePC">No process records for this line.</ng-container>
+            </td>
+          </tr>
+          <tr *ngFor="let r of pagedPending; let i = index; trackBy: trackByIndex"
+              class="cap-row-clickable"
+              [class.cap-row-authorized]="r.Status === 'Authorized'"
+              (click)="onRowClick(r)">
+            <td class="cap-center">{{ rowDisplayIndex(i) }}</td>
+            <td class="cap-mono">{{ r.PFBCode }}</td>
+            <td class="cap-center">{{ r.Dt }}</td>
+            <td class="cap-truncate" [title]="r.ProductDesc">{{ r.ProductDesc }}</td>
+            <td class="cap-mono" [title]="r.ProductCode">{{ r.ProductCode }}</td>
+            <td class="cap-num">{{ r.KVA }}</td>
+            <td [title]="r.Model">{{ r.Model }}</td>
+            <td class="cap-num">{{ r.BatchQty | number:'1.0-2' }}</td>
+            <td class="cap-num">{{ r.PrcQty | number:'1.0-2' }}</td>
+            <td>{{ r.MachineCode }}</td>
+            <td class="cap-center">
+              <span class="cap-status-pill"
+                    [class.cap-status-p]="r.Status === 'Pending'"
+                    [class.cap-status-d]="r.Status === 'Authorized'">
+                {{ r.Status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Page number strip -->
+    <div class="cap-pagination-bottom" *ngIf="pending.length > 0 && totalPages > 1">
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === 1"
+              (click)="goToPage(1)">« First</button>
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === 1"
+              (click)="goToPage(currentPage - 1)">‹ Prev</button>
+      <button *ngFor="let n of pageNumbers" type="button"
+              class="cap-page-btn"
+              [class.cap-page-btn-active]="n === currentPage"
+              (click)="goToPage(n)">{{ n }}</button>
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === totalPages"
+              (click)="goToPage(currentPage + 1)">Next ›</button>
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === totalPages"
+              (click)="goToPage(totalPages)">Last »</button>
+    </div>
+  </div>
+
+  <!-- ─────────── DATE-RANGE REPORT ─────────── -->
+  <div class="cap-section" *ngIf="selectedLineWisePC">
+    <div class="cap-section-title">
+      Process Check Report
+      <span class="cap-row-count" *ngIf="!isLoadingReport && filteredReportList.length > 0">
+        {{ filteredReportList.length }}<span *ngIf="reportSearchText"> / {{ reportList.length }}</span> rows
+      </span>
+    </div>
+
+    <!-- Filter bar: From / To / Load / Search / Excel -->
+    <div class="cap-report-filters">
+      <label class="cap-report-field">
+        <span>From</span>
+        <input class="cap-input cap-input-inline" type="date"
+               [(ngModel)]="reportFromDate" name="reportFromDate" />
+      </label>
+      <label class="cap-report-field">
+        <span>To</span>
+        <input class="cap-input cap-input-inline" type="date"
+               [(ngModel)]="reportToDate" name="reportToDate" />
+      </label>
+      <button class="cap-report-btn cap-report-btn-search" type="button"
+              [disabled]="isLoadingReport"
+              (click)="loadReport()">
+        <span class="cap-report-btn-icon" aria-hidden="true">🔍</span>
+        <span>{{ isLoadingReport ? 'Searching…' : 'Search' }}</span>
+      </button>
+
+      <input class="cap-input cap-input-inline cap-report-search"
+             type="text" placeholder="Filter PFB / Product / Plan / Maker …"
+             [(ngModel)]="reportSearchText" name="reportSearchText" />
+
+      <button class="cap-report-btn cap-report-btn-excel" type="button"
+              [disabled]="isLoadingExcel || isLoadingReport || reportList.length === 0"
+              (click)="downloadReportExcel()"
+              title="Download report as Excel (.xlsx)">
+        <span class="cap-report-btn-icon" aria-hidden="true">⤓</span>
+        <span>{{ isLoadingExcel ? 'Exporting…' : 'Excel' }}</span>
+      </button>
+    </div>
+
+    <div class="cap-report-error" *ngIf="reportError">{{ reportError }}</div>
+
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col style="width: 60px" />
+          <col style="width: 180px" />
+          <col style="width: 150px" />
+          <col />
+          <col style="width: 180px" />
+          <col style="width: 80px" />
+          <col style="width: 180px" />
+          <col style="width: 80px" />
+          <col style="width: 80px" />
+          <col style="width: 100px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 100px" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="cap-th-center">SrNo</th>
+            <th>PFB Code</th>
+            <th>Date</th>
+            <th>Canopy (Product)</th>
+            <th>Part Code</th>
+            <th class="cap-th-num">KVA</th>
+            <th>Model</th>
+            <th class="cap-th-num">Batch</th>
+            <th class="cap-th-num">Prc Qty</th>
+            <th>Canopy Type</th>
+            <th class="cap-th-num">Total</th>
+            <th class="cap-th-num">Accepted</th>
+            <th class="cap-th-num">Rework</th>
+            <th class="cap-th-num">Rejected</th>
+            <th class="cap-th-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoadingReport">
+            <td colspan="15" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+                <div class="cap-loading-text">Loading report…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingReport && reportList.length === 0">
+            <td colspan="15" class="cap-empty">
+              No records loaded yet. Set a date range and click Search.
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingReport && reportList.length > 0 && filteredReportList.length === 0">
+            <td colspan="15" class="cap-empty">
+              No records match "{{ reportSearchText }}".
+            </td>
+          </tr>
+          <tr *ngFor="let r of filteredReportList; let i = index; trackBy: trackByIndex"
+              [class.cap-row-authorized]="r.Status === 'Authorized'">
+            <td class="cap-center">{{ i + 1 }}</td>
+            <td class="cap-mono">{{ r.PFBCode }}</td>
+            <td class="cap-center">{{ r.Dt }}</td>
+            <td class="cap-truncate" [title]="r.ProductDesc">{{ r.ProductDesc }}</td>
+            <td class="cap-mono" [title]="r.ProductCode">{{ r.ProductCode }}</td>
+            <td class="cap-num">{{ r.KVA }}</td>
+            <td [title]="r.Model">{{ r.Model }}</td>
+            <td class="cap-num">{{ r.BatchQty | number:'1.0-2' }}</td>
+            <td class="cap-num">{{ r.PrcQty | number:'1.0-2' }}</td>
+            <td>{{ r.MachineCode }}</td>
+            <td class="cap-num">{{ r.TotalUnitCount }}</td>
+            <td class="cap-num cap-num-accept">{{ r.AcceptedCount }}</td>
+            <td class="cap-num cap-num-rework">{{ r.ReworkCount }}</td>
+            <td class="cap-num cap-num-reject">{{ r.RejectedCount }}</td>
+            <td class="cap-center">
+              <span class="cap-status-pill"
+                    [class.cap-status-p]="r.Status === 'Pending'"
+                    [class.cap-status-d]="r.Status === 'Authorized'">
+                {{ r.Status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─────────── CHECK MODAL ─────────── -->
+  <div class="cap-modal" *ngIf="isModalOpen">
+    <div class="cap-modal-content">
+      <div class="cap-modal-header">
+        <div class="cap-modal-title">
+          Check Process Record
+          <span class="cap-modal-subtitle" *ngIf="ctxHeader">{{ ctxHeader.PFBCode }}</span>
+        </div>
+        <button class="cap-modal-close" type="button" (click)="closeModal()" [disabled]="isSaving">×</button>
+      </div>
+
+      <div class="cap-modal-body">
+
+        <!-- Loading state -->
+        <div class="cap-inline-loader" *ngIf="isLoadingContext" style="padding: 40px 24px;">
+          <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+          <div class="cap-loading-text">Loading process detail…</div>
+        </div>
+
+        <!-- Panel A — Header -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && ctxHeader">
+          <div class="cap-panel-title">Process Header</div>
+          <div class="cap-grid cap-grid-4">
+            <div class="cap-field"><label>Plan Code</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.PlanCode" readonly /></div>
+            <div class="cap-field"><label>Date</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.Dt" readonly /></div>
+            <div class="cap-field"><label>Canopy Type</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.MachineCode" readonly /></div>
+            <div class="cap-field"><label>Maker</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.MakerCode" readonly /></div>
+          </div>
+          <div class="cap-grid cap-grid-4">
+            <div class="cap-field"><label>KVA</label>
+              <input class="cap-input cap-input-readonly cap-num" type="text" [value]="ctxHeader.KVA" readonly /></div>
+            <div class="cap-field"><label>Model</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.Model" readonly /></div>
+            <div class="cap-field"><label>Batch Qty</label>
+              <input class="cap-input cap-input-readonly cap-num" type="text"
+                     [value]="ctxHeader.BatchQty | number:'1.0-2'" readonly /></div>
+            <div class="cap-field"><label>Prc Qty</label>
+              <input class="cap-input cap-input-readonly cap-num" type="text"
+                     [value]="ctxHeader.PrcQty | number:'1.0-2'" readonly /></div>
+          </div>
+          <div class="cap-grid cap-grid-3">
+            <div class="cap-field"><label>Product</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.ProductDesc" readonly /></div>
+            <div class="cap-field"><label>BOM Code</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.BOMCode" readonly /></div>
+            <div class="cap-field"><label>Line PC (Act → Old)</label>
+              <input class="cap-input cap-input-readonly" type="text"
+                     [value]="ctxHeader.PCCode_Act + ' → ' + ctxHeader.PCCode" readonly /></div>
+          </div>
+        </div>
+
+        <!-- Panel B — Kit consumption -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && ctxKitLines.length > 0">
+          <div class="cap-panel-title">Kit Consumption ({{ ctxKitLines.length }})</div>
+          <div class="cap-table-wrapper cap-table-wrapper-small">
+            <table class="cap-table">
+              <colgroup>
+                <col style="width: 60px" />
+                <col />
+                <col style="width: 200px" />
+                <col style="width: 100px" />
+                <col style="width: 100px" />
+                <col style="width: 100px" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="cap-th-center">SrNo</th>
+                  <th>Part</th>
+                  <th>Part Code</th>
+                  <th class="cap-th-num">Kit Qty</th>
+                  <th class="cap-th-num">Tot Qty</th>
+                  <th class="cap-th-num">Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of ctxKitLines; let i = index; trackBy: trackByIndex">
+                  <td class="cap-center">{{ r.SrNo }}</td>
+                  <td class="cap-truncate" [title]="r.PartDesc">{{ r.PartDesc }}</td>
+                  <td class="cap-mono">{{ r.PartCode }}</td>
+                  <td class="cap-num">{{ r.KitQty | number:'1.0-2' }}</td>
+                  <td class="cap-num">{{ r.TotQty | number:'1.0-2' }}</td>
+                  <td class="cap-num">{{ r.Rate | number:'1.0-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel C — Assembly-kit consumption -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && ctxAssemblyKitLines.length > 0">
+          <div class="cap-panel-title">Assembly-Kit Consumption ({{ ctxAssemblyKitLines.length }})</div>
+          <div class="cap-table-wrapper cap-table-wrapper-small">
+            <table class="cap-table">
+              <colgroup>
+                <col style="width: 60px" />
+                <col />
+                <col style="width: 200px" />
+                <col style="width: 100px" />
+                <col style="width: 100px" />
+                <col style="width: 100px" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="cap-th-center">SrNo</th>
+                  <th>Part</th>
+                  <th>Part Code</th>
+                  <th class="cap-th-num">Qty</th>
+                  <th class="cap-th-num">Tot Qty</th>
+                  <th class="cap-th-num">Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of ctxAssemblyKitLines; let i = index; trackBy: trackByIndex">
+                  <td class="cap-center">{{ r.SrNo }}</td>
+                  <td class="cap-truncate" [title]="r.PartDesc">{{ r.PartDesc }}</td>
+                  <td class="cap-mono">{{ r.PartCode }}</td>
+                  <td class="cap-num">{{ r.KitQty | number:'1.0-2' }}</td>
+                  <td class="cap-num">{{ r.TotQty | number:'1.0-2' }}</td>
+                  <td class="cap-num">{{ r.Rate | number:'1.0-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel D — Per-unit check surface -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && unitRows.length > 0">
+          <div class="cap-panel-title">
+            Per-Unit Check
+            <span class="cap-row-count">{{ unitRows.length }} unit(s), {{ pendingRowsCount }} pending</span>
+
+            <!-- Bulk decision buttons — hidden in v1 (Accept-only).
+                 Set showRejectRework=true in the component to re-enable. -->
+            <div class="cap-bulk-actions" *ngIf="showRejectRework && pendingRowsCount > 0">
+              <span class="cap-bulk-label">Set all pending to:</span>
+              <button class="cap-btn cap-btn-sm cap-btn-accept" type="button"
+                      (click)="setAllDecision('Accept')">Accept</button>
+              <button class="cap-btn cap-btn-sm cap-btn-rework" type="button"
+                      (click)="setAllDecision('Rework')">Rework</button>
+              <button class="cap-btn cap-btn-sm cap-btn-reject" type="button"
+                      (click)="setAllDecision('Reject')">Reject</button>
+            </div>
+          </div>
+
+          <div class="cap-table-wrapper">
+            <table class="cap-table cap-table-units">
+              <thead>
+                <tr>
+                  <th class="cap-th-center" style="width: 50px">SrNo</th>
+                  <th>Serial No</th>
+                  <th>BFM SrNo</th>
+                  <th>FLK SrNo</th>
+                  <th class="cap-th-center" style="width: 90px">QPC Status</th>
+                  <!-- v1 hides Decision / 6M / Raise ESP — Accept is the only
+                       available verdict. Flip showRejectRework=true to show. -->
+                  <th class="cap-th-center" style="width: 130px" *ngIf="showRejectRework">Decision</th>
+                  <th style="width: 150px" *ngIf="showRejectRework">6M</th>
+                  <th style="width: 140px" *ngIf="showRejectRework">Raise ESP</th>
+                  <th>Remark</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let u of unitRows; let i = index; trackBy: trackBySerial"
+                    [class.cap-row-checked]="!isPending(u)">
+                  <td class="cap-center">{{ u.SrNo }}</td>
+                  <td class="cap-mono">{{ u.SerialNo }}</td>
+                  <td class="cap-mono">{{ u.BFMSrNo }}</td>
+                  <td class="cap-mono">{{ u.FLKSrNo }}</td>
+                  <td class="cap-center">
+                    <span class="cap-status-pill"
+                          [class.cap-status-p]="u.QPCStatus === 'P'"
+                          [class.cap-status-d]="u.QPCStatus === 'D'"
+                          [class.cap-status-rw]="u.QPCStatus === 'RW'"
+                          [class.cap-status-r]="u.QPCStatus === 'R'">
+                      {{ u.QPCStatus }}
+                    </span>
+                  </td>
+                  <!-- Decision cell (hidden in v1) -->
+                  <td class="cap-center" *ngIf="showRejectRework">
+                    <select *ngIf="isPending(u)"
+                            class="cap-input cap-input-inline"
+                            [(ngModel)]="u.Decision"
+                            (ngModelChange)="onDecisionChange(u)">
+                      <option *ngFor="let d of decisionOptions" [value]="d.value">{{ d.label }}</option>
+                    </select>
+                    <span *ngIf="!isPending(u)" class="cap-muted">—</span>
+                  </td>
+                  <!-- 6M cell (hidden in v1) -->
+                  <td *ngIf="showRejectRework">
+                    <select *ngIf="isPending(u) && u.Decision !== 'Accept'"
+                            class="cap-input cap-input-inline"
+                            [(ngModel)]="u.SixM"
+                            (ngModelChange)="on6MChange(u)">
+                      <option *ngFor="let o of sixMOptions" [value]="o.value">{{ o.label }}</option>
+                    </select>
+                    <span *ngIf="!isPending(u) || u.Decision === 'Accept'" class="cap-muted">—</span>
+                  </td>
+                  <!-- Raise ESP cell (hidden in v1) -->
+                  <td *ngIf="showRejectRework">
+                    <input *ngIf="isPending(u) && u.SixM && u.SixM !== 'None'"
+                           class="cap-input cap-input-inline"
+                           type="text" placeholder="EmpCode"
+                           [(ngModel)]="u.RaiseESP" />
+                    <span *ngIf="!isPending(u) || !u.SixM || u.SixM === 'None'" class="cap-muted">—</span>
+                  </td>
+                  <td>
+                    <input *ngIf="isPending(u)"
+                           class="cap-input cap-input-inline"
+                           type="text" placeholder="Optional remark"
+                           [(ngModel)]="u.Remark" />
+                    <span *ngIf="!isPending(u)" class="cap-muted">—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal footer -->
+      <div class="cap-modal-footer">
+        <div class="cap-summary" *ngIf="unitRows.length > 0 && pendingRowsCount > 0">
+          <span class="cap-summary-chip cap-chip-accept">Accept {{ decisionSummary.accept }}</span>
+          <!-- Rework / Reject chips hidden in v1. -->
+          <span class="cap-summary-chip cap-chip-rework" *ngIf="showRejectRework">Rework {{ decisionSummary.rework }}</span>
+          <span class="cap-summary-chip cap-chip-reject" *ngIf="showRejectRework">Reject {{ decisionSummary.reject }}</span>
+        </div>
+        <div class="cap-modal-actions">
+          <button class="cap-btn cap-btn-cancel" type="button"
+                  [disabled]="isSaving" (click)="closeModal()">Close</button>
+          <button class="cap-btn cap-btn-save" type="button"
+                  [disabled]="isSaving || isLoadingContext || pendingRowsCount === 0"
+                  (click)="onSaveClick()">
+            {{ isSaving ? 'Saving…' : 'Save Check' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="confirmModal" *ngIf="confirmMessage">
+    <div class="confirmModal-content">
+      <p style="white-space: pre-line">{{ confirmMessage }}</p>
+      <div class="confirmModal-actions">
+        <button class="cap-btn cap-btn-save" type="button" (click)="onConfirmSave()">Yes, Save</button>
+        <button class="cap-btn cap-btn-cancel" type="button" (click)="onCancelConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error / Success -->
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p style="white-space: pre-line">{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="closeError()">OK</button>
+    </div>
+  </div>
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p style="white-space: pre-line">{{ successMessage }}</p>
+      <button class="success-ok-button" type="button" (click)="closeSuccess()">OK</button>
+    </div>
+  </div>
+</div>
