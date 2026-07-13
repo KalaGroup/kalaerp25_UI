@@ -4,6 +4,7 @@ import { FlatpackCanopyAssemblyProcessComponent } from './flatpack-canopy-assemb
 import { CanopyAssemblyPlanComponent } from './canopy-assembly-plan/canopy-assembly-plan.component';
 import { CanopyAssemblyProcessComponent } from './canopy-assembly-process/canopy-assembly-process.component';
 import { CanopyAssemblyProcessCheckerComponent } from './canopy-assembly-process-checker/canopy-assembly-process-checker.component';
+import { CanopyAssemblyPlanCheckerComponent } from './canopy-assembly-plan-checker/canopy-assembly-plan-checker.component';
 
 export const CanopyAssemblyRoutes: Routes = [
   {
@@ -30,5 +31,10 @@ export const CanopyAssemblyRoutes: Routes = [
     path: 'canopy-assembly-process-checker',
     component: CanopyAssemblyProcessCheckerComponent,
     data: { title: 'Canopy Assembly Process Checker', breadcrumb: 'Canopy Assembly Process Checker' }
+  },
+  {
+    path: 'canopy-assembly-plan-checker',
+    component: CanopyAssemblyPlanCheckerComponent,
+    data: { title: 'Canopy Assembly Plan Checker', breadcrumb: 'Canopy Assembly Plan Checker' }
   }
 ]

@@ -1,0 +1,423 @@
+<div class="cap-container">
+
+  <!-- Header strip -->
+  <div class="cap-header">
+    <div class="cap-title">Canopy Assembly Plan — Checker</div>
+  </div>
+
+  <!-- Top context band -->
+  <div class="cap-context">
+    <div class="cap-grid cap-grid-3">
+      <div class="cap-field">
+        <label>Select Line <span class="cap-required" *ngIf="lineRights.length > 0">*</span></label>
+        <select class="cap-input"
+                [(ngModel)]="selectedLineWisePC"
+                (ngModelChange)="onLineChange()"
+                [disabled]="lineRights.length === 0">
+          <option value="" disabled>
+            {{ lineRights.length === 0 ? 'No lines available' : 'Select Line' }}
+          </option>
+          <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }} ({{ l.LineWisePC }})
+          </option>
+        </select>
+      </div>
+      <div class="cap-field">
+        <label>Date</label>
+        <input class="cap-input cap-input-readonly" type="text" [value]="todayIso" readonly />
+      </div>
+      <div class="cap-field">
+        <label>Profit Center</label>
+        <input class="cap-input cap-input-readonly" type="text"
+               [value]="pcName && pcCode ? pcName + ' → ' + pcCode : (pcName || pcCode || '—')"
+               readonly />
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending list -->
+  <div class="cap-section">
+    <div class="cap-section-title">
+      Plan Records
+      <span class="cap-row-count" *ngIf="pending.length > 0">{{ pending.length }} plan(s)</span>
+    </div>
+
+    <div class="cap-pagination-top" *ngIf="pending.length > 0">
+      <div class="cap-pagination-left">
+        <label>Rows per page:</label>
+        <select class="cap-input cap-input-inline"
+                [(ngModel)]="pageSize"
+                (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">
+            {{ s === 0 ? 'All' : s }}
+          </option>
+        </select>
+      </div>
+      <div class="cap-pagination-right">
+        <span class="cap-record-range">{{ recordRangeLabel }}</span>
+      </div>
+    </div>
+
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col style="width: 55px"  />   <!-- SrNo -->
+          <col style="width: 210px" />   <!-- Plan Code -->
+          <col style="width: 150px" />   <!-- Plan Date -->
+          <col style="width: 105px" />   <!-- From -->
+          <col style="width: 105px" />   <!-- To -->
+          <col style="width: 110px" />   <!-- Plan Line -->
+          <col style="width: 85px"  />   <!-- Plan Type -->
+          <col style="width: 110px" />   <!-- KVA -->
+          <col                        />  <!-- Part Code (flex) -->
+          <col style="width: 100px" />   <!-- Detail Rows -->
+          <col style="width: 100px" />   <!-- Plan Qty -->
+          <col style="width: 105px" />   <!-- Status -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="cap-th-center">SrNo</th>
+            <th>Plan Code</th>
+            <th class="cap-th-center">Plan Date</th>
+            <th class="cap-th-center">From</th>
+            <th class="cap-th-center">To</th>
+            <th>Plan Line</th>
+            <th class="cap-th-center">Plan Type</th>
+            <th>KVA</th>
+            <th>Part Code</th>
+            <th class="cap-th-num">Detail Rows</th>
+            <th class="cap-th-num">Plan Qty</th>
+            <th class="cap-th-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoadingPending">
+            <td colspan="12" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+                <div class="cap-loading-text">Loading plan records…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingPending && pending.length === 0">
+            <td colspan="12" class="cap-empty">
+              <ng-container *ngIf="!selectedLineWisePC">Select a line above to load plan records.</ng-container>
+              <ng-container *ngIf="selectedLineWisePC">No plan records for this line.</ng-container>
+            </td>
+          </tr>
+          <tr *ngFor="let r of pagedPending; let i = index; trackBy: trackByIndex"
+              class="cap-row-clickable"
+              [class.cap-row-authorized]="r.Status === 'Authorized'"
+              (click)="onRowClick(r)">
+            <td class="cap-center">{{ rowDisplayIndex(i) }}</td>
+            <td class="cap-mono">{{ r.CPCode }}</td>
+            <td class="cap-center">{{ r.Dt }}</td>
+            <td class="cap-center">{{ r.FromDt }}</td>
+            <td class="cap-center">{{ r.ToDt }}</td>
+            <td>{{ r.PlanPCCode }}</td>
+            <td class="cap-center">{{ r.PlanType }}</td>
+            <td [title]="r.KVAs">{{ r.KVAs }}</td>
+            <td class="cap-mono cap-truncate" [title]="r.PartCodes">{{ r.PartCodes }}</td>
+            <td class="cap-num">{{ r.DetailRowCount }}</td>
+            <td class="cap-num">{{ r.TotalPlanQty | number:'1.0-2' }}</td>
+            <td class="cap-center">
+              <span class="cap-status-pill"
+                    [class.cap-status-p]="r.Status === 'Pending'"
+                    [class.cap-status-d]="r.Status === 'Authorized'">
+                {{ r.Status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cap-pagination-bottom" *ngIf="pending.length > 0 && totalPages > 1">
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === 1"
+              (click)="goToPage(1)">« First</button>
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === 1"
+              (click)="goToPage(currentPage - 1)">‹ Prev</button>
+      <button *ngFor="let n of pageNumbers" type="button"
+              class="cap-page-btn"
+              [class.cap-page-btn-active]="n === currentPage"
+              (click)="goToPage(n)">{{ n }}</button>
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === totalPages"
+              (click)="goToPage(currentPage + 1)">Next ›</button>
+      <button class="cap-page-btn" type="button"
+              [disabled]="currentPage === totalPages"
+              (click)="goToPage(totalPages)">Last »</button>
+    </div>
+  </div>
+
+  <!-- Date-range Report section -->
+  <div class="cap-section" *ngIf="selectedLineWisePC">
+    <div class="cap-section-title">
+      Plan Check Report
+      <span class="cap-row-count" *ngIf="reportList.length > 0">
+        {{ filteredReportList.length }}<span *ngIf="reportSearchText"> / {{ reportList.length }}</span> rows
+      </span>
+    </div>
+
+    <div class="cap-report-filters">
+      <label class="cap-report-field">
+        <span>From</span>
+        <input class="cap-input" type="date"
+               [(ngModel)]="reportFromDate" name="reportFromDate" />
+      </label>
+      <label class="cap-report-field">
+        <span>To</span>
+        <input class="cap-input" type="date"
+               [(ngModel)]="reportToDate" name="reportToDate" />
+      </label>
+      <button type="button" class="cap-report-btn cap-report-btn-search"
+              [disabled]="isLoadingReport || !selectedLineWisePC"
+              (click)="loadReport()">
+        <span class="cap-report-btn-icon">🔍</span>
+        <span *ngIf="!isLoadingReport">Search</span>
+        <span *ngIf="isLoadingReport">Loading…</span>
+      </button>
+      <input class="cap-input cap-report-search"
+             type="text"
+             placeholder="Search plan / line / maker …"
+             [(ngModel)]="reportSearchText" />
+      <button type="button" class="cap-report-btn cap-report-btn-excel"
+              [disabled]="isLoadingExcel || isLoadingReport || reportList.length === 0"
+              (click)="downloadReportExcel()">
+        <span class="cap-report-btn-icon">⬇</span>
+        <span *ngIf="!isLoadingExcel">Excel</span>
+        <span *ngIf="isLoadingExcel">Exporting…</span>
+      </button>
+    </div>
+
+    <div class="cap-report-error" *ngIf="reportError">{{ reportError }}</div>
+
+    <div class="cap-table-wrapper">
+      <table class="cap-table">
+        <colgroup>
+          <col style="width: 55px"  />   <!-- SrNo -->
+          <col style="width: 210px" />   <!-- Plan Code -->
+          <col style="width: 150px" />   <!-- Plan Date -->
+          <col style="width: 105px" />   <!-- From -->
+          <col style="width: 105px" />   <!-- To -->
+          <col style="width: 110px" />   <!-- Plan Line -->
+          <col style="width: 85px"  />   <!-- Plan Type -->
+          <col style="width: 110px" />   <!-- KVA -->
+          <col                        />  <!-- Part Code (flex) -->
+          <col style="width: 100px" />   <!-- Maker -->
+          <col style="width: 100px" />   <!-- Plan Qty -->
+          <col style="width: 100px" />   <!-- WIP Qty -->
+          <col style="width: 105px" />   <!-- Status -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="cap-th-center">SrNo</th>
+            <th>Plan Code</th>
+            <th class="cap-th-center">Plan Date</th>
+            <th class="cap-th-center">From</th>
+            <th class="cap-th-center">To</th>
+            <th>Plan Line</th>
+            <th class="cap-th-center">Plan Type</th>
+            <th>KVA</th>
+            <th>Part Code</th>
+            <th>Maker</th>
+            <th class="cap-th-num">Plan Qty</th>
+            <th class="cap-th-num">WIP Qty</th>
+            <th class="cap-th-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoadingReport">
+            <td colspan="13" class="cap-loading-cell">
+              <div class="cap-inline-loader">
+                <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+                <div class="cap-loading-text">Loading report…</div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingReport && reportList.length === 0">
+            <td colspan="13" class="cap-empty">
+              No records loaded yet. Set a date range and click Search.
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingReport && reportList.length > 0 && filteredReportList.length === 0">
+            <td colspan="13" class="cap-empty">
+              No records match "{{ reportSearchText }}".
+            </td>
+          </tr>
+          <tr *ngFor="let r of filteredReportList; let i = index; trackBy: trackByIndex"
+              [class.cap-row-authorized]="r.Status === 'Authorized'">
+            <td class="cap-center">{{ i + 1 }}</td>
+            <td class="cap-mono">{{ r.CPCode }}</td>
+            <td class="cap-center">{{ r.Dt }}</td>
+            <td class="cap-center">{{ r.FromDt }}</td>
+            <td class="cap-center">{{ r.ToDt }}</td>
+            <td>{{ r.PlanPCCode }}</td>
+            <td class="cap-center">{{ r.PlanType }}</td>
+            <td [title]="r.KVAs">{{ r.KVAs }}</td>
+            <td class="cap-mono cap-truncate" [title]="r.PartCodes">{{ r.PartCodes }}</td>
+            <td>{{ r.MakerCode }}</td>
+            <td class="cap-num">{{ r.TotalPlanQty | number:'1.0-2' }}</td>
+            <td class="cap-num">{{ r.TotalWIPQty | number:'1.0-2' }}</td>
+            <td class="cap-center">
+              <span class="cap-status-pill"
+                    [class.cap-status-p]="r.Status === 'Pending'"
+                    [class.cap-status-d]="r.Status === 'Authorized'">
+                {{ r.Status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─────────── CHECK MODAL ─────────── -->
+  <div class="cap-modal" *ngIf="isModalOpen">
+    <div class="cap-modal-content">
+      <div class="cap-modal-header">
+        <div class="cap-modal-title">
+          Check Plan
+          <span class="cap-modal-subtitle" *ngIf="ctxHeader">{{ ctxHeader.CPCode }}</span>
+        </div>
+        <button class="cap-modal-close" type="button" (click)="closeModal()" [disabled]="isSaving">×</button>
+      </div>
+
+      <div class="cap-modal-body">
+        <!-- Loading -->
+        <div class="cap-inline-loader" *ngIf="isLoadingContext" style="padding: 40px 24px;">
+          <div class="cap-progress"><div class="cap-progress-bar"></div></div>
+          <div class="cap-loading-text">Loading plan detail…</div>
+        </div>
+
+        <!-- Panel A — Header -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && ctxHeader">
+          <div class="cap-panel-title">Plan Header</div>
+          <div class="cap-grid cap-grid-4">
+            <div class="cap-field"><label>Plan Code</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.CPCode" readonly /></div>
+            <div class="cap-field"><label>Date</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.Dt" readonly /></div>
+            <div class="cap-field"><label>Company</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.CompanyCode" readonly /></div>
+            <div class="cap-field"><label>Maker</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.MakerCode" readonly /></div>
+          </div>
+          <div class="cap-grid cap-grid-4">
+            <div class="cap-field"><label>From Date</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.FromDt" readonly /></div>
+            <div class="cap-field"><label>To Date</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.ToDt" readonly /></div>
+            <div class="cap-field"><label>Plan Type</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.PlanType" readonly /></div>
+            <div class="cap-field"><label>Checker Status</label>
+              <input class="cap-input cap-input-readonly" type="text"
+                     [value]="isPendingPlan(ctxHeader.PlanStatus) ? 'Pending' : 'Authorized'" readonly /></div>
+          </div>
+          <div class="cap-grid cap-grid-3">
+            <div class="cap-field"><label>Plan PC</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.PlanPCCode" readonly /></div>
+            <div class="cap-field"><label>PC Act</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.PCCode_Act" readonly /></div>
+            <div class="cap-field"><label>Year</label>
+              <input class="cap-input cap-input-readonly" type="text" [value]="ctxHeader.Yr" readonly /></div>
+          </div>
+        </div>
+
+        <!-- Panel B — Details -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && ctxDetails.length > 0">
+          <div class="cap-panel-title">Plan Details ({{ ctxDetails.length }})</div>
+          <div class="cap-table-wrapper cap-table-wrapper-small">
+            <table class="cap-table">
+              <colgroup>
+                <col style="width: 60px" />
+                <col style="width: 100px" />
+                <col style="width: 190px" />
+                <col />
+                <col style="width: 170px" />
+                <col style="width: 100px" />
+                <col style="width: 100px" />
+                <col style="width: 100px" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="cap-th-center">SrNo</th>
+                  <th>Date</th>
+                  <th>Part Code</th>
+                  <th>Part Description</th>
+                  <th>BOM Code</th>
+                  <th class="cap-th-num">Plan Qty</th>
+                  <th class="cap-th-num">WIP Qty</th>
+                  <th class="cap-th-num">WOP Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of ctxDetails; let i = index; trackBy: trackByIndex">
+                  <td class="cap-center">{{ r.SrNo }}</td>
+                  <td class="cap-center">{{ r.Dt }}</td>
+                  <td class="cap-mono">{{ r.Partcode }}</td>
+                  <td class="cap-truncate" [title]="r.PartDesc">{{ r.PartDesc }}</td>
+                  <td class="cap-mono" [title]="r.BomCode">{{ r.BomCode }}</td>
+                  <td class="cap-num">{{ r.Qty | number:'1.0-2' }}</td>
+                  <td class="cap-num">{{ r.CpyWIPQty | number:'1.0-2' }}</td>
+                  <td class="cap-num">{{ r.CpyWOPQty | number:'1.0-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel C — Remark -->
+        <div class="cap-panel" *ngIf="!isLoadingContext && ctxHeader && isPendingPlan(ctxHeader.PlanStatus)">
+          <div class="cap-panel-title">Checker Remark (Optional)</div>
+          <input class="cap-input" type="text"
+                 placeholder="Optional note recorded with the check"
+                 [(ngModel)]="modalRemark" />
+        </div>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="cap-modal-footer">
+        <div class="cap-modal-status" *ngIf="ctxHeader && !isPendingPlan(ctxHeader.PlanStatus)">
+          <span class="cap-status-pill cap-status-d">Already Authorized</span>
+        </div>
+        <div class="cap-modal-actions">
+          <button class="cap-btn cap-btn-cancel" type="button"
+                  [disabled]="isSaving" (click)="closeModal()">Close</button>
+          <button *ngIf="ctxHeader && isPendingPlan(ctxHeader.PlanStatus)"
+                  class="cap-btn cap-btn-save" type="button"
+                  [disabled]="isSaving || isLoadingContext"
+                  (click)="onAcceptClick()">
+            {{ isSaving ? 'Saving…' : 'Accept Plan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm / Error / Success modals -->
+  <div class="confirmModal" *ngIf="confirmMessage">
+    <div class="confirmModal-content">
+      <p style="white-space: pre-line">{{ confirmMessage }}</p>
+      <div class="confirmModal-actions">
+        <button class="cap-btn cap-btn-save" type="button" (click)="onConfirmAccept()">Yes, Accept</button>
+        <button class="cap-btn cap-btn-cancel" type="button" (click)="onCancelConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="errorModal" *ngIf="errorMessage">
+    <div class="errorModal-content">
+      <p style="white-space: pre-line">{{ errorMessage }}</p>
+      <button class="error-ok-button" type="button" (click)="closeError()">OK</button>
+    </div>
+  </div>
+  <div class="successModal" *ngIf="successMessage">
+    <div class="successModal_content">
+      <p style="white-space: pre-line">{{ successMessage }}</p>
+      <button class="success-ok-button" type="button" (click)="closeSuccess()">OK</button>
+    </div>
+  </div>
+</div>

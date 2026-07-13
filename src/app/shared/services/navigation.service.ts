@@ -175,6 +175,7 @@
 //         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
 //         {name:'Canopy Assembly Process',state:'canopy-assembly/canopy-assembly-process'},
 //         {name:'Canopy Assembly Process Checker',state:'canopy-assembly/canopy-assembly-process-checker'},
+//         {name:'Canopy Assembly Plan Checker',state:'canopy-assembly/canopy-assembly-plan-checker'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -306,6 +307,7 @@
 //         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
 //         {name:'Canopy Assembly Process',state:'canopy-assembly/canopy-assembly-process'},
 //         {name:'Canopy Assembly Process Checker',state:'canopy-assembly/canopy-assembly-process-checker'},
+//         {name:'Canopy Assembly Plan Checker',state:'canopy-assembly/canopy-assembly-plan-checker'},
 //         // Add more items here if needed in future
 //       ],
 //     },
@@ -559,6 +561,7 @@
 //         {name:'Canopy Assembly Plan',state:'canopy-assembly/canopy-assembly-plan'},
 //         {name:'Canopy Assembly Process',state:'canopy-assembly/canopy-assembly-process'},
 //         {name:'Canopy Assembly Process Checker',state:'canopy-assembly/canopy-assembly-process-checker'},
+//         {name:'Canopy Assembly Plan Checker',state:'canopy-assembly/canopy-assembly-plan-checker'},
 //         // Add more items here if needed in future
 //       ],
 //     },

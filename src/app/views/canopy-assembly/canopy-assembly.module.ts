@@ -22,6 +22,7 @@ import { FlatpackCanopyAssemblyProcessComponent } from './flatpack-canopy-assemb
 import { CanopyAssemblyPlanComponent } from './canopy-assembly-plan/canopy-assembly-plan.component';
 import { CanopyAssemblyProcessComponent } from './canopy-assembly-process/canopy-assembly-process.component';
 import { CanopyAssemblyProcessCheckerComponent } from './canopy-assembly-process-checker/canopy-assembly-process-checker.component';
+import { CanopyAssemblyPlanCheckerComponent } from './canopy-assembly-plan-checker/canopy-assembly-plan-checker.component';
 import { CanopyAssemblyRoutes } from './canopy-assembly.routing';
 
 @NgModule({
@@ -30,7 +31,8 @@ import { CanopyAssemblyRoutes } from './canopy-assembly.routing';
     FlatpackCanopyAssemblyProcessComponent,
     CanopyAssemblyPlanComponent,
     CanopyAssemblyProcessComponent,
-    CanopyAssemblyProcessCheckerComponent
+    CanopyAssemblyProcessCheckerComponent,
+    CanopyAssemblyPlanCheckerComponent
   ],
   imports: [
     CommonModule,
