@@ -3,6 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'environments/environment';
 
+// Mirrors LineDto returned by DGAssemblly/GetLineRights — one authorized
+// line for the logged-in user under their login PC. Same shape used across
+// canopy-assembly-plan / canopy-assembly-process / *-checker pages.
+export interface LineRight {
+  LineWisePC: string;
+  LineDesc:   string;
+  ParentDgPC: string;
+}
+
 // One row in the Canopy Part Desc dropdown.
 export interface CanopyOption {
   PartCode: string;
@@ -55,7 +64,8 @@ export interface ProcessDetailsRequest {
 }
 
 export interface SubmitRequest {
-  PCCode:         string;
+  PCCode:         string;    // LineWisePC → ProcessFeedBack.PCCode_Act
+  ParentDgPC:     string;    // ParentDgPC of the selected line → ProcessFeedBack.ProfitCenterCode
   CompanyCode:    string;
   EmpCode:        string;
   ProcessType:    string;
@@ -85,9 +95,12 @@ export class FlatpackCanopyAssemblyProcessService {
 
   constructor(private http: HttpClient) {}
 
-  // Canopy dropdown
-  getCanopyOptions(): Observable<CanopyOption[]> {
-    return this.http.get<CanopyOption[]>(`${this.baseUrl}CanopyAssembly/GetFlatPackCanopyOptions`);
+  // Canopy dropdown — pcCode is the selected line's LineWisePC. The API
+  // uses it to apply the per-line KVA band (see service comment).
+  getCanopyOptions(pcCode: string): Observable<CanopyOption[]> {
+    const url = `${this.baseUrl}CanopyAssembly/GetFlatPackCanopyOptions`
+      + `?pcCode=${encodeURIComponent(pcCode || '')}`;
+    return this.http.get<CanopyOption[]>(url);
   }
 
   // Cascade: (canopy, processType) → PartDesc
