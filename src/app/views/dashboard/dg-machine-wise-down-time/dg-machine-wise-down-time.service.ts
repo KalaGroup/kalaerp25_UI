@@ -57,11 +57,19 @@ export interface DownTimeRecord {
 
 export interface DownTimeTrendRow {
   date: string;             // yyyy-MM-dd
+  companyCode: string;      // owning company (for the chart company picker)
   departmentName: string;
   machineName: string;
   totalMin: number;
   lineTotalMin: number;
   status: string;
+  remark: string;           // reason — shown in the dated breakdown grid
+}
+
+export interface CompanyOption {
+  companyCode: string;      // '01' / '03' / '28'
+  companyName: string;
+  shortName: string;
 }
 
 @Injectable({
@@ -70,6 +78,7 @@ export interface DownTimeTrendRow {
 export class DgMachineWiseDownTimeService {
   private baseUrl = environment.apiURL; // ends with .../api/
 
+  private apiViewCompanies = `${this.baseUrl}MachineDownTime/GetViewCompanies`;
   private apiDepartments = `${this.baseUrl}MachineDownTime/GetDepartments`;
   private apiMachines    = `${this.baseUrl}MachineDownTime/GetMachines`;
   private apiRecords     = `${this.baseUrl}MachineDownTime/GetDownTimeRecords`;
@@ -97,6 +106,20 @@ export class DgMachineWiseDownTimeService {
   /** User id from the logged-in session (for CreatedBy/ModifiedBy). */
   get sessionUser(): string {
     return localStorage.getItem('APP_USER_ID') || '';
+  }
+
+  /** Companies the login may view charts for (33 -> 01/03/28, else self). */
+  getViewCompanies(): Observable<CompanyOption[]> {
+    const params = new HttpParams().set('companyCode', this.companyCode);
+    return this.http.get<any[]>(this.apiViewCompanies, { params }).pipe(
+      map((res) =>
+        (res || []).map((c) => ({
+          companyCode: c.CompanyCode,
+          companyName: c.CompanyName,
+          shortName: c.ShortName,
+        })),
+      ),
+    );
   }
 
   /** Departments dropdown — bound from WorkStation + ProfitCenter for the session company. */
@@ -189,11 +212,13 @@ export class DgMachineWiseDownTimeService {
       map((res) =>
         (res || []).map((x) => ({
           date: x.Date,
+          companyCode: x.CompanyCode || '',
           departmentName: x.DeptName,
           machineName: x.MachineName,
           totalMin: x.TotalMin,
           lineTotalMin: x.LineTotalMin,
           status: x.Status || '',
+          remark: x.Remark || '',
         })),
       ),
     );

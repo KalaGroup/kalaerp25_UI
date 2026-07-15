@@ -46,6 +46,7 @@ export interface ManpowerRecord {
   mcode: string;           // 6MManpowerStatus.MCode  (delete key, part 1)
   srNo: number;            // 6MManpowerStatusDetails.SrNo  (delete key, part 2)
   date: string;
+  companyCode: string;     // owning company (LEFT(PCCode,2)) — for the chart company picker
   shift: string;           // 'F' / 'S'
   pcId: number;
   pcName: string;
@@ -66,10 +67,17 @@ export interface ManpowerRecord {
 
 export interface ShortageTrendRow {
   date: string;
+  companyCode: string;      // owning company (for the chart company picker)
   pcName: string;
   workStationName: string;
   shortTotal: number;
   absent: number;
+}
+
+export interface CompanyOption {
+  companyCode: string;      // '01' / '03' / '28'
+  companyName: string;
+  shortName: string;
 }
 
 @Injectable({
@@ -78,6 +86,7 @@ export interface ShortageTrendRow {
 export class DgManpowerStatusService {
   private baseUrl = environment.apiURL; // ends with .../api/
 
+  private apiViewCompanies = `${this.baseUrl}ManpowerStatus/GetViewCompanies`;
   private apiDepartments = `${this.baseUrl}ManpowerStatus/GetDepartments`;
   private apiStations    = `${this.baseUrl}ManpowerStatus/GetStations`;
   private apiRecords     = `${this.baseUrl}ManpowerStatus/GetManpowerRecords`;
@@ -105,6 +114,20 @@ export class DgManpowerStatusService {
   /** User id from the logged-in session (for CreatedBy/ModifiedBy). */
   get sessionUser(): string {
     return localStorage.getItem('APP_USER_ID') || '';
+  }
+
+  /** Companies the login may view charts for (33 -> 01/03/28, else self). */
+  getViewCompanies(): Observable<CompanyOption[]> {
+    const params = new HttpParams().set('companyCode', this.companyCode);
+    return this.http.get<any[]>(this.apiViewCompanies, { params }).pipe(
+      map((res) =>
+        (res || []).map((c) => ({
+          companyCode: c.CompanyCode,
+          companyName: c.CompanyName,
+          shortName: c.ShortName,
+        })),
+      ),
+    );
   }
 
   /** Departments dropdown — ProfitCenters that have W1/W2/W3 sanctioned stations. */
@@ -144,6 +167,7 @@ export class DgManpowerStatusService {
     mcode: x.MCode,
     srNo: x.SrNo,
     date: x.Date,
+    companyCode: x.CompanyCode || '',
     shift: x.Shift,
     pcId: x.PcId,
     pcName: x.PcName,
@@ -204,6 +228,7 @@ export class DgManpowerStatusService {
       map((res) =>
         (res || []).map((x) => ({
           date: x.Date,
+          companyCode: x.CompanyCode || '',
           pcName: x.PcName,
           workStationName: x.WorkStationName,
           shortTotal: x.ShortTotal,

@@ -25,7 +25,7 @@
   <div *ngIf="!isFormVisible">
     <div class="panel">
       <div class="panel-head" (click)="toggleRecords()">
-        <h3>Records <span class="count" *ngIf="reportRows.length">({{ reportRows.length }})</span></h3>
+        <h3>Records <span class="count" *ngIf="filteredRecords.length">({{ filteredRecords.length }})</span></h3>
         <button class="collapse-btn" type="button" [attr.aria-label]="recordsCollapsed ? 'Expand' : 'Minimize'">{{
           recordsCollapsed ? '+' : '−' }}</button>
       </div>
@@ -35,6 +35,13 @@
         <!-- filters + exports -->
         <div class="records-toolbar">
           <div class="filters">
+            <div class="ctrl" *ngIf="showCompanyPicker">
+              <label>Company</label>
+              <select [value]="selectedCompany"
+                (change)="selectedCompany = $any($event.target).value; onRecordsCompanyChange()">
+                <option *ngFor="let c of viewCompanies" [value]="c.companyCode">{{ c.companyName }}</option>
+              </select>
+            </div>
             <div class="ctrl">
               <label>Date</label>
               <input type="date" formControlName="date" />
@@ -43,12 +50,12 @@
               <label>Department</label>
               <select formControlName="deptCode">
                 <option value="">All Departments</option>
-                <option *ngFor="let d of departments" [value]="d.deptCode">{{ d.deptName }}</option>
+                <option *ngFor="let d of filteredDepartments" [value]="d.deptCode">{{ d.deptName }}</option>
               </select>
             </div>
             <button class="save search-btn" type="button" (click)="searchReport()">Search</button>
           </div>
-          <div class="exports" *ngIf="reportRows.length > 0">
+          <div class="exports" *ngIf="filteredRecords.length > 0">
             <button class="btn-pdf" type="button" (click)="exportPdf()" [disabled]="isExporting">⤓ PDF</button>
             <button class="btn-excel" type="button" (click)="exportExcel()" [disabled]="isExporting">⤓ Excel</button>
           </div>
@@ -64,13 +71,16 @@
         <div class="table-card">
           <table>
             <colgroup>
-              <col style="width:4%" />
-              <col style="width:24%" />
+              <col style="width:3%" />
               <col style="width:13%" />
+              <col style="width:6%" />
+              <col style="width:6%" />
+              <col style="width:7%" />
+              <col style="width:18%" />
+              <col style="width:7%" />
+              <col style="width:7%" />
               <col style="width:12%" />
-              <col style="width:8%" />
-              <col style="width:19%" />
-              <col style="width:20%" />
+              <col style="width:11%" />
               <col style="width:10%" />
             </colgroup>
             <thead>
@@ -78,34 +88,268 @@
                 <th>No</th>
                 <th>Department</th>
                 <th>Plan (KVA)</th>
-                <th>Type of material</th>
-                <th>Qty</th>
-                <th>Status / Remark</th>
+                <th>Plan Qty</th>
+                <th>Type</th>
+                <th>Part Name</th>
+                <th>Shortage</th>
+                <th>Status</th>
+                <th>Remark</th>
                 <th>Person to communicate</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of reportRows; let i = index">
+              <tr *ngFor="let r of filteredRecords; let i = index">
                 <td class="idx">{{ i + 1 }}</td>
                 <td>{{ r.deptName }}</td>
                 <td>{{ r.plan }}</td>
+                <td class="num">{{ r.planQuantity }}</td>
                 <td><span class="type-pill">{{ r.materialType }}</span></td>
-                <td class="num">{{ r.quantity }}</td>
-                <td>{{ r.status }}</td>
-                <td>{{ r.person }}</td>
+                <td class="wrap">{{ r.partName || '—' }}</td>
+                <td class="num">
+                  <span *ngIf="r.shortageQty > 0" class="short-badge">{{ r.shortageQty }}</span>
+                  <span *ngIf="!r.shortageQty">—</span>
+                </td>
+                <td>
+                  <span class="status-pill" [class.s-open]="r.status === 'Open'"
+                    [class.s-closed]="r.status === 'Closed'" [class.s-proc]="r.status === 'InProcess'">
+                    {{ r.status || '—' }}</span>
+                </td>
+                <td class="wrap">{{ r.remark || '—' }}</td>
+                <td class="wrap">{{ r.person || '—' }}</td>
                 <td class="actions">
-                  <button type="button" class="row-edit" (click)="editRecord(r)" title="Edit">✎</button>
-                  <button type="button" class="row-del" (click)="deleteRecord(r)" title="Delete">✕</button>
+                  <ng-container *ngIf="!r.espReqCode; else espDone">
+                    <button type="button" class="row-edit" (click)="editRecord(r)" title="Edit">✎</button>
+                    <button type="button" class="row-del" (click)="deleteRecord(r)" title="Delete">✕</button>
+                    <button type="button" class="row-esp" (click)="openEsp(r)" title="Raise ESP for this material">✉</button>
+                  </ng-container>
+                  <ng-template #espDone>
+                    <span class="esp-done" [title]="'ESP raised: ' + r.espReqCode + ' — line locked'">✓ ESP</span>
+                  </ng-template>
                 </td>
               </tr>
-              <tr *ngIf="reportRows.length === 0">
-                <td colspan="8" class="empty">No Data Found</td>
+              <tr *ngIf="filteredRecords.length === 0">
+                <td colspan="11" class="empty">No Data Found</td>
               </tr>
             </tbody>
           </table>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ===== SHORTAGE ANALYTICS (charts) ===== -->
+    <div class="panel">
+      <div class="panel-head" (click)="toggleAnalytics()">
+        <h3>Shortage Analytics</h3>
+        <button class="collapse-btn" type="button">{{ analyticsCollapsed ? '+' : '−' }}</button>
+      </div>
+      <div class="panel-body" [@collapse]="analyticsCollapsed ? 'closed' : 'open'">
+
+        <div class="a-card">
+          <div class="a-card-head">
+            <div class="chart-title">
+              <div class="company">{{ chartsCompanyName }}</div>
+              <h4>Material shortage report <span class="when">{{ breakdownPeriodLabel }}</span></h4>
+            </div>
+          </div>
+
+          <!-- controls -->
+          <div class="bd-controls">
+            <div class="seg-block" *ngIf="showCompanyPicker">
+              <span class="seg-label">Company</span>
+              <select class="company-select" [value]="chartCompany"
+                (change)="chartCompany = $any($event.target).value; onChartCompanyChange()">
+                <option *ngFor="let c of viewCompanies" [value]="c.companyCode">{{ c.companyName }}</option>
+              </select>
+            </div>
+            <div class="seg-block">
+              <span class="seg-label">Group by</span>
+              <div class="seg">
+                <button [class.active]="breakdownDim === 'department'" (click)="setBreakdownDim('department')">Department</button>
+                <button [class.active]="breakdownDim === 'person'" (click)="setBreakdownDim('person')">Person</button>
+                <button [class.active]="breakdownDim === 'part'" (click)="setBreakdownDim('part')">Part</button>
+                <button [class.active]="breakdownDim === 'type'" (click)="setBreakdownDim('type')">Material type</button>
+              </div>
+            </div>
+            <div class="seg-block">
+              <span class="seg-label">Period</span>
+              <div class="seg">
+                <button [class.active]="breakdownPeriod === 'weekly'" (click)="setBreakdownPeriod('weekly')">Weekly</button>
+                <button [class.active]="breakdownPeriod === 'monthly'" (click)="setBreakdownPeriod('monthly')">Monthly</button>
+              </div>
+            </div>
+            <div class="seg-block custom-range">
+              <span class="seg-label">Custom</span>
+              <div class="range-inputs">
+                <input type="date" [value]="breakdownFrom" (change)="breakdownFrom = $any($event.target).value" />
+                <span>to</span>
+                <input type="date" [value]="breakdownTo" (change)="breakdownTo = $any($event.target).value" />
+                <button class="apply-btn" type="button" (click)="applyCustomRange()">Apply</button>
+              </div>
+            </div>
+            <div class="seg-block">
+              <span class="seg-label">View</span>
+              <div class="seg view">
+                <button [class.active]="breakdownView === 'both'" (click)="setBreakdownView('both')">Chart + Grid</button>
+                <button [class.active]="breakdownView === 'chart'" (click)="setBreakdownView('chart')">Chart</button>
+                <button [class.active]="breakdownView === 'grid'" (click)="setBreakdownView('grid')">Grid</button>
+              </div>
+            </div>
+            <button class="btn-chart-pdf bd-pdf" type="button" *ngIf="breakdownRows.length" [disabled]="isExporting"
+              title="Export the breakdown chart + grid to PDF" (click)="exportBreakdownPdf()">⤓ PDF</button>
+            <span *ngIf="chartLoading" class="chart-hint">Loading...</span>
+          </div>
+
+          <!-- KPIs -->
+          <div class="bd-kpis" *ngIf="breakdownRows.length">
+            <div class="kpi"><span class="kpi-label">Total Shortage</span><span class="kpi-val">{{ breakdownShortTotal }}</span></div>
+            <div class="kpi"><span class="kpi-label">Open Shortage</span><span class="kpi-val">{{ breakdownOpenTotal }}</span></div>
+            <div class="kpi"><span class="kpi-label">{{ dimLabel }}s</span><span class="kpi-val">{{ breakdownRows.length }}</span></div>
+          </div>
+
+          <!-- CHART -->
+          <ng-container *ngIf="breakdownView !== 'grid'">
+            <div class="chart-body tall"><canvas id="materialBreakdownCanvas"></canvas></div>
+            <p *ngIf="breakdownRows.length > 15" class="bd-cap-note">Chart shows the top 15 — see the full list in the grid below.</p>
+          </ng-container>
+
+          <p *ngIf="breakdownRows.length === 0" class="bd-empty">No shortage recorded for this period.</p>
+
+          <!-- DATED GRID -->
+          <ng-container *ngIf="breakdownView !== 'chart' && breakdownRows.length">
+            <div class="bd-grid-head">
+              <h5>Records <span class="count">({{ breakdownRows.length }})</span></h5>
+              <span class="bd-grid-sub">Ranked by shortage · {{ breakdownPeriodLabel }}</span>
+            </div>
+            <div class="bd-grid-scroll">
+              <table class="bd-grid">
+                <thead>
+                  <tr>
+                    <th class="st-h" style="width:44%">{{ dimLabel }}</th>
+                    <th class="date-h" style="width:16%">Date</th>
+                    <th class="short-h" style="width:16%">Shortage (Nos.)</th>
+                    <th style="width:24%">Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of breakdownDetailRows"
+                    [class.grp-head]="r.kind === 'head'" [class.grp-sub]="r.kind === 'sub'"
+                    [class.grp-first]="r.kind !== 'sub'">
+                    <td class="st">
+                      <ng-container *ngIf="r.kind !== 'sub'">
+                        <span class="rank">{{ breakdownRankOf(r.label) }}</span>{{ r.label }}
+                      </ng-container>
+                    </td>
+                    <td class="date-cell">
+                      <ng-container *ngIf="r.kind === 'head'; else oneDate">{{ r.days }} days</ng-container>
+                      <ng-template #oneDate>{{ niceDate(r.date) }}</ng-template>
+                    </td>
+                    <td class="short">{{ r.short }}</td>
+                    <td>
+                      <ng-container *ngIf="r.kind !== 'sub'; else pctOnly">
+                        <div class="bar-wrap">
+                          <div class="bar" [style.width.%]="breakdownShare(r)"></div>
+                          <span class="pct">{{ breakdownShare(r) | number:'1.0-1' }}%</span>
+                        </div>
+                      </ng-container>
+                      <ng-template #pctOnly><span class="pct sub-pct">{{ breakdownShare(r) | number:'1.0-1' }}%</span></ng-template>
+                    </td>
+                  </tr>
+                  <tr class="sum-total">
+                    <td class="st">Total</td>
+                    <td></td>
+                    <td class="short">{{ breakdownShortTotal }}</td>
+                    <td><span class="pct" style="color:#0f6c8d">100%</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- ===== WHERE IS SHORTAGE (flat report) ===== -->
+        <div class="a-card">
+          <div class="a-card-head">
+            <div class="chart-title">
+              <div class="company">{{ chartsCompanyName }}</div>
+              <h4>Where is shortage <span class="when">{{ breakdownPeriodLabel }}</span></h4>
+            </div>
+            <button class="btn-chart-pdf" type="button" *ngIf="shortageReport.length" [disabled]="isExporting"
+              title="Export this report to PDF" (click)="exportShortagePdf()">⤓ PDF</button>
+          </div>
+          <div class="table-card" *ngIf="shortageReport.length; else noShort">
+            <table>
+              <colgroup>
+                <col style="width:4%" /><col style="width:9%" /><col style="width:16%" /><col style="width:7%" />
+                <col style="width:8%" /><col style="width:24%" /><col style="width:7%" /><col style="width:8%" /><col style="width:17%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>No</th><th>Date</th><th>Department</th><th>Plan (KVA)</th><th>Type</th>
+                  <th>Part</th><th>Shortage</th><th>Status</th><th>Person</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of shortageReport; let i = index">
+                  <td class="idx">{{ i + 1 }}</td>
+                  <td>{{ niceDate(r.date) }}</td>
+                  <td class="wrap">{{ r.deptName }}</td>
+                  <td>{{ r.plan }}</td>
+                  <td><span class="type-pill">{{ r.materialType }}</span></td>
+                  <td class="wrap">{{ r.partName || '—' }}</td>
+                  <td class="num"><span class="short-badge">{{ r.shortageQty }}</span></td>
+                  <td><span class="status-pill" [class.s-open]="r.status === 'Open'"
+                    [class.s-closed]="r.status === 'Closed'" [class.s-proc]="r.status === 'InProcess'">{{ r.status || '—' }}</span></td>
+                  <td class="wrap">{{ r.person || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ng-template #noShort><p class="bd-empty">No shortage lines in this period.</p></ng-template>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RAISE ESP MODAL ===== -->
+  <div class="esp-overlay" #espOverlayEl [class.open]="espOpen">
+    <div class="esp-modal">
+      <div class="esp-head">
+        <h4>Raise ESP <span class="esp-sub" *ngIf="espRecord">— {{ espRecord.partName || espRecord.materialType }}<ng-container
+              *ngIf="espRecord.shortageQty > 0"> · shortage {{ espRecord.shortageQty }} Nos</ng-container></span></h4>
+        <button type="button" class="esp-close" (click)="closeEsp()">✕</button>
+      </div>
+      <div class="esp-body">
+        <div class="esp-row">
+          <div class="esp-ctrl grow">
+            <label>To Employee <span class="req">*</span></label>
+            <select [value]="espToEmp" (change)="espToEmp = $any($event.target).value">
+              <option value="">Select employee…</option>
+              <option *ngFor="let e of espEmployees" [value]="e.eCode">{{ e.fullName }} [ {{ e.eCode }} ] · {{ e.profitCenter }}</option>
+            </select>
+          </div>
+          <div class="esp-ctrl">
+            <label>Priority</label>
+            <select [value]="espPriority" (change)="espPriority = $any($event.target).value">
+              <option *ngFor="let pr of espPriorities" [value]="pr">{{ pr }}</option>
+            </select>
+          </div>
+          <div class="esp-ctrl">
+            <label>Target Date <span class="req">*</span></label>
+            <input type="date" [value]="espTargetDate" [min]="espMinTargetDate"
+              (change)="espTargetDate = $any($event.target).value" />
+          </div>
+        </div>
+        <div class="esp-ctrl">
+          <label>Request Message <span class="req">*</span> <small>(you can edit this)</small></label>
+          <textarea rows="7" [value]="espMsg" (input)="espMsg = $any($event.target).value"></textarea>
+        </div>
+      </div>
+      <div class="esp-foot">
+        <button type="button" class="clear" (click)="closeEsp()" [disabled]="espSending">Cancel</button>
+        <button type="button" class="save" (click)="sendEsp()" [disabled]="espSending">{{ espSending ? 'Sending…' : 'Send ESP' }}</button>
       </div>
     </div>
   </div>
@@ -136,23 +380,29 @@
 
         <!-- material grid -->
         <div class="table-card">
-          <table>
+          <table class="entry-grid">
             <colgroup>
+              <col style="width:3%" />
+              <col style="width:8%" />
+              <col style="width:7%" />
+              <col style="width:9%" />
+              <col style="width:24%" />
+              <col style="width:8%" />
+              <col style="width:9%" />
+              <col style="width:14%" />
+              <col style="width:14%" />
               <col style="width:4%" />
-              <col style="width:22%" />
-              <col style="width:15%" />
-              <col style="width:11%" />
-              <col style="width:21%" />
-              <col style="width:21%" />
-              <col style="width:6%" />
             </colgroup>
             <thead>
               <tr>
-                <th>#</th>
+                <th>Sr</th>
                 <th>Plan (KVA) <span class="req">*</span></th>
+                <th>Plan Qty <span class="req">*</span></th>
                 <th>Type of material</th>
-                <th>Quantity <span class="req">*</span></th>
-                <th>Status / Remark <span class="req">*</span></th>
+                <th>Part Name</th>
+                <th>Shortage Qty</th>
+                <th>Status <span class="req">*</span></th>
+                <th>Remarks</th>
                 <th>Person to communicate</th>
                 <th></th>
               </tr>
@@ -161,24 +411,48 @@
               <tr *ngFor="let row of rows.controls; let i = index" [formGroupName]="i">
                 <td class="idx">{{ i + 1 }}</td>
                 <td>
-                  <select formControlName="plan">
-                    <option value="">Select KVA…</option>
+                  <select formControlName="plan" (change)="onRowPlanChange(i)">
+                    <option value="">KVA…</option>
                     <option *ngFor="let k of kvaOptions" [value]="k.kva">{{ k.kva }}</option>
                   </select>
                 </td>
                 <td>
-                  <select formControlName="materialType">
+                  <input type="number" min="0" step="1" formControlName="planQuantity" placeholder="0" />
+                </td>
+                <td>
+                  <select formControlName="materialType" (change)="onRowTypeChange(i)">
                     <option *ngFor="let t of materialTypes" [value]="t">{{ t }}</option>
                   </select>
                 </td>
                 <td>
-                  <input type="number" min="0" step="1" formControlName="quantity" placeholder="0" />
+                  <!-- Raw -> parts of the row's KVA; other types -> free text (optional) -->
+                  <select *ngIf="row.get('materialType')?.value === 'Raw'; else freePart" formControlName="partCode">
+                    <option value="">Select part…</option>
+                    <option *ngFor="let p of partsFor(row.get('plan')?.value)" [value]="p.partCode" [title]="p.partName">{{ partLabel(p.partName) }}</option>
+                  </select>
+                  <ng-template #freePart>
+                    <input type="text" formControlName="partName" placeholder="Part name (optional)" />
+                  </ng-template>
                 </td>
                 <td>
-                  <input type="text" formControlName="status" placeholder="e.g. OK / note" />
+                  <select formControlName="shortageQty">
+                    <option [ngValue]="0">—</option>
+                    <option *ngFor="let n of shortageOptions" [ngValue]="n">{{ n }}</option>
+                  </select>
                 </td>
                 <td>
-                  <input type="text" formControlName="person" placeholder="Name" />
+                  <select formControlName="status">
+                    <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" formControlName="remark" placeholder="Remark" />
+                </td>
+                <td>
+                  <select formControlName="person">
+                    <option value="">Select…</option>
+                    <option *ngFor="let e of employees" [value]="e.empName">{{ e.empName }}</option>
+                  </select>
                 </td>
                 <td class="actions">
                   <button type="button" class="row-del" (click)="removeRow(i)" title="Remove row">✕</button>

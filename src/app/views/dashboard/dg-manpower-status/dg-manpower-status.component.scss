@@ -901,6 +901,26 @@ td.absent-col input {
   padding-bottom: 8px;
 }
 
+/* small per-chart "PDF" button in each chart card head */
+.btn-chart-pdf {
+  border: 1px solid #e3b7b1; background: #fdecea; color: #c0392b;
+  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: background 0.15s ease;
+}
+.btn-chart-pdf:hover:not(:disabled) { background: #f8d7d2; }
+.btn-chart-pdf:disabled { opacity: 0.55; cursor: default; }
+.btn-chart-pdf.bd-pdf { align-self: flex-end; margin-bottom: 2px; }
+
+/* per-date breakdown grid: date column + tidy station groups */
+.bd-grid th.date-h { width: 110px; }
+.bd-grid td.date-cell { white-space: nowrap; color: #34505e; font-weight: 600; text-align: center; }
+.bd-grid tr.grp-first td { border-top: 2px solid #d8e4ea; }
+.bd-grid tr.grp-head td { background: #f0f6f9; font-weight: 700; }
+.bd-grid tr.grp-head td.date-cell { color: #6b7f8b; font-weight: 600; font-size: 12px; }
+.bd-grid tr.grp-sub td { font-size: 12.5px; color: #4a5b66; padding-top: 5px; padding-bottom: 5px; background: #fff; }
+.bd-grid tr.grp-sub td.date-cell { font-weight: 500; }
+.bd-grid .pct.sub-pct { color: #7a8b95; font-size: 12px; }
+
 /* control groups get a caption above each segmented toggle */
 .breakdown-controls {
   align-items: flex-end;
