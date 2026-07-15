@@ -112,7 +112,9 @@
   color: #444;
   font-weight: 500;
   cursor: default;
-  min-width: 220px;
+  // Widened so long PC names like "Unit 4 line A & B Bending (03.070)"
+  // fit without truncation.
+  min-width: 320px;
 }
 
 .fcp-required {

@@ -21,9 +21,13 @@ export class FlatpackCanopyAssemblyPlanReportComponent implements OnInit {
   pcCode: string = '';
   pcName: string = '';
 
-  // ── Line-rights dropdown (matches dg-test-report / dg-stage-i idiom) ──
-  prmCode: string = '';
-  lineRights: LineRight[] = [];
+  // ── Line list (hardcoded, matches the Process page) ──────────
+  // Three flat-pack lines, all sharing ParentDgPC 01.093. No backend fetch.
+  readonly lineRights: LineRight[] = [
+    { LineWisePC: '01.124', LineDesc: 'Unit 1 Line A Flat Packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.125', LineDesc: 'Unit 1 Line B Flat Packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.126', LineDesc: 'Unit 1 Line C Flat Packing', ParentDgPC: '01.093' },
+  ];
   selectedLineWisePC: string = '';
 
   // ── Results table data ───────────────────────────────────────
@@ -70,40 +74,18 @@ export class FlatpackCanopyAssemblyPlanReportComponent implements OnInit {
     const rawPc = localStorage.getItem('ProfitCenter')?.trim() ?? '';
     this.pcCode = rawPc === 'undefined' || rawPc === 'null' ? '' : rawPc;
     this.pcName = localStorage.getItem('profitCenterName')?.trim() ?? '';
-
-    // Multi-line positions: load line rights so the user can pick the line.
-    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
-    this.loadLineRights();
   }
 
   get selectedLineRight(): LineRight | undefined {
     return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
   }
 
-  private loadLineRights(): void {
-    if (!this.prmCode) {
-      this.lineRights = [];
-      return;
-    }
-    this.flatpackService.getLineRights(this.prmCode).subscribe({
-      next: (rows) => {
-        this.lineRights = Array.isArray(rows) ? rows : [];
-        if (this.lineRights.length === 1) {
-          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
-        }
-      },
-      error: () => {
-        this.lineRights = [];
-      },
-    });
-  }
-
   // ── Search ───────────────────────────────────────────────────
   onSearch(): void {
-    // TODO: replace hard-coded PC with selectedLineRight?.LineWisePC once
-    // the user's line-rights / login PC is populated correctly.
-    const pcForReport = '01.093';
-
+    if (!this.selectedLineWisePC) {
+      this.errorMessage = 'Please select Line!';
+      return;
+    }
     if (!this.fromDate || !this.toDate) {
       this.errorMessage = 'Please choose both From Date and To Date.';
       return;
@@ -112,6 +94,8 @@ export class FlatpackCanopyAssemblyPlanReportComponent implements OnInit {
       this.errorMessage = 'From Date cannot be after To Date.';
       return;
     }
+
+    const pcForReport = this.selectedLineWisePC;
 
     this.isLoading = true;
     this.loadError = '';

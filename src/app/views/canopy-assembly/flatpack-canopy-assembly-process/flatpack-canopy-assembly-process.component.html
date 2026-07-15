@@ -20,11 +20,18 @@
   <!-- Form grid (CSS-Grid, predictable column widths) -->
   <div class="fcap-form">
 
-    <!-- Row 1: 3 equal context fields -->
+    <!-- Row 1: Line dropdown + Profit Center + Bom Code -->
     <div class="fcap-grid fcap-grid-3">
       <div class="fcap-field">
-        <label>Process Code</label>
-        <input class="fcap-input fcap-input-readonly" type="text" [value]="pfbCode" readonly />
+        <label>Line <span class="fcap-required">*</span></label>
+        <select class="fcap-input fcap-select"
+                [(ngModel)]="selectedLineWisePC"
+                (ngModelChange)="onLineChange()">
+          <option value="" disabled>Select Line</option>
+          <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+            {{ l.LineDesc }}
+          </option>
+        </select>
       </div>
       <div class="fcap-field">
         <label>Profit Center</label>
@@ -65,7 +72,7 @@
       </div>
     </div>
 
-    <!-- Row 3: Process Type + Line + Qty + Search -->
+    <!-- Row 3: Process Type + Qty + Search (Line moved to Row 1) -->
     <div class="fcap-grid fcap-grid-type">
       <div class="fcap-field">
         <label>Process Type <span class="fcap-required">*</span></label>
@@ -75,10 +82,6 @@
           <option value="" disabled>Select Type</option>
           <option *ngFor="let t of processTypeOptions" [value]="t.value">{{ t.label }}</option>
         </select>
-      </div>
-      <div class="fcap-field">
-        <label>Line</label>
-        <input class="fcap-input fcap-input-readonly" type="text" [value]="heading" readonly />
       </div>
       <div class="fcap-field">
         <label>Process Qty <span class="fcap-required">*</span></label>

@@ -36,14 +36,6 @@ export class FlatpackCanopyAssemblyPlanReportService {
 
   constructor(private http: HttpClient) {}
 
-  // GET — lines this position is entitled to query.
-  // Reuses the existing endpoint exposed by DGAssemblyController so we don't
-  // duplicate the LineRights query here.
-  getLineRights(prmCode: string): Observable<LineRight[]> {
-    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
-    return this.http.get<LineRight[]>(url);
-  }
-
   // GET — Flat Pack Canopy Plan Report
   getFlatPackCanopyPlanReport(
     pcCode: string,

@@ -4,6 +4,7 @@ import {
   FlatpackCanopyAssemblyProcessService,
   CanopyOption,
   FlatPackPartRow,
+  LineRight,
   ProcessDetailsResponse,
 } from './flatpack-canopy-assembly-process.service';
 
@@ -15,11 +16,22 @@ import {
 })
 export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
   // ── Header context ──────────────────────────────────────────────
-  pcCode: string = '';
+  pcCode: string = '';         // login PC (from localStorage), shown in the read-only Profit Center field
   pcName: string = '';
   empCode: string = '';
   companyCode: string = '';
-  heading: string = 'Line1';   // legacy "ULHeading"
+  heading: string = 'Line1';   // legacy "ULHeading" — kept as-is so the SP path is unchanged
+
+  // ── Line list (hardcoded) ─────────────────────────────────────
+  // Flat Pack Canopy Assembly is dedicated to three lines — all sharing
+  // ParentDgPC 01.093. Hardcoded on purpose: no backend / position-rights
+  // lookup for this page. If a fourth line joins, add it here.
+  readonly lineRights: LineRight[] = [
+    { LineWisePC: '01.124', LineDesc: 'Unit 1 Line A Flat Packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.125', LineDesc: 'Unit 1 Line B Flat Packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.126', LineDesc: 'Unit 1 Line C Flat Packing', ParentDgPC: '01.093' },
+  ];
+  selectedLineWisePC: string = '';
 
   // ── Form state ─────────────────────────────────────────────────
   canopyOptions: CanopyOption[] = [];
@@ -97,13 +109,31 @@ export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
     this.empCode     = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.companyCode = localStorage.getItem('companyId')?.trim() ?? '';
 
-    this.loadCanopyOptions();
+    // Canopy options depend on the selected line's LineWisePC (KVA band
+    // filter). Nothing loads until the operator picks a line.
   }
 
-  // ── Dropdown load ─────────────────────────────────────────────
+  // Resolved line record for the currently selected LineWisePC.
+  get selectedLineRight(): LineRight | undefined {
+    return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // Line changed — reload the Canopy dropdown for the new LineWisePC (KVA
+  // band changes per line) and clear derived state so the operator re-runs
+  // Search against the newly selected line's PC.
+  onLineChange(): void {
+    this.canopyOptions = [];
+    this.selectedCanopyPartCode = '';
+    this.clearDerived();
+    if (this.selectedLineWisePC) this.loadCanopyOptions();
+  }
+
+  // ── Canopy dropdown load ──────────────────────────────────────
+  // Server applies the per-line KVA band based on selectedLineWisePC.
   private loadCanopyOptions(): void {
+    if (!this.selectedLineWisePC) { this.canopyOptions = []; return; }
     this.isLoadingOptions = true;
-    this.flatpackService.getCanopyOptions().subscribe({
+    this.flatpackService.getCanopyOptions(this.selectedLineWisePC).subscribe({
       next: (rows) => {
         this.canopyOptions = Array.isArray(rows) ? rows : [];
         this.isLoadingOptions = false;
@@ -165,16 +195,13 @@ export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
 
   // ── Search ────────────────────────────────────────────────────
   onSearch(): void {
+    if (!this.selectedLineWisePC)     { this.errorMessage = 'Please select Line!'; return; }
     if (!this.selectedCanopyPartCode) { this.errorMessage = 'Please select Canopy!'; return; }
     if (!this.selectedProcessType)    { this.errorMessage = 'Please select Process Type!'; return; }
     if (!this.partCode)               { this.errorMessage = 'Part Desc could not be derived.'; return; }
     if (!this.processQty || this.processQty <= 0) { this.errorMessage = 'Please Enter ProcessQty !'; return; }
-    if (!this.pcCode)                 { this.errorMessage = 'Profit Center is missing. Please log in again.'; return; }
 
-    // TODO: replace hard-coded PC with the user's real production PC once
-    // the line-rights / login PC is reliably populated. The grid SP only
-    // returns rows when PC ∈ { 01.005, 03.038, 01.093 } (legacy gate).
-    const pcForSearch = '01.093';
+    const pcForSearch = this.selectedLineRight?.LineWisePC ?? '';
 
     this.isSearching = true;
     this.flatpackService.getProcessDetails({
@@ -239,12 +266,13 @@ export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
   }
 
   private doSave(): void {
-    // TODO: same hard-coded PC as Search until the real PC source is live.
-    const pcForSave = '01.093';
+    const pcForSave = this.selectedLineRight?.LineWisePC ?? '';
+    if (!pcForSave) { this.errorMessage = 'Please select Line!'; return; }
 
     this.isSaving = true;
     this.flatpackService.submit({
       PCCode:         pcForSave,
+      ParentDgPC:     this.selectedLineRight?.ParentDgPC ?? '',
       CompanyCode:    this.companyCode || '01',
       EmpCode:        this.empCode,
       ProcessType:    this.selectedProcessType,
