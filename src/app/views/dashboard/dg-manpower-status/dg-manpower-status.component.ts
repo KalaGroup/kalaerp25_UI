@@ -7,6 +7,8 @@ import {
   ManpowerRecord,
   SaveManpowerBatchRequest,
   shiftLabel,
+  CompanyOption,
+  ShortageTrendRow,
 } from './dg-manpower-status.service';
 
 /** One department row in the Summary table: Required/Available/Shortage per skill, a Total group, and Absent. */
@@ -95,7 +97,15 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
   breakdownTo = '';
   // aggregated bars carry shortage + absent so the chart + grid can both show meaningful data
   breakdownRows: { label: string; short: number; absent: number }[] = [];
+  /** Per-date detail behind the aggregate: single rows, group headers, and date sub-rows (drives the grid). */
+  breakdownDetailRows: { kind: 'single' | 'head' | 'sub'; label: string; date: string; days: number; short: number; absent: number }[] = [];
+  /** label -> its dated rows, for the chart tooltip ("12 Jun: 5 short ..."). */
+  private breakdownDateMap = new Map<string, { date: string; short: number; absent: number }[]>();
   private breakdownChart: any = null;
+
+  // ---- chart company picker (for a parent login like 33 that spans 01/03/28) ----
+  viewCompanies: CompanyOption[] = [];  // companies the login may view charts for
+  selectedCompany = '';                 // currently-picked company code; '' until loaded
 
   constructor(
     private fb: FormBuilder,
@@ -115,6 +125,18 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
     this.service.getDepartments().subscribe({
       next: (res) => (this.departments = res || []),
       error: () => (this.errorMessage = 'Could not load departments.'),
+    });
+
+    // Companies for the chart picker (parent login -> children; else just self).
+    this.service.getViewCompanies().subscribe({
+      next: (res) => {
+        this.viewCompanies = res || [];
+        this.selectedCompany = this.viewCompanies.length ? this.viewCompanies[0].companyCode : this.service.companyCode;
+      },
+      error: () => {
+        this.viewCompanies = [];
+        this.selectedCompany = this.service.companyCode;
+      },
     });
 
     this.resolveBreakdownRange();   // sets breakdownFrom / breakdownTo from the default period
@@ -417,7 +439,7 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
     }[];
     sub: { ss: number; sm: number; su: number; as: number; am: number; au: number; xs: number; xm: number; xu: number; absent: number };
   }[] {
-    const sorted = [...this.reportRows].sort((a, b) =>
+    const sorted = [...this.filteredRecords].sort((a, b) =>
       (a.pcName || '').localeCompare(b.pcName || '') ||
       this.shiftRank(a.shift) - this.shiftRank(b.shift) ||
       (a.workStationName || '').localeCompare(b.workStationName || ''),
@@ -476,7 +498,7 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
 
   /** Excel export (ExcelJS) — manning-sheet layout with merged PC/Shift and per-PC subtotals. */
   async exportExcel(): Promise<void> {
-    if (this.isExporting || this.reportRows.length === 0) return;
+    if (this.isExporting || this.filteredRecords.length === 0) return;
     this.isExporting = true;
     try {
       if (!(window as any).ExcelJS) {
@@ -509,7 +531,7 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
       const t1 = ws.getCell(1, 1);
       t1.value = {
         richText: [
-          { text: this.service.companyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
+          { text: this.chartCompanyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
           { text: 'Unit-1  \u2014  Groupwise Manpower Status', font: { bold: true, size: 11, color: { argb: 'FFFFFFFF' } } },
         ],
       };
@@ -662,7 +684,7 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
 
   /** PDF export — manning-sheet layout (PC/Shift merged via rowSpan), per-PC subtotals + grand total. */
   async exportPdf(): Promise<void> {
-    if (this.isExporting || this.reportRows.length === 0) return;
+    if (this.isExporting || this.filteredRecords.length === 0) return;
     this.isExporting = true;
     try {
       if (!(window as any).jspdf) {
@@ -683,7 +705,7 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(15);
       doc.setTextColor(15, 108, 141);
-      doc.text(this.service.companyName, pageW / 2, 12, { align: 'center' });
+      doc.text(this.chartCompanyName, pageW / 2, 12, { align: 'center' });
       doc.setFontSize(11);
       doc.setTextColor(40, 40, 40);
       doc.text('Unit-1  \u2014  Groupwise Manpower Status', pageW / 2, 19, { align: 'center' });
@@ -788,6 +810,199 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
     return this.service.companyName;
   }
 
+  /** Show the picker only when the login spans more than one company (e.g. 33). */
+  get showCompanyPicker(): boolean {
+    return this.viewCompanies.length > 1;
+  }
+
+  /** Name of the picked company, for the chart headers (falls back to the login company name). */
+  get chartCompanyName(): string {
+    const c = this.viewCompanies.find((x) => x.companyCode === this.selectedCompany);
+    return c ? c.companyName : this.service.companyName;
+  }
+
+  /** Keep only the picked company's rows (no-op for a single-company login). */
+  private forSelectedCompany(rows: ShortageTrendRow[]): ShortageTrendRow[] {
+    if (!this.selectedCompany) return rows;
+    return rows.filter((r) => (r.companyCode || '') === this.selectedCompany);
+  }
+
+  /** User picked a different company from the chart picker — reload every chart. */
+  onCompanyChange(): void {
+    if (this.analyticsCollapsed) return;
+    this.loadSummary();
+    this.loadBreakdown();
+  }
+
+  /** Records shown in the grid — narrowed to the picked company (no-op for a single-company login). */
+  get filteredRecords(): ManpowerRecord[] {
+    if (!this.showCompanyPicker || !this.selectedCompany) return this.reportRows;
+    return this.reportRows.filter((r) => (r.companyCode || '') === this.selectedCompany);
+  }
+
+  /** Departments offered in the Records filter — narrowed to the picked company (via PCCode prefix). */
+  get filteredDepartments(): DepartmentOption[] {
+    if (!this.showCompanyPicker || !this.selectedCompany) return this.departments;
+    return this.departments.filter((d) => (d.pcCode || '').slice(0, 2) === this.selectedCompany);
+  }
+
+  /** Company changed from the Records toolbar — re-filter the grid (and charts if the panel is open). */
+  onRecordsCompanyChange(): void {
+    const pcId = this.form.get('pcId')?.value;
+    if (pcId) {
+      const dept = this.departments.find((d) => String(d.pcId) === String(pcId));
+      // drop a department filter that doesn't belong to the newly-picked company
+      if (dept && (dept.pcCode || '').slice(0, 2) !== this.selectedCompany) {
+        this.form.get('pcId')?.setValue('');
+      }
+    }
+    this.onCompanyChange();   // keeps the charts in step when the analytics panel is open
+  }
+
+  /**
+   * Export ONE chart to PDF by capturing its live <canvas>, so the PDF matches
+   * the screen exactly. Requires the card to be showing a chart (not grid-only).
+   */
+  async exportChartPdf(canvasId: string, heading: string): Promise<void> {
+    if (this.isExporting) return;
+    const src = document.getElementById(canvasId) as HTMLCanvasElement | null;
+    if (!src || !src.width) { this.errorMessage = 'Switch this card to a Chart view first, then export.'; return; }
+    this.isExporting = true;
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      if (!jsPDF) { this.errorMessage = 'PDF library failed to load. Check your connection and retry.'; return; }
+
+      // Chart.js canvases are transparent — paint white behind so the PDF prints cleanly.
+      const tmp = document.createElement('canvas');
+      tmp.width = src.width; tmp.height = src.height;
+      const tctx = tmp.getContext('2d')!;
+      tctx.fillStyle = '#ffffff'; tctx.fillRect(0, 0, tmp.width, tmp.height);
+      tctx.drawImage(src, 0, 0);
+      const png = tmp.toDataURL('image/png');
+
+      const pdfSafe = (s: string) => (s || '').replace(/\u2192/g, ' to ').replace(/[^\x00-\xFF]/g, '');
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
+      doc.text(pdfSafe(this.chartCompanyName), pageW / 2, 16, { align: 'center' });
+      doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      doc.text(pdfSafe(heading), pageW / 2, 24, { align: 'center' });
+
+      const imgW = pageW - 28;
+      let imgH = imgW * (src.height / src.width);
+      const maxH = pageH - 36;
+      if (imgH > maxH) imgH = maxH;
+      doc.addImage(png, 'PNG', 14, 30, imgW, imgH);
+
+      const fname = (pdfSafe(heading).replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '_').slice(0, 60)) || 'chart';
+      doc.save(`${fname}.pdf`);
+    } catch (e) {
+      console.error('Chart PDF export failed:', e);
+      this.errorMessage = 'Failed to generate the chart PDF. Please try again.';
+    } finally {
+      this.isExporting = false;
+    }
+  }
+
+  /**
+   * Breakdown PDF — matches the on-screen View selection:
+   *   Chart + Grid -> chart on top, dated grid below
+   *   Chart        -> chart only
+   *   Grid         -> grid only
+   * Always for the picked company and the selected period.
+   */
+  async exportBreakdownPdf(): Promise<void> {
+    if (this.isExporting) return;
+    if (!this.breakdownRows.length) { this.errorMessage = 'No breakdown data to export.'; return; }
+    this.isExporting = true;
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      if (!jsPDF) { this.errorMessage = 'PDF library failed to load. Check your connection and retry.'; return; }
+      if (!jsPDF.API || !jsPDF.API.autoTable) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+      }
+
+      const pdfSafe = (s: string) => (s || '').replace(/\u2192/g, ' to ').replace(/[^\x00-\xFF]/g, '');
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+
+      // header: company + "Shortage breakdown · <period>"
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
+      doc.text(pdfSafe(this.chartCompanyName), pageW / 2, 14, { align: 'center' });
+      doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      doc.text(pdfSafe('Shortage breakdown  ·  ' + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+
+      let startY = 26;
+
+      // chart image — included for Chart and Chart+Grid views
+      if (this.breakdownView !== 'grid') {
+        const src = document.getElementById('shortageBreakdownCanvas') as HTMLCanvasElement | null;
+        if (src && src.width) {
+          const tmp = document.createElement('canvas');
+          tmp.width = src.width; tmp.height = src.height;
+          const tctx = tmp.getContext('2d')!;
+          tctx.fillStyle = '#ffffff'; tctx.fillRect(0, 0, tmp.width, tmp.height);
+          tctx.drawImage(src, 0, 0);
+          const png = tmp.toDataURL('image/png');
+          const imgW = pageW - 28;
+          const imgH = Math.min(imgW * (src.height / src.width), this.breakdownView === 'chart' ? 150 : 95);
+          doc.addImage(png, 'PNG', 14, startY, imgW, imgH);
+          startY += imgH + 6;
+        }
+      }
+
+      // dated grid table — included for Grid and Chart+Grid views
+      if (this.breakdownView !== 'chart') {
+        const dimLabel = this.breakdownDim === 'station' ? 'Station' : 'Department';
+        const head = [['#', dimLabel, 'Date', 'Shortage (Nos.)', 'Absent', 'Share']];
+        const kinds: string[] = [];
+        const body: any[] = this.breakdownDetailRows.map((r) => {
+          kinds.push(r.kind);
+          return [
+            r.kind !== 'sub' ? this.breakdownRankOf(r.label) : '',
+            r.kind !== 'sub' ? pdfSafe(r.label) : '',
+            r.kind === 'head' ? `${r.days} days` : this.niceDate(r.date),
+            r.short, r.absent,
+            this.breakdownShare(r).toFixed(1) + '%',
+          ];
+        });
+        kinds.push('total');
+        body.push(['', 'Total', '', this.breakdownShortTotal, this.breakdownAbsentTotal, '100%']);
+
+        (doc as any).autoTable({
+          head, body, startY, theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle' },
+          headStyles: { fillColor: [15, 108, 141], textColor: 255, halign: 'center' },
+          columnStyles: {
+            0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'left' }, 2: { halign: 'center', cellWidth: 26 },
+            3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' },
+          },
+          didParseCell: (d: any) => {
+            const k = kinds[d.row.index];
+            if (k === 'total') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [235, 242, 246]; }
+            else if (k === 'head' || k === 'single') { d.cell.styles.fontStyle = 'bold'; if (k === 'head') d.cell.styles.fillColor = [240, 246, 249]; }
+            else { d.cell.styles.textColor = [90, 105, 115]; }
+          },
+        });
+      }
+
+      doc.save('Shortage_breakdown.pdf');
+    } catch (e) {
+      console.error('Breakdown PDF export failed:', e);
+      this.errorMessage = 'Failed to generate the breakdown PDF. Please try again.';
+    } finally {
+      this.isExporting = false;
+    }
+  }
+
   toggleRecords(): void { this.recordsCollapsed = !this.recordsCollapsed; }
 
   toggleAnalytics(): void {
@@ -850,7 +1065,11 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
    * Summary by department, built from a given record set: per-skill Required / Available / Shortage,
    * a Total group, and Absent at the end. Also prepares station-wise totals for the chart.
    */
-  buildSummaryFrom(records: ManpowerRecord[]): void {
+  buildSummaryFrom(allRecords: ManpowerRecord[]): void {
+    // keep only the picked company's rows (no-op for a single-company login)
+    const records = this.selectedCompany
+      ? allRecords.filter((r) => (r.companyCode || '') === this.selectedCompany)
+      : allRecords;
     const dMap = new Map<string, SummaryRow>();
     const sMap = new Map<string, number>();
     for (const r of records) {
@@ -996,25 +1215,77 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
     return tot ? Math.round((r.short / tot) * 1000) / 10 : 0;
   }
 
+  /** 1-based rank of a label in the aggregated (sorted) breakdown rows. */
+  breakdownRankOf(label: string): number {
+    return this.breakdownRows.findIndex((r) => r.label === label) + 1;
+  }
+
+  /**
+   * Flatten the per-date map into tidy grid rows:
+   *   - stations with ONE dated entry -> a single combined row
+   *   - stations with several dates   -> a bold header row (totals) + light date sub-rows
+   *   - zero-shortage entries are dropped
+   * Stations stay in ranked order; dates ascend inside each station.
+   */
+  private rebuildBreakdownDetail(dateMap?: Map<string, Map<string, { short: number; absent: number }>>): void {
+    if (dateMap) {
+      this.breakdownDateMap = new Map(
+        Array.from(dateMap.entries()).map(([label, byDate]) => [
+          label,
+          Array.from(byDate.entries())
+            .map(([date, v]) => ({ date, short: v.short, absent: v.absent }))
+            .filter((d) => d.short > 0)                          // zero-shortage days add noise
+            .sort((a, b) => a.date.localeCompare(b.date)),
+        ]),
+      );
+    }
+    const detail: typeof this.breakdownDetailRows = [];
+    for (const agg of this.breakdownRows) {                      // ranked order
+      const dates = this.breakdownDateMap.get(agg.label) || [];
+      if (dates.length === 0) continue;
+      if (dates.length === 1) {
+        const d = dates[0];
+        detail.push({ kind: 'single', label: agg.label, date: d.date, days: 1, short: d.short, absent: d.absent });
+      } else {
+        detail.push({ kind: 'head', label: agg.label, date: '', days: dates.length, short: agg.short, absent: agg.absent });
+        for (const d of dates) {
+          detail.push({ kind: 'sub', label: agg.label, date: d.date, days: 0, short: d.short, absent: d.absent });
+        }
+      }
+    }
+    this.breakdownDetailRows = detail;
+  }
+
   /** Load + aggregate shortage by station or by department for the resolved window. */
   loadBreakdown(): void {
     if (!this.breakdownFrom || !this.breakdownTo) this.resolveBreakdownRange();
     this.chartLoading = true;
     this.service.getShortageTrend(this.breakdownFrom, this.breakdownTo).subscribe({
-      next: (rows) => {
+      next: (rawRows) => {
         this.chartLoading = false;
+        const rows = this.forSelectedCompany(rawRows);
         const map = new Map<string, { short: number; absent: number }>();
+        const dateMap = new Map<string, Map<string, { short: number; absent: number }>>();
         for (const r of rows) {
           const key = (this.breakdownDim === 'station' ? r.workStationName : r.pcName) || '—';
           const cur = map.get(key) || { short: 0, absent: 0 };
           cur.short += r.shortTotal || 0;
           cur.absent += r.absent || 0;
           map.set(key, cur);
+
+          // per-date detail for the same key (one entry per key+date)
+          let byDate = dateMap.get(key);
+          if (!byDate) { byDate = new Map(); dateMap.set(key, byDate); }
+          const d = byDate.get(r.date) || { short: 0, absent: 0 };
+          d.short += r.shortTotal || 0;
+          d.absent += r.absent || 0;
+          byDate.set(r.date, d);
         }
         this.breakdownRows = Array.from(map.entries())
           .map(([label, v]) => ({ label, short: v.short, absent: v.absent }))
           .filter((x) => x.short > 0)                          // only show where there's a net shortage
           .sort((a, b) => b.short - a.short);
+        this.rebuildBreakdownDetail(dateMap);
         setTimeout(() => this.renderBreakdownChart(), 0);
       },
       error: () => { this.chartLoading = false; },
@@ -1027,19 +1298,30 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
     const Chart = await this.ensureChartJs();
     const canvas = document.getElementById('shortageBreakdownCanvas') as HTMLCanvasElement | null;
     if (!canvas) return;
-    if (this.breakdownChart) { this.breakdownChart.destroy(); this.breakdownChart = null; }
 
     const cap = this.breakdownDim === 'station' ? 15 : 20;     // keep labels readable
     const top = this.breakdownRows.slice(0, cap);
     const color = this.breakdownDim === 'station' ? '#0f6c8d' : '#5a55c9';
-    const unit = this.breakdownDim === 'station' ? 'Station' : 'Department';
+    const labels = top.map((m) => m.label);
+    const dataset = { label: 'Shortage (Nos.)', data: top.map((m) => m.short), backgroundColor: color, borderWidth: 0, borderRadius: 3 };
+
+    // Smooth path: animate the data in place if the chart exists AND is still
+    // bound to the live canvas. (Grid view removes the canvas via *ngIf — the
+    // old chart then points at a dead canvas and must be rebuilt.)
+    if (this.breakdownChart) {
+      if (this.breakdownChart.canvas === canvas && canvas.isConnected) {
+        this.breakdownChart.data.labels = labels;
+        this.breakdownChart.data.datasets = [dataset];
+        this.breakdownChart.update();
+        return;
+      }
+      this.breakdownChart.destroy();
+      this.breakdownChart = null;
+    }
 
     this.breakdownChart = new Chart(canvas.getContext('2d')!, {
       type: 'bar',
-      data: {
-        labels: top.map((m) => m.label),
-        datasets: [{ label: 'Shortage (Nos.)', data: top.map((m) => m.short), backgroundColor: color, borderWidth: 0, borderRadius: 3 }],
-      },
+      data: { labels, datasets: [dataset] },
       options: {
         responsive: true, maintainAspectRatio: false,
         layout: { padding: { top: 22 } },                       // headroom for the value labels
@@ -1047,8 +1329,17 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              title: (items: any) => `${unit}: ${items[0].label}`,
+              // read the current dimension so the tooltip stays correct after in-place updates
+              title: (items: any) => `${this.breakdownDim === 'station' ? 'Station' : 'Department'}: ${items[0].label}`,
               label: (c: any) => `${c.parsed.y} short`,
+              // per-date detail: which dates this station was short, and by how much
+              afterBody: (items: any) => {
+                const dates = this.breakdownDateMap.get(items[0].label) || [];
+                if (!dates.length) return [];
+                const lines = dates.slice(0, 8).map((d) => `  ${this.niceDate(d.date)}: ${d.short} short`);
+                if (dates.length > 8) lines.push(`  +${dates.length - 8} more date(s)`);
+                return ['', 'Dates:', ...lines];
+              },
             }
           },
         },

@@ -28,7 +28,7 @@
     <!-- ============ RECORDS (filters + exports + grid, collapsible) ============ -->
     <div class="panel">
       <div class="panel-head" (click)="toggleRecords()">
-        <h3>Records <span class="count" *ngIf="reportRows.length">({{ reportRows.length }})</span></h3>
+        <h3>Records <span class="count" *ngIf="filteredRecords.length">({{ filteredRecords.length }})</span></h3>
         <button class="collapse-btn" type="button" [attr.aria-label]="recordsCollapsed ? 'Expand' : 'Minimize'">{{ recordsCollapsed ? '+' : '−' }}</button>
       </div>
       <div class="panel-body" *ngIf="!recordsCollapsed">
@@ -36,6 +36,13 @@
     <!-- FILTERS -->
     <div class="card">
       <div class="row">
+        <div *ngIf="showCompanyPicker">
+          <label>Company</label>
+          <select [value]="selectedCompany"
+            (change)="selectedCompany = $any($event.target).value; onRecordsCompanyChange()">
+            <option *ngFor="let c of viewCompanies" [value]="c.companyCode">{{ c.companyName }}</option>
+          </select>
+        </div>
         <div>
           <label>Date</label>
           <input type="date" formControlName="date" />
@@ -51,7 +58,7 @@
           <label>Department</label>
           <select formControlName="pcId">
             <option value="">All Departments</option>
-            <option *ngFor="let d of departments" [value]="d.pcId">{{ d.pcName }}</option>
+            <option *ngFor="let d of filteredDepartments" [value]="d.pcId">{{ d.pcName }}</option>
           </select>
         </div>
         <div class="btn-cell">
@@ -61,7 +68,7 @@
     </div>
 
     <!-- EXPORT BAR -->
-    <div class="export-bar" *ngIf="reportRows.length > 0">
+    <div class="export-bar" *ngIf="filteredRecords.length > 0">
       <button class="btn-pdf" (click)="exportPdf()" [disabled]="isExporting">⤓ PDF</button>
       <button class="btn-excel" (click)="exportExcel()" [disabled]="isExporting">⤓ Excel</button>
     </div>
@@ -110,7 +117,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of reportRows; let i = index">
+          <tr *ngFor="let r of filteredRecords; let i = index">
             <td>{{ i + 1 }}</td>
             <td>{{ shiftLabel(r.shift) }}</td>
             <td class="machine-name">{{ r.pcName }}</td>
@@ -128,7 +135,7 @@
             </td>
           </tr>
 
-          <tr *ngIf="!isLoading && reportRows.length === 0">
+          <tr *ngIf="!isLoading && filteredRecords.length === 0">
             <td colspan="16" class="no-data">No Data Found</td>
           </tr>
         </tbody>
@@ -149,6 +156,13 @@
 
         <!-- ===== Date + shift picker that drives the Summary table & Station-wise chart ===== -->
         <div class="analytics-controls">
+          <div class="ctrl" *ngIf="showCompanyPicker">
+            <label>Company</label>
+            <select [value]="selectedCompany"
+              (change)="selectedCompany = $any($event.target).value; onCompanyChange()">
+              <option *ngFor="let c of viewCompanies" [value]="c.companyCode">{{ c.companyName }}</option>
+            </select>
+          </div>
           <div class="ctrl">
             <label>Summary date</label>
             <input type="date" [value]="summaryDate" (change)="summaryDate = $any($event.target).value; applySummaryDate()" />
@@ -168,7 +182,7 @@
         <div class="a-card">
           <div class="a-card-head">
             <div class="chart-title">
-              <div class="company">{{ companyName }}</div>
+              <div class="company">{{ chartCompanyName }}</div>
               <h4>Summary by department <span class="when">{{ shiftLabel(summaryShift) }} · {{ niceDate(summaryDate) }}</span></h4>
             </div>
             <span class="summary-pill" *ngIf="summaryRows.length">Total shortage {{ summaryTotals.shT }} Nos.</span>
@@ -220,7 +234,7 @@
         <div class="a-card">
           <div class="a-card-head">
             <div class="chart-title">
-              <div class="company">{{ companyName }}</div>
+              <div class="company">{{ chartCompanyName }}</div>
               <h4>Station-wise shortage <span class="when">{{ shiftLabel(summaryShift) }} · {{ niceDate(summaryDate) }}</span></h4>
             </div>
             <div class="a-head-right">
@@ -230,6 +244,9 @@
                 <button [class.active]="dailyView === 'chart'" (click)="setDailyView('chart')">Chart</button>
                 <button [class.active]="dailyView === 'grid'"  (click)="setDailyView('grid')">Grid</button>
               </div>
+              <button class="btn-chart-pdf" type="button" *ngIf="dailyView !== 'grid' && stationRows.length" [disabled]="isExporting"
+                title="Export this chart to PDF"
+                (click)="exportChartPdf('shortageStationCanvas', 'Station-wise shortage (' + shiftLabel(summaryShift) + ' · ' + niceDate(summaryDate) + ')')">⤓ PDF</button>
             </div>
           </div>
 
@@ -260,14 +277,14 @@
               </tbody>
             </table>
           </div>
-          <p *ngIf="!chartLoading && stationRows.length === 0" class="bd-empty">No shortage for this date &amp; shift.</p>
+          <p *ngIf="stationRows.length === 0" class="bd-empty">No shortage for this date &amp; shift.</p>
         </div>
 
         <!-- ===== Station / Department shortage breakdown (weekly · monthly · all) ===== -->
         <div class="a-card breakdown-card">
           <div class="a-card-head">
             <div class="chart-title">
-              <div class="company">{{ companyName }}</div>
+              <div class="company">{{ chartCompanyName }}</div>
               <h4>
                 {{ breakdownDim === 'station' ? 'Station-wise shortage report' : 'Department-wise shortage report' }}
                 <span class="when">{{ breakdownPeriodLabel }}</span>
@@ -307,6 +324,10 @@
                 <button [class.active]="breakdownView === 'grid'"  (click)="setBreakdownView('grid')">Grid</button>
               </div>
             </div>
+
+            <button class="btn-chart-pdf bd-pdf" type="button" *ngIf="breakdownRows.length" [disabled]="isExporting"
+              title="Export the breakdown chart + grid to PDF"
+              (click)="exportBreakdownPdf()">⤓ PDF</button>
           </div>
 
           <!-- KPI chips -->
@@ -332,7 +353,7 @@
             </p>
           </ng-container>
 
-          <p *ngIf="!chartLoading && breakdownRows.length === 0" class="bd-empty">No shortage recorded for this period.</p>
+          <p *ngIf="breakdownRows.length === 0" class="bd-empty">No shortage recorded for this period.</p>
 
           <!-- RECORDS GRID -->
           <ng-container *ngIf="breakdownView !== 'chart' && breakdownRows.length">
@@ -344,26 +365,41 @@
               <table class="bd-grid">
                 <thead>
                   <tr>
-                    <th class="st-h" style="width:42%">{{ breakdownDim === 'station' ? 'Station' : 'Department' }}</th>
-                    <th class="short-h" style="width:18%">Shortage (Nos.)</th>
-                    <th class="abs-h" style="width:14%">Absent</th>
-                    <th style="width:26%">Share</th>
+                    <th class="st-h" style="width:36%">{{ breakdownDim === 'station' ? 'Station' : 'Department' }}</th>
+                    <th class="date-h" style="width:14%">Date</th>
+                    <th class="short-h" style="width:16%">Shortage (Nos.)</th>
+                    <th class="abs-h" style="width:12%">Absent</th>
+                    <th style="width:22%">Share</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let r of breakdownRows; let i = index">
-                    <td class="st"><span class="rank">{{ i + 1 }}</span>{{ r.label }}</td>
+                  <tr *ngFor="let r of breakdownDetailRows"
+                    [class.grp-head]="r.kind === 'head'" [class.grp-sub]="r.kind === 'sub'"
+                    [class.grp-first]="r.kind !== 'sub'">
+                    <td class="st">
+                      <ng-container *ngIf="r.kind !== 'sub'">
+                        <span class="rank">{{ breakdownRankOf(r.label) }}</span>{{ r.label }}
+                      </ng-container>
+                    </td>
+                    <td class="date-cell">
+                      <ng-container *ngIf="r.kind === 'head'; else oneDate">{{ r.days }} days</ng-container>
+                      <ng-template #oneDate>{{ niceDate(r.date) }}</ng-template>
+                    </td>
                     <td class="short">{{ r.short }}</td>
                     <td class="abs">{{ r.absent }}</td>
                     <td>
-                      <div class="bar-wrap">
-                        <div class="bar" [style.width.%]="breakdownShare(r)"></div>
-                        <span class="pct">{{ breakdownShare(r) | number:'1.0-1' }}%</span>
-                      </div>
+                      <ng-container *ngIf="r.kind !== 'sub'; else pctOnly">
+                        <div class="bar-wrap">
+                          <div class="bar" [style.width.%]="breakdownShare(r)"></div>
+                          <span class="pct">{{ breakdownShare(r) | number:'1.0-1' }}%</span>
+                        </div>
+                      </ng-container>
+                      <ng-template #pctOnly><span class="pct sub-pct">{{ breakdownShare(r) | number:'1.0-1' }}%</span></ng-template>
                     </td>
                   </tr>
                   <tr class="sum-total">
                     <td class="st">Total</td>
+                    <td></td>
                     <td class="short">{{ breakdownShortTotal }}</td>
                     <td class="abs">{{ breakdownAbsentTotal }}</td>
                     <td><span class="pct" style="color:#0f6c8d">100%</span></td>

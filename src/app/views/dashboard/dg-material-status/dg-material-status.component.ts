@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
@@ -7,6 +7,11 @@ import {
   KvaOption,
   MaterialRecord,
   SaveMaterialBatchRequest,
+  MaterialTrendRow,
+  CompanyOption,
+  PartOption,
+  EmployeeOption,
+  EspEmployee,
 } from './dg-material-status.service';
 
 @Component({
@@ -22,7 +27,7 @@ import {
     ]),
   ],
 })
-export class DgMaterialStatusComponent implements OnInit {
+export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewInit {
   form!: FormGroup;
 
   isFormVisible = false;   // false = View (records) page first; true = Add (entry form)
@@ -33,6 +38,14 @@ export class DgMaterialStatusComponent implements OnInit {
 
   /** "Type of material" options — hardcoded (from the Excel sub-headers). */
   materialTypes: string[] = ['Raw', 'Consumable', 'Spares', 'Tools'];
+  statusOptions: string[] = ['Open', 'Closed', 'InProcess'];
+  shortageOptions: number[] = Array.from({ length: 100 }, (_, i) => i + 1);   // 1..100
+  employees: EmployeeOption[] = [];
+  private partsByKva = new Map<string, PartOption[]>();   // KVA -> parts (Raw dropdown cache)
+
+  // chart/records company picker (parent login like 33 spans 01/03/28)
+  viewCompanies: CompanyOption[] = [];
+  selectedCompany = '';
 
   reportRows: MaterialRecord[] = [];
   recordsCollapsed = false;
@@ -57,7 +70,26 @@ export class DgMaterialStatusComponent implements OnInit {
 
     this.loadDepartments();
     this.loadKva();
-    this.searchReport();          // View page shown first
+
+    // employees for the person-to-communicate dropdown
+    this.service.getEmployees().subscribe({
+      next: (res) => (this.employees = res || []),
+      error: () => (this.employees = []),
+    });
+
+    // companies for the picker (parent login -> children; else just self)
+    this.service.getViewCompanies().subscribe({
+      next: (res) => {
+        this.viewCompanies = res || [];
+        this.selectedCompany = this.viewCompanies.length ? this.viewCompanies[0].companyCode : this.service.companyCode;
+        this.chartCompany = this.selectedCompany;
+        this.onChartCompanyChange();   // re-filter the charts once the picker resolves
+      },
+      error: () => { this.viewCompanies = []; this.selectedCompany = this.service.companyCode; },
+    });
+
+    this.resolveBreakdownRange();
+    this.searchReport();          // View page shown first (analytics loads on expand)
   }
 
   /* ---------------- form rows ---------------- */
@@ -68,10 +100,14 @@ export class DgMaterialStatusComponent implements OnInit {
   private newRow(): FormGroup {
     return this.fb.group({
       plan: ['', Validators.required],                       // KVA
+      planQuantity: [null, [Validators.required, Validators.min(0)]],
       materialType: ['Raw', Validators.required],            // hardcoded dropdown
-      quantity: [null, [Validators.required, Validators.min(0)]],
-      status: ['', Validators.required],                                          // data entry (the "OK"/note)
-      person: [''],                                          // person to communicate (data entry)
+      partCode: [''],                                        // Raw: selected Part.PartCode
+      partName: [''],                                        // Raw: name snapshot; else free text / blank
+      shortageQty: [0],                                      // 0 = none; 1..100
+      status: ['Open', Validators.required],                 // Open / Closed / InProcess
+      remark: [''],
+      person: [''],                                          // person to communicate (employee)
     });
   }
 
@@ -89,8 +125,513 @@ export class DgMaterialStatusComponent implements OnInit {
     if (this.rows.length > 1) {
       this.rows.removeAt(i);
     } else {
-      this.rows.at(0).reset({ plan: '', materialType: 'Raw', quantity: null, status: '', person: '' });
+      this.rows.at(0).reset({ plan: '', planQuantity: null, materialType: 'Raw', partCode: '', partName: '', shortageQty: 0, status: 'Open', remark: '', person: '' });
     }
+  }
+
+  /* ---------------- Raw part dropdown + company picker ---------------- */
+
+  /** Compact label for the part dropdown options (full name is still saved). */
+  partLabel(name: string): string {
+    const n = name || '';
+    return n.length > 48 ? n.slice(0, 45) + '…' : n;
+  }
+
+  /** Cached parts for a Plan (KVA) — the row's Raw part dropdown reads this. */
+  partsFor(plan: any): PartOption[] {
+    return this.partsByKva.get(String(plan ?? '')) || [];
+  }
+
+  /** Fetch parts for a KVA once and cache them. */
+  private ensureParts(kva: any): void {
+    const k = String(kva ?? '').trim();
+    if (!k || this.partsByKva.has(k)) return;
+    this.partsByKva.set(k, []);   // placeholder so we don't double-fetch
+    this.service.getPartsByKva(k).subscribe({
+      next: (res) => this.partsByKva.set(k, res || []),
+      error: () => this.partsByKva.set(k, []),
+    });
+  }
+
+  /** Row's Plan (KVA) changed — load its parts if the row is Raw, and clear a stale part. */
+  onRowPlanChange(i: number): void {
+    const g = this.rows.at(i);
+    g.get('partCode')?.setValue('');
+    g.get('partName')?.setValue('');
+    if (g.get('materialType')?.value === 'Raw') this.ensureParts(g.get('plan')?.value);
+  }
+
+  /** Row's Type changed — Raw needs the part list; switching away keeps free text. */
+  onRowTypeChange(i: number): void {
+    const g = this.rows.at(i);
+    g.get('partCode')?.setValue('');
+    g.get('partName')?.setValue('');
+    if (g.get('materialType')?.value === 'Raw') this.ensureParts(g.get('plan')?.value);
+  }
+
+  /** Show the picker only when the login spans more than one company (e.g. 33). */
+  get showCompanyPicker(): boolean {
+    return this.viewCompanies.length > 1;
+  }
+
+  /** Name of the picked company (falls back to the login company name). */
+  get chartCompanyName(): string {
+    const c = this.viewCompanies.find((x) => x.companyCode === this.selectedCompany);
+    return c ? c.companyName : this.service.companyName;
+  }
+
+  /** Records shown in the grid — narrowed to the picked company. */
+  get filteredRecords(): MaterialRecord[] {
+    if (!this.showCompanyPicker || !this.selectedCompany) return this.reportRows;
+    return this.reportRows.filter((r) => (r.companyCode || (r.deptCode || '').slice(0, 2)) === this.selectedCompany);
+  }
+
+  /** Departments offered in the filters — narrowed to the picked company (PCCode prefix). */
+  get filteredDepartments(): MaterialDept[] {
+    if (!this.showCompanyPicker || !this.selectedCompany) return this.departments;
+    return this.departments.filter((d) => (d.deptCode || '').slice(0, 2) === this.selectedCompany);
+  }
+
+  /** Company changed from the Records toolbar — drop a mismatched department filter. */
+  onRecordsCompanyChange(): void {
+    const dept = this.form.get('deptCode')?.value as string;
+    if (dept && dept.slice(0, 2) !== this.selectedCompany) {
+      this.form.get('deptCode')?.setValue('');
+    }
+  }
+
+  /* ================= ESP (raise a Corporate Requisition for a shortage) ================= */
+  espOpen = false;
+  espSending = false;
+  espRecord: MaterialRecord | null = null;
+  espEmployees: EspEmployee[] = [];
+  espToEmp = '';
+  espPriority = 'High Priority';
+  espTargetDate = '';                    // "yyyy-MM-dd" — selected by the user
+  espMinTargetDate = '';                 // today — lower bound of the picker
+  espMsg = '';
+  espPriorities = ['High Priority', 'Medium Priority', 'Low Priority'];
+
+  @ViewChild('espOverlayEl') private espOverlayEl?: ElementRef<HTMLElement>;
+
+  /** Move the ESP modal to <body> so no sidebar z-index or transformed ancestor can cover/trap it. */
+  ngAfterViewInit(): void {
+    const el = this.espOverlayEl?.nativeElement;
+    if (el && el.parentElement !== document.body) document.body.appendChild(el);
+  }
+
+  /** Today as "yyyy-MM-dd" (local) — lower bound for the Target Date picker. */
+  private isoToday(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  /** ESP button — opens the modal pre-worded for this shortage line. */
+  openEsp(r: MaterialRecord): void {
+    this.clearMessages();
+    if (r.espReqCode) {
+      this.errorMessage = `ESP already raised for this line (${r.espReqCode}).`;
+      return;
+    }
+    this.espRecord = r;
+    this.espPriority = 'High Priority';
+    this.espMinTargetDate = this.isoToday();
+    this.espTargetDate = '';
+    const what = r.partName ? `${r.partName}` : `${r.materialType} material`;
+    this.espMsg = r.shortageQty > 0
+      ? `Material shortage at ${r.deptName} on ${this.niceDate(r.date)}: ` +
+        `${r.shortageQty} Nos short — ${what} (Plan ${r.plan} KVA, ${r.materialType}). ` +
+        `Current status: ${r.status || 'Open'}. Kindly arrange / issue the material at the earliest.`
+      : `Material requirement at ${r.deptName} on ${this.niceDate(r.date)}: ` +
+        `${what} (Plan ${r.plan} KVA, ${r.materialType}, Plan Qty ${r.planQuantity}). ` +
+        `Kindly arrange / issue the material at the earliest.`;
+    // pre-select the record's "person to communicate" via the [ ecode ] in the stored name
+    const m = (r.person || '').match(/\[\s*([^\]]+?)\s*\]/);
+    this.espToEmp = m ? m[1].trim() : '';
+    this.espOpen = true;
+    if (!this.espEmployees.length) {
+      this.service.getEspEmployees().subscribe({
+        next: (res) => {
+          this.espEmployees = res || [];
+          if (this.espToEmp && !this.espEmployees.some((e) => e.eCode === this.espToEmp)) this.espToEmp = '';
+        },
+        error: () => (this.errorMessage = 'Could not load the ESP employee list.'),
+      });
+    }
+  }
+
+  closeEsp(): void { this.espOpen = false; this.espRecord = null; }
+
+  sendEsp(): void {
+    if (!this.espRecord) return;
+    if (!this.espToEmp) { this.errorMessage = 'Select the employee to raise the ESP to.'; return; }
+    if (!this.espTargetDate) { this.errorMessage = 'Select the target date.'; return; }
+    if (!this.espMsg.trim()) { this.errorMessage = 'The request message cannot be empty.'; return; }
+    const emp = this.espEmployees.find((e) => e.eCode === this.espToEmp);
+    if (!emp) { this.errorMessage = 'Selected employee is invalid.'; return; }
+    this.espSending = true;
+    this.service.raiseEsp({
+      empCode: this.service.sessionUser,
+      fromPCCode: this.espRecord.deptCode,
+      toEmpCode: emp.eCode,
+      toPCCode: emp.pcCode,
+      priority: this.espPriority,
+      reqMsg: this.espMsg.trim(),
+      companyCode: this.service.companyCode,
+      targetDate: this.espTargetDate,
+      mcode: this.espRecord.mcode,
+      srNo: this.espRecord.srNo,
+    }).subscribe({
+      next: (res: any) => {
+        this.espSending = false;
+        const reqNo = res?.message ? ` (${res.message})` : '';
+        if (this.espRecord && res?.message) this.espRecord.espReqCode = res.message;
+        this.successMessage = `ESP raised to ${emp.fullName}${reqNo} for the ${this.espRecord?.partName || this.espRecord?.materialType} shortage.`;
+        this.closeEsp();
+      },
+      error: (err) => {
+        this.espSending = false;
+        console.error('ESP raise failed:', err);
+        this.errorMessage = 'Failed to raise the ESP. Please try again.';
+      },
+    });
+  }
+
+  /* ================= SHORTAGE ANALYTICS (charts) ================= */
+  analyticsCollapsed = true;    // hidden at first — loads on expand
+  chartLoading = false;
+  chartCompany = '';               // charts' own company (independent of the Records filter)
+  breakdownDim: 'department' | 'person' | 'part' | 'type' = 'department';
+  breakdownPeriod: 'weekly' | 'monthly' | 'custom' = 'monthly';
+  breakdownView: 'both' | 'chart' | 'grid' = 'both';
+  breakdownFrom = '';
+  breakdownTo = '';
+  breakdownRows: { label: string; short: number; open: number }[] = [];
+  breakdownDetailRows: { kind: 'single' | 'head' | 'sub'; label: string; date: string; days: number; short: number }[] = [];
+  private breakdownDateMap = new Map<string, { date: string; short: number }[]>();
+  shortageReport: MaterialTrendRow[] = [];      // flat "where is shortage" list for the period
+  private breakdownChart: any = null;
+  private chartJs?: Promise<any>;
+
+  ngOnDestroy(): void {
+    if (this.breakdownChart) { this.breakdownChart.destroy(); this.breakdownChart = null; }
+    const el = this.espOverlayEl?.nativeElement;
+    if (el && el.parentElement === document.body) document.body.removeChild(el);
+  }
+
+  toggleAnalytics(): void {
+    this.analyticsCollapsed = !this.analyticsCollapsed;
+    if (!this.analyticsCollapsed) setTimeout(() => this.loadAnalytics(), 0);
+    else if (this.breakdownChart) { this.breakdownChart.destroy(); this.breakdownChart = null; }
+  }
+
+  loadAnalytics(): void {
+    if (!this.breakdownFrom || !this.breakdownTo) this.resolveBreakdownRange();
+    this.loadBreakdown();
+  }
+
+  /** Charts' company changed — reload them (if the panel is open). */
+  onChartCompanyChange(): void {
+    if (!this.analyticsCollapsed) this.loadBreakdown();
+  }
+
+  /** Name of the charts' picked company (independent of the Records filter). */
+  get chartsCompanyName(): string {
+    const c = this.viewCompanies.find((x) => x.companyCode === this.chartCompany);
+    return c ? c.companyName : this.service.companyName;
+  }
+
+  private fmtDate(d: Date): string { return d.toISOString().slice(0, 10); }
+
+  resolveBreakdownRange(): void {
+    const today = new Date();
+    if (this.breakdownPeriod === 'weekly') {
+      const from = new Date(today); from.setDate(today.getDate() - 6);
+      this.breakdownFrom = this.fmtDate(from); this.breakdownTo = this.fmtDate(today);
+    } else if (this.breakdownPeriod === 'monthly') {
+      const from = new Date(today); from.setDate(today.getDate() - 29);
+      this.breakdownFrom = this.fmtDate(from); this.breakdownTo = this.fmtDate(today);
+    }
+    // custom keeps whatever the user typed
+  }
+
+  setBreakdownDim(dim: 'department' | 'person' | 'part' | 'type'): void {
+    this.breakdownDim = dim;
+    this.loadBreakdown();
+  }
+  setBreakdownPeriod(period: 'weekly' | 'monthly'): void {
+    this.breakdownPeriod = period;
+    this.resolveBreakdownRange();
+    this.loadBreakdown();
+  }
+  applyCustomRange(): void {
+    if (!this.breakdownFrom || !this.breakdownTo) return;
+    this.breakdownPeriod = 'custom';
+    this.loadBreakdown();
+  }
+  setBreakdownView(view: 'both' | 'chart' | 'grid'): void {
+    this.breakdownView = view;
+    if (view !== 'grid') setTimeout(() => this.renderBreakdownChart(), 0);
+  }
+
+  get breakdownPeriodLabel(): string {
+    return `${this.niceDate(this.breakdownFrom)} → ${this.niceDate(this.breakdownTo)}`;
+  }
+  get dimLabel(): string {
+    return this.breakdownDim === 'department' ? 'Department'
+      : this.breakdownDim === 'person' ? 'Person'
+        : this.breakdownDim === 'part' ? 'Part' : 'Material type';
+  }
+  get breakdownShortTotal(): number { return this.breakdownRows.reduce((t, r) => t + r.short, 0); }
+  get breakdownOpenTotal(): number { return this.breakdownRows.reduce((t, r) => t + r.open, 0); }
+  breakdownShare(r: { short: number }): number {
+    const tot = this.breakdownShortTotal;
+    return tot ? Math.round((r.short / tot) * 1000) / 10 : 0;
+  }
+  breakdownRankOf(label: string): number {
+    return this.breakdownRows.findIndex((r) => r.label === label) + 1;
+  }
+
+  /** Load + aggregate shortage by the chosen dimension for the resolved window. */
+  loadBreakdown(): void {
+    if (!this.breakdownFrom || !this.breakdownTo) this.resolveBreakdownRange();
+    this.chartLoading = true;
+    this.service.getTrend(this.breakdownFrom, this.breakdownTo).subscribe({
+      next: (rawRows) => {
+        this.chartLoading = false;
+        const rows = (this.showCompanyPicker && this.chartCompany)
+          ? (rawRows || []).filter((r) => (r.companyCode || '') === this.chartCompany)
+          : (rawRows || []);
+
+        // flat "where is shortage" report: every dated line with a shortage
+        this.shortageReport = rows
+          .filter((r) => (r.shortageQty || 0) > 0)
+          .sort((a, b) => b.date.localeCompare(a.date));
+
+        const keyOf = (r: MaterialTrendRow) =>
+          (this.breakdownDim === 'department' ? r.deptName
+            : this.breakdownDim === 'person' ? r.person
+              : this.breakdownDim === 'part' ? r.partName
+                : r.materialType) || '—';
+
+        const map = new Map<string, { short: number; open: number }>();
+        const dateMap = new Map<string, Map<string, number>>();
+        for (const r of rows) {
+          const q = r.shortageQty || 0;
+          if (q <= 0) continue;
+          const key = keyOf(r);
+          const cur = map.get(key) || { short: 0, open: 0 };
+          cur.short += q;
+          if ((r.status || '') === 'Open') cur.open += q;
+          map.set(key, cur);
+          let byDate = dateMap.get(key);
+          if (!byDate) { byDate = new Map(); dateMap.set(key, byDate); }
+          byDate.set(r.date, (byDate.get(r.date) || 0) + q);
+        }
+        this.breakdownRows = Array.from(map.entries())
+          .map(([label, v]) => ({ label, short: v.short, open: v.open }))
+          .sort((a, b) => b.short - a.short);
+        this.rebuildBreakdownDetail(dateMap);
+        setTimeout(() => this.renderBreakdownChart(), 0);
+      },
+      error: () => { this.chartLoading = false; },
+    });
+  }
+
+  /** Flatten the per-date map into tidy grid rows (single / head + sub). */
+  private rebuildBreakdownDetail(dateMap: Map<string, Map<string, number>>): void {
+    this.breakdownDateMap = new Map(
+      Array.from(dateMap.entries()).map(([label, byDate]) => [
+        label,
+        Array.from(byDate.entries())
+          .map(([date, short]) => ({ date, short }))
+          .filter((d) => d.short > 0)
+          .sort((a, b) => a.date.localeCompare(b.date)),
+      ]),
+    );
+    const detail: typeof this.breakdownDetailRows = [];
+    for (const agg of this.breakdownRows) {
+      const dates = this.breakdownDateMap.get(agg.label) || [];
+      if (!dates.length) continue;
+      if (dates.length === 1) {
+        detail.push({ kind: 'single', label: agg.label, date: dates[0].date, days: 1, short: dates[0].short });
+      } else {
+        detail.push({ kind: 'head', label: agg.label, date: '', days: dates.length, short: agg.short });
+        for (const d of dates) detail.push({ kind: 'sub', label: agg.label, date: d.date, days: 0, short: d.short });
+      }
+    }
+    this.breakdownDetailRows = detail;
+  }
+
+  private ensureChartJs(): Promise<any> {
+    if (!this.chartJs) {
+      this.chartJs = (window as any).Chart
+        ? Promise.resolve((window as any).Chart)
+        : this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js').then(() => (window as any).Chart);
+    }
+    return this.chartJs;
+  }
+
+  /** Bar chart of shortage by the chosen dimension (smooth in-place updates). */
+  private async renderBreakdownChart(): Promise<void> {
+    if (this.breakdownView === 'grid') return;
+    const Chart = await this.ensureChartJs();
+    const canvas = document.getElementById('materialBreakdownCanvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    const top = this.breakdownRows.slice(0, 15);
+    const labels = top.map((m) => this.partLabel(m.label));
+    const dataset = { label: 'Shortage (Nos.)', data: top.map((m) => m.short), backgroundColor: '#0f6c8d', borderWidth: 0, borderRadius: 3 };
+
+    if (this.breakdownChart) {
+      if (this.breakdownChart.canvas === canvas && canvas.isConnected) {
+        this.breakdownChart.data.labels = labels;
+        this.breakdownChart.data.datasets = [dataset];
+        this.breakdownChart.update();
+        return;
+      }
+      this.breakdownChart.destroy();
+      this.breakdownChart = null;
+    }
+
+    this.breakdownChart = new Chart(canvas.getContext('2d')!, {
+      type: 'bar',
+      data: { labels, datasets: [dataset] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items: any) => `${this.dimLabel}: ${items[0].label}`,
+              label: (c: any) => `${c.parsed.y} short`,
+              afterBody: (items: any) => {
+                const full = this.breakdownRows[items[0].dataIndex]?.label || items[0].label;
+                const dates = this.breakdownDateMap.get(full) || [];
+                if (!dates.length) return [];
+                const lines = dates.slice(0, 8).map((d) => `  ${this.niceDate(d.date)}: ${d.short} short`);
+                if (dates.length > 8) lines.push(`  +${dates.length - 8} more date(s)`);
+                return ['', 'Dates:', ...lines];
+              },
+            },
+          },
+        },
+        scales: {
+          x: { ticks: { maxRotation: 55, minRotation: 0, autoSkip: false }, grid: { display: false } },
+          y: { beginAtZero: true, min: 0, title: { display: true, text: 'Shortage (Nos.)' } },
+        },
+      },
+    });
+  }
+
+  /** Breakdown PDF — mirrors the View selection (chart / grid / both). */
+  async exportBreakdownPdf(): Promise<void> {
+    if (this.isExporting) return;
+    if (!this.breakdownRows.length) { this.errorMessage = 'No shortage data to export.'; return; }
+    this.isExporting = true;
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      if (!jsPDF) { this.errorMessage = 'PDF library failed to load.'; return; }
+      if (!jsPDF.API || !jsPDF.API.autoTable) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+      }
+      const pdfSafe = (t: string) => (t || '').replace(/\u2192/g, ' to ').replace(/[^\x00-\xFF]/g, '');
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
+      doc.text(pdfSafe(this.chartsCompanyName), pageW / 2, 14, { align: 'center' });
+      doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      doc.text(pdfSafe(`Material shortage by ${this.dimLabel.toLowerCase()}  ·  ` + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+
+      let startY = 26;
+      if (this.breakdownView !== 'grid') {
+        const src = document.getElementById('materialBreakdownCanvas') as HTMLCanvasElement | null;
+        if (src && src.width) {
+          const tmp = document.createElement('canvas');
+          tmp.width = src.width; tmp.height = src.height;
+          const tctx = tmp.getContext('2d')!;
+          tctx.fillStyle = '#ffffff'; tctx.fillRect(0, 0, tmp.width, tmp.height);
+          tctx.drawImage(src, 0, 0);
+          const imgW = pageW - 28;
+          const imgH = Math.min(imgW * (src.height / src.width), this.breakdownView === 'chart' ? 150 : 95);
+          doc.addImage(tmp.toDataURL('image/png'), 'PNG', 14, startY, imgW, imgH);
+          startY += imgH + 6;
+        }
+      }
+      if (this.breakdownView !== 'chart') {
+        const kinds: string[] = [];
+        const body: any[] = this.breakdownDetailRows.map((r) => {
+          kinds.push(r.kind);
+          return [
+            r.kind !== 'sub' ? this.breakdownRankOf(r.label) : '',
+            r.kind !== 'sub' ? pdfSafe(r.label) : '',
+            r.kind === 'head' ? `${r.days} days` : this.niceDate(r.date),
+            r.short,
+            this.breakdownShare(r).toFixed(1) + '%',
+          ];
+        });
+        kinds.push('total');
+        body.push(['', 'Total', '', this.breakdownShortTotal, '100%']);
+        (doc as any).autoTable({
+          head: [['#', this.dimLabel, 'Date', 'Shortage (Nos.)', 'Share']],
+          body, startY, theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle' },
+          headStyles: { fillColor: [15, 108, 141], textColor: 255, halign: 'center' },
+          columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'left' }, 2: { halign: 'center', cellWidth: 26 }, 3: { halign: 'right' }, 4: { halign: 'right' } },
+          didParseCell: (d: any) => {
+            const k = kinds[d.row.index];
+            if (k === 'total') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [235, 242, 246]; }
+            else if (k === 'head' || k === 'single') { d.cell.styles.fontStyle = 'bold'; if (k === 'head') d.cell.styles.fillColor = [240, 246, 249]; }
+            else { d.cell.styles.textColor = [90, 105, 115]; }
+          },
+        });
+      }
+      doc.save('Material_shortage_breakdown.pdf');
+    } catch (e) {
+      console.error('Breakdown PDF export failed:', e);
+      this.errorMessage = 'Failed to generate the breakdown PDF.';
+    } finally { this.isExporting = false; }
+  }
+
+  /** "Where is shortage" flat report -> PDF. */
+  async exportShortagePdf(): Promise<void> {
+    if (this.isExporting || !this.shortageReport.length) return;
+    this.isExporting = true;
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      if (!jsPDF) { this.errorMessage = 'PDF library failed to load.'; return; }
+      if (!jsPDF.API || !jsPDF.API.autoTable) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+      }
+      const pdfSafe = (t: string) => (t || '').replace(/\u2192/g, ' to ').replace(/[^\x00-\xFF]/g, '');
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
+      doc.text(pdfSafe(this.chartsCompanyName), pageW / 2, 14, { align: 'center' });
+      doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      doc.text(pdfSafe('Shortage report  ·  ' + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+      const body = this.shortageReport.map((r, i) => [
+        i + 1, this.niceDate(r.date), pdfSafe(r.deptName), r.plan, pdfSafe(r.materialType),
+        pdfSafe(r.partName || '-'), r.shortageQty, pdfSafe(r.status || '-'), pdfSafe(r.person || '-'),
+      ]);
+      (doc as any).autoTable({
+        head: [['#', 'Date', 'Department', 'Plan (KVA)', 'Type', 'Part', 'Shortage', 'Status', 'Person']],
+        body, startY: 26, theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 1.5, valign: 'middle' },
+        headStyles: { fillColor: [15, 108, 141], textColor: 255, halign: 'center' },
+        columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 6: { halign: 'right' } },
+      });
+      doc.save('Material_shortage_report.pdf');
+    } catch (e) {
+      console.error('Shortage PDF export failed:', e);
+      this.errorMessage = 'Failed to generate the shortage PDF.';
+    } finally { this.isExporting = false; }
   }
 
   /* ---------------- view <-> add ---------------- */
@@ -114,6 +655,10 @@ export class DgMaterialStatusComponent implements OnInit {
 
   /** Open the Add form in edit mode, pre-loaded with that day + department's saved rows. */
   editRecord(r: MaterialRecord): void {
+    if (r.espReqCode) {
+      this.errorMessage = `ESP already raised (${r.espReqCode}) — this line is locked.`;
+      return;
+    }
     this.isFormVisible = true;
     this.isEditMode = true;
     this.clearMessages();
@@ -129,14 +674,20 @@ export class DgMaterialStatusComponent implements OnInit {
           this.rows.push(
             this.fb.group({
               plan: [x.plan, Validators.required],
+              planQuantity: [x.planQuantity, [Validators.required, Validators.min(0)]],
               materialType: [x.materialType || 'Raw', Validators.required],
-              quantity: [x.quantity, [Validators.required, Validators.min(0)]],
-              status: [x.status || '', Validators.required],
+              partCode: [x.partCode || ''],
+              partName: [x.partName || ''],
+              shortageQty: [x.shortageQty || 0],
+              status: [x.status || 'Open', Validators.required],
+              remark: [x.remark || ''],
               person: [x.person || ''],
             }),
           ),
         );
         if (this.rows.length === 0) this.rows.push(this.newRow());
+        // pre-load part options for Raw rows so their dropdowns show the saved part
+        (rows || []).forEach((x) => { if ((x.materialType || '') === 'Raw' && x.plan) this.ensureParts(x.plan); });
       },
       error: () => {
         this.isLoading = false;
@@ -147,6 +698,10 @@ export class DgMaterialStatusComponent implements OnInit {
 
   /** Soft-delete one material line. */
   deleteRecord(r: MaterialRecord): void {
+    if (r.espReqCode) {
+      this.errorMessage = `ESP already raised (${r.espReqCode}) — this line cannot be deleted.`;
+      return;
+    }
     const ok = confirm(`Delete material row "${r.plan}" (${r.materialType}) on ${r.date}?`);
     if (!ok) return;
     this.isLoading = true;
@@ -255,9 +810,15 @@ export class DgMaterialStatusComponent implements OnInit {
       createdBy: this.service.sessionUser,
       entries: this.rows.controls.map((r) => ({
         plan: r.value.plan,
+        planQuantity: Number(r.value.planQuantity),
         materialType: r.value.materialType,
-        quantity: Number(r.value.quantity),
+        partCode: r.value.materialType === 'Raw' ? (r.value.partCode || '') : '',
+        partName: r.value.materialType === 'Raw'
+          ? (this.partsFor(r.value.plan).find((p) => p.partCode === r.value.partCode)?.partName || r.value.partName || '')
+          : (r.value.partName || ''),
+        shortageQty: Number(r.value.shortageQty) || 0,
         status: r.value.status || '',
+        remark: r.value.remark || '',
         person: r.value.person || '',
       })),
     };
@@ -321,7 +882,7 @@ export class DgMaterialStatusComponent implements OnInit {
   }
 
   async exportExcel(): Promise<void> {
-    if (this.isExporting || this.reportRows.length === 0) return;
+    if (this.isExporting || this.filteredRecords.length === 0) return;
     this.isExporting = true;
     try {
       if (!(window as any).ExcelJS) {
@@ -346,7 +907,7 @@ export class DgMaterialStatusComponent implements OnInit {
       const t1 = ws.getCell('A1');
       t1.value = {
         richText: [
-          { text: this.service.companyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
+          { text: this.chartCompanyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
           { text: `Production Material U1        ${this.exportDateLabel()}`, font: { bold: true, size: 11, color: { argb: 'FFFFFFFF' } } },
         ],
       };
@@ -354,7 +915,7 @@ export class DgMaterialStatusComponent implements OnInit {
       t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
       ws.getRow(1).height = 40;
 
-      const headers = ['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Type of material', 'Quantity', 'Status / Remark', 'Person to communicate'];
+      const headers = ['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Plan Qty', 'Type', 'Part Name', 'Shortage Qty', 'Status', 'Remark', 'Person to communicate'];
       headers.forEach((h, i) => {
         const c = ws.getCell(2, i + 1);
         c.value = h;
@@ -365,11 +926,11 @@ export class DgMaterialStatusComponent implements OnInit {
       });
 
       let sr = 1, rowNum = 3;
-      for (const r of this.reportRows) {
+      for (const r of this.filteredRecords) {
         ws.getRow(rowNum).values = [
-          sr++, r.date, r.deptName, r.plan, r.materialType, r.quantity, r.status || '', r.person || '',
+          sr++, r.date, r.deptName, r.plan, r.planQuantity, r.materialType, r.partName || '', r.shortageQty || '', r.status || '', r.remark || '', r.person || '',
         ];
-        for (let c = 1; c <= 8; c++) {
+        for (let c = 1; c <= 11; c++) {
           const cell = ws.getRow(rowNum).getCell(c);
           cell.border = allBorders;
           cell.alignment = { horizontal: c === 1 || c === 6 ? 'center' : 'left', vertical: 'middle', wrapText: c === 7 };
@@ -387,7 +948,7 @@ export class DgMaterialStatusComponent implements OnInit {
   }
 
   async exportPdf(): Promise<void> {
-    if (this.isExporting || this.reportRows.length === 0) return;
+    if (this.isExporting || this.filteredRecords.length === 0) return;
     this.isExporting = true;
     try {
       if (!(window as any).jspdf) {
@@ -413,7 +974,7 @@ export class DgMaterialStatusComponent implements OnInit {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(15, 108, 141);
-      doc.text(this.service.companyName, M, 62);
+      doc.text(this.chartCompanyName, M, 62);
 
       // date — right, same line as the company name
       const dateLabel = this.exportDateLabel();
@@ -429,12 +990,12 @@ export class DgMaterialStatusComponent implements OnInit {
       doc.setLineWidth(1);
       doc.line(M, 72, pageW - M, 72);
 
-      const body = this.reportRows.map((r, i) => [
-        i + 1, r.date, r.deptName, r.plan, r.materialType, r.quantity, r.status || '', r.person || '',
+      const body = this.filteredRecords.map((r, i) => [
+        i + 1, r.date, r.deptName, r.plan, r.planQuantity, r.materialType, r.partName || '', r.shortageQty || '', r.status || '', r.remark || '', r.person || '',
       ]);
 
       (doc as any).autoTable({
-        head: [['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Type of material', 'Qty', 'Status / Remark', 'Person to communicate']],
+        head: [['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Plan Qty', 'Type', 'Part Name', 'Shortage', 'Status', 'Remark', 'Person']],
         body,
         startY: 84,
         styles: { fontSize: 8, cellPadding: 4 },

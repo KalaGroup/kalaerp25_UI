@@ -7,6 +7,8 @@ import {
   DownTimeEntry,
   DownTimeRecord,
   SaveDownTimeBatchRequest,
+  CompanyOption,
+  DownTimeTrendRow,
 } from './dg-machine-wise-down-time.service';
 
 /**
@@ -67,6 +69,10 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   successMessage = '';
   errorMessage = '';
 
+  // ---- chart company picker (for a parent login like 33 that spans 01/03/28) ----
+  viewCompanies: CompanyOption[] = [];  // companies the login may view charts for
+  selectedCompany = '';                 // currently-picked company code; '' until loaded
+
   // ---- in-app analytics ----
   chartLoading = false;
   summaryDate = '';                     // single date -> day-wise Summary + Machine-wise chart
@@ -87,6 +93,10 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   breakdownTo = '';
   // aggregated rows carry BOTH metrics so the chart + grid can render either or both
   breakdownRows: { label: string; machineMin: number; lineMin: number; totalMin: number }[] = [];
+  /** Per-date detail behind the aggregate: single rows, group headers, and date sub-rows (drives the grid). */
+  breakdownDetailRows: { kind: 'single' | 'head' | 'sub'; label: string; date: string; days: number; reason: string; machineMin: number; lineMin: number; totalMin: number }[] = [];
+  /** label -> its dated rows, for the chart tooltip ("12 Jun: 500 min ..."). */
+  private breakdownDateMap = new Map<string, { date: string; reason: string; machineMin: number; lineMin: number; totalMin: number }[]>();
   private breakdownChart: any = null;
   private machineChart: any = null;     // Chart.js instances (destroyed on re-render)
   private lineChart: any = null;        // line-wise day chart
@@ -114,6 +124,19 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     this.service.getDepartments().subscribe({
       next: (res) => (this.departments = res || []),
       error: () => (this.errorMessage = 'Could not load departments.'),
+    });
+
+    // Companies for the chart picker (parent login -> children; else just self).
+    this.service.getViewCompanies().subscribe({
+      next: (res) => {
+        this.viewCompanies = res || [];
+        this.selectedCompany = this.viewCompanies.length ? this.viewCompanies[0].companyCode : this.service.companyCode;
+      },
+      error: () => {
+        // fall back to the session company so charts still work without the picker
+        this.viewCompanies = [];
+        this.selectedCompany = this.service.companyCode;
+      },
     });
 
     // Land on the View page and load any existing records.
@@ -225,6 +248,52 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   /** Company name (from the logged-in session) shown in chart / report headings. */
   get companyName(): string {
     return this.service.companyName;
+  }
+
+  /** Show the picker only when the login spans more than one company (e.g. 33). */
+  get showCompanyPicker(): boolean {
+    return this.viewCompanies.length > 1;
+  }
+
+  /** Name of the picked company, for the chart headers (falls back to the login company name). */
+  get chartCompanyName(): string {
+    const c = this.viewCompanies.find((x) => x.companyCode === this.selectedCompany);
+    return c ? c.companyName : this.service.companyName;
+  }
+
+  /** Keep only the picked company's rows (no-op for a single-company login). */
+  private forSelectedCompany(rows: DownTimeTrendRow[]): DownTimeTrendRow[] {
+    if (!this.selectedCompany) return rows;
+    return rows.filter((r) => (r.companyCode || '') === this.selectedCompany);
+  }
+
+  /** User picked a different company from the chart picker — reload every chart. */
+  onCompanyChange(): void {
+    if (this.analyticsCollapsed) return;
+    this.loadSummary();
+    this.loadBreakdown();
+  }
+
+  /** Records shown in the grid — narrowed to the picked company (no-op for a single-company login). */
+  get filteredRecords(): DownTimeRecord[] {
+    if (!this.showCompanyPicker || !this.selectedCompany) return this.reportRows;
+    return this.reportRows.filter((r) => (r.departmentCode || '').slice(0, 2) === this.selectedCompany);
+  }
+
+  /** Departments offered in the Records filter — narrowed to the picked company. */
+  get filteredDepartments(): DepartmentOption[] {
+    if (!this.showCompanyPicker || !this.selectedCompany) return this.departments;
+    return this.departments.filter((d) => (d.departmentCode || '').slice(0, 2) === this.selectedCompany);
+  }
+
+  /** Company changed from the Records toolbar — re-filter the grid (and charts if the panel is open). */
+  onRecordsCompanyChange(): void {
+    const dept = this.form.get('departmentCode')?.value as string;
+    // drop a department filter that doesn't belong to the newly-picked company
+    if (dept && dept.slice(0, 2) !== this.selectedCompany) {
+      this.form.get('departmentCode')?.setValue('');
+    }
+    this.onCompanyChange();   // keeps the charts in step when the analytics panel is open
   }
 
   /** Load every machine of the chosen department/line into editable rows. */
@@ -367,7 +436,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       let msg: string;
       if (incomplete.length === 1) {
         const r = incomplete[0];
-        const need = [r.needStatus && 'Status', r.needRemark && 'Remark'].filter(Boolean).join(' & ');
+        const need = [r.needStatus && 'Status', r.needRemark && 'Reason'].filter(Boolean).join(' & ');
         msg = `Please add ${need} for "${r.name}".`;
       } else {
         msg = `Status & Remark are required for every machine you entered — ${incomplete.length} rows are still incomplete.`;
@@ -437,7 +506,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   }[] {
     const groups: any[] = [];
     const index = new Map<string, number>();
-    for (const r of this.reportRows) {
+    for (const r of this.filteredRecords) {
       const key = r.departmentName || r.departmentCode || '\u2014';
       if (!index.has(key)) {
         index.set(key, groups.length);
@@ -458,7 +527,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   /** Station summary (Department -> machine downtime minutes), plus Hours, for the Summary sheet. */
   private buildStationSummary(): { station: string; min: number; hours: number }[] {
     const map = new Map<string, number>();
-    for (const r of this.reportRows) {
+    for (const r of this.filteredRecords) {
       const key = r.departmentName || r.departmentCode || '\u2014';
       map.set(key, (map.get(key) || 0) + (r.totalMin || 0));
     }
@@ -469,7 +538,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
 
   /** Per-machine downtime + status for the Machine-wise sheet (sorted high to low). */
   private buildMachineList(): { machine: string; min: number; status: string }[] {
-    return this.reportRows
+    return this.filteredRecords
       .map((r) => ({ machine: r.machineName || r.machineCode, min: r.totalMin || 0, status: r.status || '' }))
       .filter((m) => m.min > 0)
       .sort((a, b) => b.min - a.min);
@@ -526,6 +595,13 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     const Chart = await this.ensureChartJs();
     const canvas = document.createElement('canvas');
     canvas.width = width; canvas.height = height;
+    // Attach off-screen: some Chart.js builds touch the canvas's parent during setup
+    // (addResizeListener), which throws on a detached canvas ("insertBefore" of null).
+    canvas.style.position = 'fixed';
+    canvas.style.left = '-10000px';
+    canvas.style.top = '0';
+    canvas.style.pointerEvents = 'none';
+    document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d')!;
     const chart = new Chart(ctx, {
       type: 'bar',
@@ -539,12 +615,13 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
     const url = canvas.toDataURL('image/png');
     chart.destroy();
+    canvas.remove();               // clean up the off-screen canvas
     return url;
   }
 
   /** Excel export: Data + Summary (Station/Min/Hours + chart) + Machine-wise (chart colored by status). */
   async exportExcel(): Promise<void> {
-    if (this.isExporting || this.reportRows.length === 0) return;
+    if (this.isExporting || this.filteredRecords.length === 0) return;
     this.isExporting = true;
     try {
       if (!(window as any).ExcelJS) {
@@ -575,7 +652,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       const t1 = ws.getCell('A1');
       t1.value = {
         richText: [
-          { text: this.service.companyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
+          { text: this.chartCompanyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
           { text: `Machine Wise Down Time U1        ${this.exportDateLabel()}`, font: { bold: true, size: 11, color: { argb: 'FFFFFFFF' } } },
         ],
       };
@@ -592,7 +669,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       ws.getCell('D2').value = 'Machine Down Time (min)';
       ws.getCell('G2').value = 'Line Down Time (min)';
       ws.getCell('J2').value = 'Status';
-      ws.getCell('K2').value = 'Remark';
+      ws.getCell('K2').value = 'Reason';
       ws.getCell('D3').value = '1st shift';
       ws.getCell('E3').value = '2nd shift';
       ws.getCell('F3').value = 'Total Down Time';
@@ -727,7 +804,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
 
   /** PDF export — grouped, two-row grouped header (Machine DT / Line DT) + Status, sub + grand totals. */
   async exportPdf(): Promise<void> {
-    if (this.isExporting || this.reportRows.length === 0) return;
+    if (this.isExporting || this.filteredRecords.length === 0) return;
     this.isExporting = true;
     try {
       if (!(window as any).jspdf) {
@@ -745,7 +822,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       const doc = new jsPDF('l', 'mm', 'a4');
       const pageW = doc.internal.pageSize.getWidth();
       doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(15, 108, 141);
-      doc.text(this.service.companyName, pageW / 2, 12, { align: 'center' });
+      doc.text(this.chartCompanyName, pageW / 2, 12, { align: 'center' });
       doc.setFontSize(11); doc.setTextColor(40, 40, 40);
       doc.text('Machine Wise Down Time U1', pageW / 2, 19, { align: 'center' });
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(60, 60, 60);
@@ -756,7 +833,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
           { content: 'Sr.no', rowSpan: 2 }, { content: 'Department', rowSpan: 2 }, { content: 'Machine', rowSpan: 2 },
           { content: 'Machine Down Time (min)', colSpan: 3 },
           { content: 'Line Down Time (min)', colSpan: 3 },
-          { content: 'Status', rowSpan: 2 }, { content: 'Remark', rowSpan: 2 },
+          { content: 'Status', rowSpan: 2 }, { content: 'Reason', rowSpan: 2 },
         ],
         ['1st', '2nd', 'Total', '1st', '2nd', 'Total'],
       ];
@@ -792,6 +869,154 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     } catch (e) {
       console.error('PDF export failed:', e);
       this.errorMessage = 'Failed to generate PDF. Please try again.';
+    } finally {
+      this.isExporting = false;
+    }
+  }
+
+  /**
+   * Export ONE chart to PDF by capturing its live <canvas>, so the PDF matches
+   * the screen exactly (grouped bars, colours, value labels). Requires the card
+   * to be showing a chart (not grid-only). `heading` is the page title.
+   */
+  async exportChartPdf(canvasId: string, heading: string): Promise<void> {
+    if (this.isExporting) return;
+    const src = document.getElementById(canvasId) as HTMLCanvasElement | null;
+    if (!src || !src.width) { this.errorMessage = 'Switch this card to a Chart view first, then export.'; return; }
+    this.isExporting = true;
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      if (!jsPDF) { this.errorMessage = 'PDF library failed to load. Check your connection and retry.'; return; }
+
+      // Chart.js canvases are transparent — paint white behind so the PDF prints cleanly.
+      const tmp = document.createElement('canvas');
+      tmp.width = src.width; tmp.height = src.height;
+      const tctx = tmp.getContext('2d')!;
+      tctx.fillStyle = '#ffffff'; tctx.fillRect(0, 0, tmp.width, tmp.height);
+      tctx.drawImage(src, 0, 0);
+      const png = tmp.toDataURL('image/png');
+
+      const pdfSafe = (s: string) => (s || '').replace(/\u2192/g, ' to ').replace(/[^\x00-\xFF]/g, '');
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
+      doc.text(pdfSafe(this.chartCompanyName), pageW / 2, 16, { align: 'center' });
+      doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      doc.text(pdfSafe(heading), pageW / 2, 24, { align: 'center' });
+
+      // fit the captured image to the page width, preserving aspect ratio
+      const imgW = pageW - 28;
+      let imgH = imgW * (src.height / src.width);
+      const maxH = pageH - 36;
+      if (imgH > maxH) imgH = maxH;
+      doc.addImage(png, 'PNG', 14, 30, imgW, imgH);
+
+      const fname = (pdfSafe(heading).replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '_').slice(0, 60)) || 'chart';
+      doc.save(`${fname}.pdf`);
+    } catch (e) {
+      console.error('Chart PDF export failed:', e);
+      this.errorMessage = 'Failed to generate the chart PDF. Please try again.';
+    } finally {
+      this.isExporting = false;
+    }
+  }
+
+  /**
+   * Breakdown PDF — matches the on-screen View selection:
+   *   Chart + Grid -> chart on top, ranked grid below
+   *   Chart        -> chart only
+   *   Grid         -> grid only
+   * Always for the picked company and the selected period.
+   */
+  async exportBreakdownPdf(): Promise<void> {
+    if (this.isExporting) return;
+    if (!this.breakdownRows.length) { this.errorMessage = 'No breakdown data to export.'; return; }
+    this.isExporting = true;
+    try {
+      if (!(window as any).jspdf) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      if (!jsPDF) { this.errorMessage = 'PDF library failed to load. Check your connection and retry.'; return; }
+      if (!jsPDF.API || !jsPDF.API.autoTable) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+      }
+
+      const pdfSafe = (s: string) => (s || '').replace(/\u2192/g, ' to ').replace(/[^\x00-\xFF]/g, '');
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+
+      // header: company + "Down time breakdown · <period>"
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
+      doc.text(pdfSafe(this.chartCompanyName), pageW / 2, 14, { align: 'center' });
+      doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      doc.text(pdfSafe('Down time breakdown  ·  ' + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+
+      let startY = 26;
+
+      // chart image — included for Chart and Chart+Grid views
+      if (this.breakdownView !== 'grid') {
+        const src = document.getElementById('breakdownChartCanvas') as HTMLCanvasElement | null;
+        if (src && src.width) {
+          const tmp = document.createElement('canvas');
+          tmp.width = src.width; tmp.height = src.height;
+          const tctx = tmp.getContext('2d')!;
+          tctx.fillStyle = '#ffffff'; tctx.fillRect(0, 0, tmp.width, tmp.height);
+          tctx.drawImage(src, 0, 0);
+          const png = tmp.toDataURL('image/png');
+          const imgW = pageW - 28;
+          const imgH = Math.min(imgW * (src.height / src.width), this.breakdownView === 'chart' ? 150 : 95);
+          doc.addImage(png, 'PNG', 14, startY, imgW, imgH);
+          startY += imgH + 6;
+        }
+      }
+
+      // ranked grid table — included for Grid and Chart+Grid views (per-date rows)
+      if (this.breakdownView !== 'chart') {
+        const dimLabel = this.breakdownDim === 'machine' ? 'Machine' : 'Department / Line';
+        const head = [['#', dimLabel, 'Date', 'Reason', 'Machine DT (min)', 'Line DT (min)', 'Total (min)', 'Share']];
+        const kinds: string[] = [];
+        const body: any[] = this.breakdownDetailRows.map((r) => {
+          kinds.push(r.kind);
+          return [
+            r.kind !== 'sub' ? this.breakdownRankOf(r.label) : '',
+            r.kind !== 'sub' ? pdfSafe(r.label) : '',
+            r.kind === 'head' ? '' : this.niceDate(r.date),
+            r.kind === 'head' ? '' : pdfSafe(r.reason || ''),
+            r.machineMin, r.lineMin, r.totalMin,
+            this.breakdownShare(r).toFixed(1) + '%',
+          ];
+        });
+        kinds.push('total');
+        body.push(['', 'Total', '', '', this.breakdownMachineTotal, this.breakdownLineTotal, this.breakdownCombinedTotal, '100%']);
+
+        (doc as any).autoTable({
+          head, body, startY, theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle' },
+          headStyles: { fillColor: [15, 108, 141], textColor: 255, halign: 'center' },
+          columnStyles: {
+            0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'left' }, 2: { halign: 'center', cellWidth: 24 },
+            3: { halign: 'left', cellWidth: 52 },
+            4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' },
+          },
+          didParseCell: (d: any) => {
+            const k = kinds[d.row.index];
+            if (k === 'total') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [235, 242, 246]; }
+            else if (k === 'head' || k === 'single') { d.cell.styles.fontStyle = 'bold'; if (k === 'head') d.cell.styles.fillColor = [240, 246, 249]; }
+            else { d.cell.styles.textColor = [90, 105, 115]; }
+          },
+        });
+      }
+
+      doc.save('Down_time_breakdown.pdf');
+    } catch (e) {
+      console.error('Breakdown PDF export failed:', e);
+      this.errorMessage = 'Failed to generate the breakdown PDF. Please try again.';
     } finally {
       this.isExporting = false;
     }
@@ -836,6 +1061,14 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     return `${d} ${DgMachineWiseDownTimeComponent.MONTHS[+m - 1]} ${y}`;
   }
 
+  /** Hard refresh: destroy every chart instance and reload the panel (for the odd blank chart). */
+  refreshCharts(): void {
+    if (this.breakdownChart) { this.breakdownChart.destroy(); this.breakdownChart = null; }
+    if (this.machineChart)   { this.machineChart.destroy();   this.machineChart = null; }
+    if (this.lineChart)      { this.lineChart.destroy();      this.lineChart = null; }
+    this.loadAnalytics();
+  }
+
   loadAnalytics(): void {
     if (this.analyticsCollapsed) return;
     this.loadSummary();
@@ -847,8 +1080,9 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     if (!this.summaryDate) return;
     this.chartLoading = true;
     this.service.getDownTimeTrend(this.summaryDate, this.summaryDate).subscribe({
-      next: (rows) => {
+      next: (rawRows) => {
         this.chartLoading = false;
+        const rows = this.forSelectedCompany(rawRows);
 
         const sMap = new Map<string, number>();
         for (const r of rows) {
@@ -955,20 +1189,32 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     if (!this.breakdownFrom || !this.breakdownTo) this.resolveBreakdownRange();
     this.chartLoading = true;
     this.service.getDownTimeTrend(this.breakdownFrom, this.breakdownTo).subscribe({
-      next: (rows) => {
+      next: (rawRows) => {
         this.chartLoading = false;
+        const rows = this.forSelectedCompany(rawRows);
         const map = new Map<string, { machineMin: number; lineMin: number }>();
+        const dateMap = new Map<string, Map<string, { machineMin: number; lineMin: number; reasons: Set<string> }>>();
         for (const r of rows) {
           const key = (this.breakdownDim === 'machine' ? r.machineName : r.departmentName) || '—';
           const cur = map.get(key) || { machineMin: 0, lineMin: 0 };
           cur.machineMin += r.totalMin || 0;       // machine down time
           cur.lineMin += r.lineTotalMin || 0;      // line down time
           map.set(key, cur);
+
+          // per-date detail for the same key (one entry per key+date)
+          let byDate = dateMap.get(key);
+          if (!byDate) { byDate = new Map(); dateMap.set(key, byDate); }
+          const d = byDate.get(r.date) || { machineMin: 0, lineMin: 0, reasons: new Set<string>() };
+          d.machineMin += r.totalMin || 0;
+          d.lineMin += r.lineTotalMin || 0;
+          if ((r.remark || '').trim()) d.reasons.add(r.remark.trim());   // reason(s) for this date
+          byDate.set(r.date, d);
         }
         this.breakdownRows = Array.from(map.entries())
           .map(([label, v]) => ({ label, machineMin: v.machineMin, lineMin: v.lineMin, totalMin: v.machineMin + v.lineMin }))
           .filter((x) => x.machineMin > 0 || x.lineMin > 0)
           .sort((a, b) => this.metricValue(b) - this.metricValue(a));
+        this.rebuildBreakdownDetail(dateMap);
         setTimeout(() => this.renderBreakdownChart(), 0);
       },
       error: () => { this.chartLoading = false; },
@@ -982,10 +1228,138 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
         : r.machineMin;
   }
 
+  /**
+   * Flatten the per-date map into tidy grid rows:
+   *   - machines with ONE dated entry -> a single combined row
+   *   - machines with several dates   -> a bold header row (totals) + light date sub-rows
+   *   - zero-minute entries (remark-only) are dropped
+   * Machines stay in ranked order; dates ascend inside each machine.
+   */
+  private rebuildBreakdownDetail(dateMap?: Map<string, Map<string, { machineMin: number; lineMin: number; reasons: Set<string> }>>): void {
+    if (dateMap) {
+      this.breakdownDateMap = new Map(
+        Array.from(dateMap.entries()).map(([label, byDate]) => [
+          label,
+          Array.from(byDate.entries())
+            .map(([date, v]) => ({ date, reason: Array.from(v.reasons).join(' | '), machineMin: v.machineMin, lineMin: v.lineMin, totalMin: v.machineMin + v.lineMin }))
+            .filter((d) => d.totalMin > 0)                       // remark-only rows add noise
+            .sort((a, b) => a.date.localeCompare(b.date)),
+        ]),
+      );
+    }
+    const detail: typeof this.breakdownDetailRows = [];
+    for (const agg of this.breakdownRows) {                      // ranked order
+      const dates = this.breakdownDateMap.get(agg.label) || [];
+      if (dates.length === 0) continue;
+      if (dates.length === 1) {
+        const d = dates[0];
+        detail.push({ kind: 'single', label: agg.label, date: d.date, days: 1, reason: d.reason, machineMin: d.machineMin, lineMin: d.lineMin, totalMin: d.totalMin });
+      } else {
+        detail.push({ kind: 'head', label: agg.label, date: '', days: dates.length, reason: '', machineMin: agg.machineMin, lineMin: agg.lineMin, totalMin: agg.totalMin });
+        for (const d of dates) {
+          detail.push({ kind: 'sub', label: agg.label, date: d.date, days: 0, reason: d.reason, machineMin: d.machineMin, lineMin: d.lineMin, totalMin: d.totalMin });
+        }
+      }
+    }
+    this.breakdownDetailRows = detail;
+  }
+
+  /** 1-based rank of a label in the aggregated (sorted) breakdown rows. */
+  breakdownRankOf(label: string): number {
+    return this.breakdownRows.findIndex((r) => r.label === label) + 1;
+  }
+
+  /** Breakdown (dated) grid -> Excel: same rows as on screen, with Reason. */
+  async exportBreakdownExcel(): Promise<void> {
+    if (this.isExporting) return;
+    if (!this.breakdownDetailRows.length) { this.errorMessage = 'No breakdown data to export.'; return; }
+    this.isExporting = true;
+    try {
+      if (!(window as any).ExcelJS) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+      }
+      const ExcelJS = (window as any).ExcelJS;
+      if (!ExcelJS) { this.errorMessage = 'Excel library failed to load.'; return; }
+
+      const TEAL = 'FF0F6C8D';
+      const thin = { style: 'thin', color: { argb: 'FFB0B0B0' } };
+      const allBorders = { top: thin, left: thin, bottom: thin, right: thin };
+      const dimLabel = this.breakdownDim === 'machine' ? 'Machine' : 'Department / Line';
+
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Downtime breakdown');
+      ws.columns = [
+        { width: 5 }, { width: 30 }, { width: 13 }, { width: 42 },
+        { width: 15 }, { width: 13 }, { width: 12 }, { width: 9 },
+      ];
+
+      ws.mergeCells('A1:H1');
+      const t1 = ws.getCell('A1');
+      t1.value = {
+        richText: [
+          { text: this.chartCompanyName + '\n', font: { bold: true, size: 14, color: { argb: 'FFFFFFFF' } } },
+          { text: `Machine-wise downtime report        ${this.breakdownPeriodLabel}`, font: { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } } },
+        ],
+      };
+      t1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
+      t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
+      ws.getRow(1).height = 36;
+
+      const headers = ['#', dimLabel, 'Date', 'Reason', 'Machine DT (min)', 'Line DT (min)', 'Total (min)', 'Share'];
+      headers.forEach((h, i) => {
+        const c = ws.getCell(2, i + 1);
+        c.value = h;
+        c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
+        c.border = allBorders;
+      });
+
+      let rowNum = 3;
+      const writeRow = (vals: any[], kind: 'single' | 'head' | 'sub' | 'total') => {
+        ws.getRow(rowNum).values = vals;
+        for (let c = 1; c <= 8; c++) {
+          const cell = ws.getRow(rowNum).getCell(c);
+          cell.border = allBorders;
+          cell.alignment = {
+            horizontal: c === 1 || c === 3 ? 'center' : c >= 5 ? 'right' : 'left',
+            vertical: 'middle', wrapText: c === 4,
+          };
+          if (kind === 'total') { cell.font = { bold: true }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEBF2F6' } }; }
+          else if (kind === 'head') { cell.font = { bold: true }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F6F9' } }; }
+          else if (kind === 'single') { cell.font = { bold: true }; }
+          else { cell.font = { color: { argb: 'FF5A6973' }, size: 10 }; }
+        }
+        rowNum++;
+      };
+
+      for (const r of this.breakdownDetailRows) {
+        writeRow([
+          r.kind !== 'sub' ? this.breakdownRankOf(r.label) : '',
+          r.kind !== 'sub' ? r.label : '',
+          r.kind === 'head' ? '' : this.niceDate(r.date),
+          r.kind === 'head' ? '' : (r.reason || ''),
+          r.machineMin, r.lineMin, r.totalMin,
+          this.breakdownShare(r).toFixed(1) + '%',
+        ], r.kind);
+      }
+      writeRow(['', 'Total', '', '', this.breakdownMachineTotal, this.breakdownLineTotal, this.breakdownCombinedTotal, '100%'], 'total');
+
+      const buf = await wb.xlsx.writeBuffer();
+      this.downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Down_time_breakdown.xlsx');
+    } catch (e) {
+      console.error('Breakdown Excel export failed:', e);
+      this.errorMessage = 'Failed to generate the breakdown Excel. Please try again.';
+    } finally {
+      this.isExporting = false;
+    }
+  }
+
   /** Switch the charted metric: machine down time / line down time / both. */
   setBreakdownMetric(metric: 'machine' | 'line' | 'both'): void {
     this.breakdownMetric = metric;
     this.breakdownRows = [...this.breakdownRows].sort((a, b) => this.metricValue(b) - this.metricValue(a));
+    this.rebuildBreakdownDetail();                              // keep the dated grid in the new ranked order
     setTimeout(() => this.renderBreakdownChart(), 0);
   }
 
@@ -1029,10 +1403,8 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     const Chart = await this.ensureChartJs();
     const canvas = document.getElementById('breakdownChartCanvas') as HTMLCanvasElement | null;
     if (!canvas) return;
-    if (this.breakdownChart) { this.breakdownChart.destroy(); this.breakdownChart = null; }
 
     const top = this.breakdownRows.slice(0, this.breakdownChartCap);      // keep labels readable
-    const unit = this.breakdownDim === 'machine' ? 'Machine' : 'Department / Line';
     const labels = top.map((m) => m.label);
 
     const machineDs = { label: 'Machine down time', data: top.map((m) => m.machineMin), backgroundColor: this.MACHINE_COLOR, borderWidth: 0, borderRadius: 4, maxBarThickness: 64 };
@@ -1041,6 +1413,20 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     const datasets = this.breakdownMetric === 'machine' ? [machineDs]
       : this.breakdownMetric === 'line' ? [lineDs]
         : [machineDs, lineDs];
+
+    // Smooth path: if the chart already exists AND is still bound to the live
+    // canvas, animate the data in place. (Switching to Grid removes the canvas
+    // via *ngIf — the old chart then points at a dead canvas and must be rebuilt.)
+    if (this.breakdownChart) {
+      if (this.breakdownChart.canvas === canvas && canvas.isConnected) {
+        this.breakdownChart.data.labels = labels;
+        this.breakdownChart.data.datasets = datasets;
+        this.breakdownChart.update();
+        return;
+      }
+      this.breakdownChart.destroy();
+      this.breakdownChart = null;
+    }
 
     this.breakdownChart = new Chart(canvas.getContext('2d')!, {
       type: 'bar',
@@ -1052,8 +1438,18 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
           legend: { display: false },                      // custom HTML legend in the card head
           tooltip: {
             callbacks: {
-              title: (items: any) => `${unit}: ${items[0].label}`,
+              // read the current dimension so the tooltip stays correct after in-place updates
+              title: (items: any) => `${this.breakdownDim === 'machine' ? 'Machine' : 'Department / Line'}: ${items[0].label}`,
               label: (c: any) => `${c.dataset.label}: ${c.parsed.y} min`,
+              // per-date detail: which dates this machine/line was down, and for how long
+              afterBody: (items: any) => {
+                const dates = this.breakdownDateMap.get(items[0].label) || [];
+                if (!dates.length) return [];
+                const lines = dates.slice(0, 8).map((d) =>
+                  `  ${this.niceDate(d.date)}: ${this.metricValue(d)} min`);
+                if (dates.length > 8) lines.push(`  +${dates.length - 8} more date(s)`);
+                return ['', 'Dates:', ...lines];
+              },
             }
           },
         },
