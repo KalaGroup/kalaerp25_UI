@@ -31,7 +31,8 @@ export interface MaterialRecord {
   partCode: string;         // Raw: Part.PartCode; others blank
   partName: string;
   shortageQty: number;      // 0 = no shortage
-  status: string;           // Open / Closed / InProcess
+  issueType: string;        // Wrong / Damaged / Shortage
+  status: string;           // Open / Closed (auto via ESP feedback)
   remark: string;
   person: string;
   espReqCode: string;       // COR number if an ESP was raised; '' = not yet
@@ -39,12 +40,14 @@ export interface MaterialRecord {
 
 /** One entry line to save. */
 export interface MaterialEntryPayload {
+  deptCode: string;         // department per ROW
   plan: string;
   planQuantity: number;
   materialType: string;     // Raw / Consumable / Spares / Tools
   partCode: string;
   partName: string;
   shortageQty: number;
+  issueType: string;
   status: string;
   remark: string;
   person: string;
@@ -77,6 +80,15 @@ export interface EspEmployee {
   pcCode: string;
 }
 
+/** Update ONE material line in place (per-row edit). */
+export interface MaterialRowUpdatePayload {
+  mcode: string; srNo: number;
+  plan: string; planQuantity: number; materialType: string;
+  partCode: string; partName: string;
+  shortageQty: number; issueType: string;
+  status: string; remark: string; person: string;
+}
+
 /** Raise-ESP request (proxied to ERP20 /Corporate/CorporateReq/Submit). */
 export interface EspRaisePayload {
   empCode: string;       // raiser (session user)
@@ -101,8 +113,10 @@ export interface MaterialTrendRow {
   partCode: string;
   partName: string;
   shortageQty: number;
+  issueType: string;
   status: string;
   person: string;
+  remark: string;          // Reason for the charts grid
 }
 
 /** Whole department's material for one date, saved in one transaction. */
@@ -187,6 +201,7 @@ export class DgMaterialStatusService {
           partCode: x.PartCode || '',
           partName: x.PartName || '',
           shortageQty: x.ShortageQty || 0,
+          issueType: x.IssueType || '',
           status: x.Status,
           remark: x.Remark || '',
           person: x.Person,
@@ -240,6 +255,17 @@ export class DgMaterialStatusService {
     });
   }
 
+  /** Update one material line in place. */
+  updateRow(p: MaterialRowUpdatePayload): Observable<any> {
+    return this.http.post(`${this.baseUrl}Material/UpdateMaterialRow`, {
+      MCode: p.mcode, SrNo: p.srNo, Plan: p.plan, PlanQuantity: p.planQuantity,
+      MaterialType: p.materialType, PartCode: p.partCode, PartName: p.partName,
+      ShortageQty: p.shortageQty, IssueType: p.issueType, Status: p.status,
+      Remark: p.remark, Person: p.person,
+      ModifiedBy: this.sessionUser, CompanyCode: this.companyCode,
+    });
+  }
+
   /** Dated shortage rows across a range for the charts. */
   getTrend(fromDate: string, toDate: string): Observable<MaterialTrendRow[]> {
     const params = new HttpParams()
@@ -257,8 +283,10 @@ export class DgMaterialStatusService {
           partCode: x.PartCode || '',
           partName: x.PartName || '',
           shortageQty: x.ShortageQty || 0,
+          issueType: x.IssueType || '',
           status: x.Status || '',
           person: x.Person || '',
+          remark: x.Remark || '',
         })),
       ),
     );

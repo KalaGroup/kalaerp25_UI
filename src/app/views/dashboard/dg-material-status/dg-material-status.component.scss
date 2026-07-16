@@ -111,6 +111,7 @@
 .exports {
   display: flex;
   gap: 8px;
+  margin-left: auto;   /* stay pinned to the right even when the row wraps */
 
   .btn-pdf, .btn-excel {
     height: 34px;
@@ -532,3 +533,113 @@ td.wrap { white-space: normal; word-break: break-word; text-align: left; }
   display: inline-block; padding: 3px 9px; border-radius: 10px;
   background: #e7f6ec; color: #1d7a3f; font-weight: 700; font-size: 12px; white-space: nowrap;
 }
+
+/* --- round-2 polish --- */
+/* entry grid needs real width for 12 columns; headers wrap at spaces only */
+.table-card table.entry-grid { min-width: 1280px; }
+.table-card table thead th { word-break: normal; }
+
+/* breakdown grid: Reason column */
+.bd-grid th.reason-h { text-align: left; }
+.bd-grid td.reason-cell {
+  text-align: left; color: #4a5b66; font-size: 12.5px;
+  overflow-wrap: break-word; white-space: normal;
+}
+.bd-grid tr.grp-sub td.reason-cell { font-size: 12px; color: #6b7a84; }
+
+/* green Excel + teal Refresh (same family as the PDF button) */
+.btn-chart-excel {
+  border: 1px solid #bfe3cc; background: #e7f6ec; color: #1d7a3f;
+  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-chart-excel:hover:not(:disabled) { background: #d9f0e1; }
+.btn-chart-excel:disabled { opacity: 0.55; cursor: default; }
+.btn-chart-refresh {
+  border: 1px solid #b9d7e4; background: #eef6fa; color: #0f6c8d;
+  border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-chart-refresh:hover:not(:disabled) { background: #ddedf5; }
+.btn-chart-refresh:disabled { opacity: 0.55; cursor: default; }
+
+/* --- searchable dropdown panel (KVA / Part / Responsible person) --- */
+.sdd-panel {
+  position: fixed; z-index: 100001;                 /* above everything, incl. the ESP overlay */
+  background: #fff; border: 1px solid #d7e2e9; border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(20, 45, 60, 0.18);
+  max-height: 240px; overflow-y: auto; padding: 4px 0;
+}
+.sdd-opt {
+  padding: 8px 12px; font-size: 13px; color: #33424c; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sdd-opt:hover { background: #eaf5fa; color: #0f6c8d; }
+.sdd-empty { padding: 8px 12px; font-size: 12.5px; color: #8a99a3; }
+
+/* ESP modal: error inside + self-contained footer buttons */
+.esp-error {
+  margin: 0 22px 0; padding: 9px 12px; border-radius: 8px;
+  background: #fdecea; color: #c0392b; font-size: 13px; font-weight: 600;
+}
+.esp-cancel {
+  border: 1px solid #d7dee4; background: #fff; color: #4a5b66;
+  border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.esp-cancel:hover:not(:disabled) { background: #f4f8fa; }
+.esp-send {
+  border: none; background: linear-gradient(180deg, #12789c, #0f6c8d); color: #fff;
+  border-radius: 8px; padding: 9px 20px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+}
+.esp-send:hover:not(:disabled) { filter: brightness(1.06); }
+.esp-cancel:disabled, .esp-send:disabled { opacity: 0.6; cursor: default; }
+
+/* analytics card: export buttons grouped at the right edge */
+.a-card-actions { display: flex; gap: 8px; align-items: flex-start; }
+
+/* PDF/Excel live on the SAME line as the filters, pinned right — no wrapped second row */
+.filters { flex: 1 1 auto; }
+.filters .exports { margin-left: auto; }
+.filters .ctrl select { max-width: 340px; }   /* department can't hog the whole row anymore */
+.filters .ctrl.grow { flex: 0 1 340px; }      /* dept stays a sane width; buttons keep the line */
+
+/* wrapped toolbar lines sit tight — no fat vertical gap on narrow windows */
+.records-toolbar { column-gap: 12px; row-gap: 6px; margin-bottom: 8px; }
+.filters { column-gap: 12px; row-gap: 6px; }
+.filters .exports { align-self: flex-end; }
+
+/* PDF/Excel pinned to the toolbar's right, on the same line as Date/Search — can never wrap */
+.records-toolbar { position: relative; padding-right: 185px; }
+.filters .exports {
+  position: absolute; right: 0; bottom: 0;
+  margin-left: 0; align-self: auto;
+}
+
+/* ONE line, always: filters shrink instead of wrapping; PDF/Excel pinned right on the Date line */
+.records-toolbar { flex-wrap: nowrap; }
+.filters { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; }
+.filters .ctrl { min-width: 0; flex: 0 1 auto; }
+.filters .ctrl select { width: 100%; min-width: 130px; }
+.filters .ctrl.grow { flex: 1 1 200px; min-width: 150px; max-width: 340px; }  /* dept gives way first */
+.filters .exports { flex: 0 0 auto; }
+.filters .search-btn { flex: 0 0 auto; }
+
+/* DATE strip + exports share one line right above the grid */
+.grid-datebar-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.grid-datebar-row .grid-datebar { margin-bottom: 0; }
+.grid-datebar-row .exports { display: flex; gap: 8px; margin-left: auto; }
+
+/* dropdown footer: says when the list is capped, so it never looks "incomplete" */
+.sdd-more {
+  position: sticky; bottom: 0;
+  padding: 6px 12px; font-size: 11.5px; font-weight: 600; color: #6b7f8b;
+  background: #f4f8fa; border-top: 1px solid #e3ecf1;
+}
+
+/* breakdown grid: Issue column */
+.bd-grid th.issue-h { text-align: center; }
+.bd-grid td.issue-cell { text-align: center; color: #4a5b66; font-size: 12.5px; white-space: nowrap; }
+.bd-grid tr.grp-sub td.issue-cell { font-size: 12px; color: #6b7a84; }

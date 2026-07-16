@@ -12,6 +12,7 @@ import {
   PartOption,
   EmployeeOption,
   EspEmployee,
+  MaterialRowUpdatePayload,
 } from './dg-material-status.service';
 
 @Component({
@@ -38,9 +39,12 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   /** "Type of material" options — hardcoded (from the Excel sub-headers). */
   materialTypes: string[] = ['Raw', 'Consumable', 'Spares', 'Tools'];
-  statusOptions: string[] = ['Open', 'Closed', 'InProcess'];
+  statusOptions: string[] = ['Open'];                     // feeding is always Open (auto-Closed via ESP feedback)
+  issueTypes: string[] = ['Wrong', 'Damaged', 'Shortage'];
   shortageOptions: number[] = Array.from({ length: 100 }, (_, i) => i + 1);   // 1..100
   employees: EmployeeOption[] = [];
+  /** Single-row edit: identity of the line being edited (null = adding). */
+  editingRef: { mcode: string; srNo: number } | null = null;
   private partsByKva = new Map<string, PartOption[]>();   // KVA -> parts (Raw dropdown cache)
 
   // chart/records company picker (parent login like 33 spans 01/03/28)
@@ -99,12 +103,14 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   private newRow(): FormGroup {
     return this.fb.group({
+      deptCode: ['', Validators.required],                   // department per ROW
       plan: ['', Validators.required],                       // KVA
       planQuantity: [null, [Validators.required, Validators.min(0)]],
       materialType: ['Raw', Validators.required],            // hardcoded dropdown
       partCode: [''],                                        // Raw: selected Part.PartCode
       partName: [''],                                        // Raw: name snapshot; else free text / blank
       shortageQty: [0],                                      // 0 = none; 1..100
+      issueType: [''],                                        // Wrong / Damaged / Shortage
       status: ['Open', Validators.required],                 // Open / Closed / InProcess
       remark: [''],
       person: [''],                                          // person to communicate (employee)
@@ -125,11 +131,99 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     if (this.rows.length > 1) {
       this.rows.removeAt(i);
     } else {
-      this.rows.at(0).reset({ plan: '', planQuantity: null, materialType: 'Raw', partCode: '', partName: '', shortageQty: 0, status: 'Open', remark: '', person: '' });
+      this.rows.at(0).reset({ deptCode: '', plan: '', planQuantity: null, materialType: 'Raw', partCode: '', partName: '', shortageQty: 0, issueType: '', status: 'Open', remark: '', person: '' });
     }
   }
 
   /* ---------------- Raw part dropdown + company picker ---------------- */
+
+  /** Edit mode: update the single line in place, then return to records. */
+  private saveSingleEdit(): void {
+    const g = this.rows.at(0);
+    if (g.invalid) { g.markAllAsTouched(); this.errorMessage = 'Fill the required fields.'; return; }
+    const v = g.getRawValue();
+    const p: MaterialRowUpdatePayload = {
+      mcode: this.editingRef!.mcode, srNo: this.editingRef!.srNo,
+      plan: v.plan, planQuantity: Number(v.planQuantity), materialType: v.materialType,
+      partCode: v.materialType === 'Raw'
+        ? (this.partsFor(v.plan).find((x) => x.partName === v.partName)?.partCode || v.partCode || '')
+        : '',
+      partName: v.partName || '',
+      shortageQty: Number(v.shortageQty) || 0,
+      issueType: v.issueType || '',
+      status: v.status || 'Open',
+      remark: v.remark || '', person: v.person || '',
+    };
+    this.isLoading = true;
+    this.service.updateRow(p).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.successMessage = 'Record updated.';
+        this.editingRef = null;
+        this.isFormVisible = false;
+        this.isEditMode = false;
+        this.lockHeader(false);
+        this.searchReport();
+      },
+      error: (err) => { this.isLoading = false; console.error(err); this.errorMessage = 'Update failed. Please try again.'; },
+    });
+  }
+
+  /* ---------------- searchable dropdown (KVA / Part / Responsible person) ---------------- */
+  ddRow = -1;
+  ddField: 'plan' | 'partName' | 'person' | '' = '';
+  ddPos = { left: 0, top: 0, width: 0 };
+  private ddCap = 100;                                   // max options rendered at once
+  private ddCache = { key: '', list: [] as string[], total: 0 };
+
+  /** Open the panel under the focused input (fixed-positioned, so table scroll can't clip it). */
+  sddShow(i: number, field: 'plan' | 'partName' | 'person', ev: Event): void {
+    const el = ev.target as HTMLElement;
+    const r = el.getBoundingClientRect();
+    this.ddPos = { left: r.left, top: r.bottom + 2, width: Math.max(r.width, field === 'plan' ? 140 : 320) };
+    this.ddRow = i;
+    this.ddField = field;
+    if (field === 'partName') this.ensureParts(this.rows.at(i).get('plan')?.value);
+  }
+
+  sddClose(): void {
+    setTimeout(() => { this.ddRow = -1; this.ddField = ''; }, 150);
+  }
+
+  /** Filter once per real change (not on every change-detection pass). */
+  private sddCompute(i: number): void {
+    if (i < 0 || !this.ddField) { this.ddCache = { key: '', list: [], total: 0 }; return; }
+    const g = this.rows.at(i);
+    const q = ((g.get(this.ddField)?.value) || '').toString().trim().toLowerCase();
+    let src: string[] = [];
+    if (this.ddField === 'plan') src = this.kvaOptions.map((k) => String(k.kva));
+    else if (this.ddField === 'partName') src = this.partsFor(g.get('plan')?.value).map((p) => p.partName);
+    else src = this.employees.map((e) => e.empName);
+    const key = `${i}|${this.ddField}|${q}|${src.length}`;
+    if (this.ddCache.key === key) return;
+    const f = q ? src.filter((v) => v.toLowerCase().includes(q)) : src;
+    this.ddCache = { key, list: f.slice(0, this.ddCap), total: f.length };
+  }
+
+  /** Options for the open panel, filtered by what's typed in the input. */
+  sddList(i: number): string[] {
+    this.sddCompute(i);
+    return this.ddCache.list;
+  }
+
+  /** How many matched in total (the panel renders at most ddCap of them). */
+  sddTotal(i: number): number {
+    this.sddCompute(i);
+    return this.ddCache.total;
+  }
+
+  sddPick(i: number, val: string): void {
+    const g = this.rows.at(i);
+    const field = this.ddField;
+    g.get(field)?.setValue(val);
+    this.ddRow = -1; this.ddField = '';
+    if (field === 'plan') this.onRowPlanChange(i);
+  }
 
   /** Compact label for the part dropdown options (full name is still saved). */
   partLabel(name: string): string {
@@ -198,6 +292,11 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     if (dept && dept.slice(0, 2) !== this.selectedCompany) {
       this.form.get('deptCode')?.setValue('');
     }
+    // per-row departments too: drop any that belong to a different company
+    this.rows.controls.forEach((g) => {
+      const d = (g.get('deptCode')?.value || '') as string;
+      if (d && d.slice(0, 2) !== this.selectedCompany) g.get('deptCode')?.setValue('');
+    });
   }
 
   /* ================= ESP (raise a Corporate Requisition for a shortage) ================= */
@@ -207,6 +306,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   espEmployees: EspEmployee[] = [];
   espToEmp = '';
   espPriority = 'High Priority';
+  espError = '';                          // shown INSIDE the modal (it lives in <body>)
   espTargetDate = '';                    // "yyyy-MM-dd" — selected by the user
   espMinTargetDate = '';                 // today — lower bound of the picker
   espMsg = '';
@@ -230,12 +330,16 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   openEsp(r: MaterialRecord): void {
     this.clearMessages();
     if (r.espReqCode) {
-      this.errorMessage = `ESP already raised for this line (${r.espReqCode}).`;
+      this.errorMessage = `ESP already sent for this line (${r.espReqCode}).`;
+      return;
+    }
+    if (!r.shortageQty || r.shortageQty <= 0) {
+      this.errorMessage = 'ESP can be raised only for lines with a shortage.';
       return;
     }
     this.espRecord = r;
     this.espPriority = 'High Priority';
-    this.espMinTargetDate = this.isoToday();
+    this.espMinTargetDate = this.isoToday() + 'T00:00';   // datetime-local lower bound
     this.espTargetDate = '';
     const what = r.partName ? `${r.partName}` : `${r.materialType} material`;
     this.espMsg = r.shortageQty > 0
@@ -245,30 +349,41 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       : `Material requirement at ${r.deptName} on ${this.niceDate(r.date)}: ` +
         `${what} (Plan ${r.plan} KVA, ${r.materialType}, Plan Qty ${r.planQuantity}). ` +
         `Kindly arrange / issue the material at the earliest.`;
-    // pre-select the record's "person to communicate" via the [ ecode ] in the stored name
+    // the ESP goes to the row's Responsible person (fixed — no dropdown)
     const m = (r.person || '').match(/\[\s*([^\]]+?)\s*\]/);
     this.espToEmp = m ? m[1].trim() : '';
+    if (!this.espToEmp) {
+      this.errorMessage = 'Set the Responsible person for this line first.';
+      return;
+    }
+    this.espError = '';
+    if (this.espEmployees.length && this.espToEmp && !this.espEmployees.some((e) => e.eCode === this.espToEmp)) {
+      this.espError = 'This person is not in the ESP (Corporate Requisition) employee list, so their PC code cannot be resolved. Set a listed employee as the Responsible person for this line.';
+    }
     this.espOpen = true;
     if (!this.espEmployees.length) {
       this.service.getEspEmployees().subscribe({
         next: (res) => {
           this.espEmployees = res || [];
-          if (this.espToEmp && !this.espEmployees.some((e) => e.eCode === this.espToEmp)) this.espToEmp = '';
+          if (this.espToEmp && !this.espEmployees.some((e) => e.eCode === this.espToEmp)) {
+            this.espError = 'This person is not in the ESP (Corporate Requisition) employee list, so their PC code cannot be resolved. Set a listed employee as the Responsible person for this line.';
+          }
         },
         error: () => (this.errorMessage = 'Could not load the ESP employee list.'),
       });
     }
   }
 
-  closeEsp(): void { this.espOpen = false; this.espRecord = null; }
+  closeEsp(): void { this.espOpen = false; this.espRecord = null; this.espError = ''; }
 
   sendEsp(): void {
     if (!this.espRecord) return;
-    if (!this.espToEmp) { this.errorMessage = 'Select the employee to raise the ESP to.'; return; }
-    if (!this.espTargetDate) { this.errorMessage = 'Select the target date.'; return; }
-    if (!this.espMsg.trim()) { this.errorMessage = 'The request message cannot be empty.'; return; }
+    this.espError = '';
+    if (!this.espToEmp) { this.espError = 'This line has no Responsible person.'; return; }
+    if (!this.espTargetDate) { this.espError = 'Select the target date & time.'; return; }
+    if (!this.espMsg.trim()) { this.espError = 'The request message cannot be empty.'; return; }
     const emp = this.espEmployees.find((e) => e.eCode === this.espToEmp);
-    if (!emp) { this.errorMessage = 'Selected employee is invalid.'; return; }
+    if (!emp) { this.espError = 'This person is not in the ESP employee list — PC code cannot be resolved.'; return; }
     this.espSending = true;
     this.service.raiseEsp({
       empCode: this.service.sessionUser,
@@ -292,7 +407,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       error: (err) => {
         this.espSending = false;
         console.error('ESP raise failed:', err);
-        this.errorMessage = 'Failed to raise the ESP. Please try again.';
+        this.espError = 'Failed to raise the ESP. Please try again.';
       },
     });
   }
@@ -301,14 +416,15 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   analyticsCollapsed = true;    // hidden at first — loads on expand
   chartLoading = false;
   chartCompany = '';               // charts' own company (independent of the Records filter)
-  breakdownDim: 'department' | 'person' | 'part' | 'type' = 'department';
+  breakdownDim: 'department' | 'person' | 'part' | 'kva' | 'type' = 'department';
+  breakdownIssue: 'all' | 'Wrong' | 'Damaged' | 'Shortage' = 'all';   // issue-type filter for the charts
   breakdownPeriod: 'weekly' | 'monthly' | 'custom' = 'monthly';
   breakdownView: 'both' | 'chart' | 'grid' = 'both';
   breakdownFrom = '';
   breakdownTo = '';
   breakdownRows: { label: string; short: number; open: number }[] = [];
-  breakdownDetailRows: { kind: 'single' | 'head' | 'sub'; label: string; date: string; days: number; short: number }[] = [];
-  private breakdownDateMap = new Map<string, { date: string; short: number }[]>();
+  breakdownDetailRows: { kind: 'single' | 'head' | 'sub'; label: string; date: string; days: number; reason: string; issue: string; short: number }[] = [];
+  private breakdownDateMap = new Map<string, { date: string; reason: string; issue: string; short: number }[]>();
   shortageReport: MaterialTrendRow[] = [];      // flat "where is shortage" list for the period
   private breakdownChart: any = null;
   private chartJs?: Promise<any>;
@@ -355,7 +471,18 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     // custom keeps whatever the user typed
   }
 
-  setBreakdownDim(dim: 'department' | 'person' | 'part' | 'type'): void {
+  /** Issue-type filter — narrows every chart/grid to Wrong / Damaged / Shortage (or all). */
+  setBreakdownIssue(v: 'all' | 'Wrong' | 'Damaged' | 'Shortage'): void {
+    this.breakdownIssue = v;
+    this.loadBreakdown();
+  }
+
+  /** "All issue types" / "Damaged" … — used in titles and exports. */
+  get issueLabel(): string {
+    return this.breakdownIssue === 'all' ? 'All issue types' : this.breakdownIssue;
+  }
+
+  setBreakdownDim(dim: 'department' | 'person' | 'part' | 'kva' | 'type'): void {
     this.breakdownDim = dim;
     this.loadBreakdown();
   }
@@ -380,7 +507,8 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   get dimLabel(): string {
     return this.breakdownDim === 'department' ? 'Department'
       : this.breakdownDim === 'person' ? 'Person'
-        : this.breakdownDim === 'part' ? 'Part' : 'Material type';
+        : this.breakdownDim === 'part' ? 'Part'
+          : this.breakdownDim === 'kva' ? 'KVA' : 'Material type';
   }
   get breakdownShortTotal(): number { return this.breakdownRows.reduce((t, r) => t + r.short, 0); }
   get breakdownOpenTotal(): number { return this.breakdownRows.reduce((t, r) => t + r.open, 0); }
@@ -392,6 +520,134 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     return this.breakdownRows.findIndex((r) => r.label === label) + 1;
   }
 
+  private async ensureExcelJs(): Promise<any> {
+    if (!(window as any).ExcelJS) {
+      await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+    }
+    return (window as any).ExcelJS;
+  }
+
+  /** Breakdown (dated) grid -> Excel: same rows as on screen, with Reason. */
+  async exportBreakdownExcel(): Promise<void> {
+    if (this.isExporting || !this.breakdownDetailRows.length) return;
+    this.isExporting = true;
+    try {
+      const ExcelJS = await this.ensureExcelJs();
+      if (!ExcelJS) { this.errorMessage = 'Excel library failed to load.'; return; }
+      const TEAL = 'FF0F6C8D';
+      const thin = { style: 'thin', color: { argb: 'FFB0B0B0' } };
+      const B = { top: thin, left: thin, bottom: thin, right: thin };
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Shortage breakdown');
+      ws.columns = [{ width: 5 }, { width: 30 }, { width: 13 }, { width: 40 }, { width: 11 }, { width: 15 }, { width: 9 }];
+      ws.mergeCells('A1:G1');
+      const t1 = ws.getCell('A1');
+      t1.value = {
+        richText: [
+          { text: this.chartsCompanyName + '\n', font: { bold: true, size: 14, color: { argb: 'FFFFFFFF' } } },
+          { text: `Material shortage by ${this.dimLabel.toLowerCase()}  ·  ${this.issueLabel}        ${this.breakdownPeriodLabel}`, font: { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } } },
+        ],
+      };
+      t1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
+      t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
+      ws.getRow(1).height = 36;
+      const headers = ['#', this.dimLabel, 'Date', 'Reason', 'Issue', 'Shortage (Nos.)', 'Share'];
+      headers.forEach((h, i) => {
+        const c = ws.getCell(2, i + 1);
+        c.value = h;
+        c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
+        c.border = B;
+      });
+      let rowNum = 3;
+      const write = (vals: any[], kind: string) => {
+        ws.getRow(rowNum).values = vals;
+        for (let c = 1; c <= 7; c++) {
+          const cell = ws.getRow(rowNum).getCell(c);
+          cell.border = B;
+          cell.alignment = { horizontal: c === 1 || c === 3 || c === 5 ? 'center' : c >= 6 ? 'right' : 'left', vertical: 'middle', wrapText: c === 4 };
+          if (kind === 'total') { cell.font = { bold: true }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEBF2F6' } }; }
+          else if (kind === 'head') { cell.font = { bold: true }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F6F9' } }; }
+          else if (kind === 'single') { cell.font = { bold: true }; }
+          else { cell.font = { color: { argb: 'FF5A6973' }, size: 10 }; }
+        }
+        rowNum++;
+      };
+      for (const r of this.breakdownDetailRows) {
+        write([
+          r.kind !== 'sub' ? this.breakdownRankOf(r.label) : '',
+          r.kind !== 'sub' ? r.label : '',
+          r.kind === 'head' ? '' : this.niceDate(r.date),
+          r.kind === 'head' ? '' : (r.reason || ''),
+          r.kind === 'head' ? '' : (r.issue || ''),
+          r.short,
+          this.breakdownShare(r).toFixed(1) + '%',
+        ], r.kind);
+      }
+      write(['', 'Total', '', '', '', this.breakdownShortTotal, '100%'], 'total');
+      const buf = await wb.xlsx.writeBuffer();
+      this.downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Material_shortage_breakdown.xlsx');
+    } catch (e) {
+      console.error('Breakdown Excel export failed:', e);
+      this.errorMessage = 'Failed to generate the breakdown Excel.';
+    } finally { this.isExporting = false; }
+  }
+
+  /** "Where is shortage" flat report -> Excel. */
+  async exportShortageExcel(): Promise<void> {
+    if (this.isExporting || !this.shortageReport.length) return;
+    this.isExporting = true;
+    try {
+      const ExcelJS = await this.ensureExcelJs();
+      if (!ExcelJS) { this.errorMessage = 'Excel library failed to load.'; return; }
+      const TEAL = 'FF0F6C8D';
+      const thin = { style: 'thin', color: { argb: 'FFB0B0B0' } };
+      const B = { top: thin, left: thin, bottom: thin, right: thin };
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Shortage report');
+      ws.columns = [{ width: 4 }, { width: 12 }, { width: 22 }, { width: 9 }, { width: 11 }, { width: 38 }, { width: 11 }, { width: 9 }, { width: 9 }, { width: 24 }];
+      ws.mergeCells('A1:J1');
+      const t1 = ws.getCell('A1');
+      t1.value = {
+        richText: [
+          { text: this.chartsCompanyName + '\n', font: { bold: true, size: 14, color: { argb: 'FFFFFFFF' } } },
+          { text: `Where is shortage  ·  ${this.issueLabel}        ${this.breakdownPeriodLabel}`, font: { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } } },
+        ],
+      };
+      t1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
+      t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
+      ws.getRow(1).height = 36;
+      const headers = ['#', 'Date', 'Department', 'Plan (KVA)', 'Type', 'Part', 'Issue', 'Shortage', 'Status', 'Responsible person'];
+      headers.forEach((h, i) => {
+        const c = ws.getCell(2, i + 1);
+        c.value = h;
+        c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
+        c.border = B;
+      });
+      let rowNum = 3;
+      for (const r of this.shortageReport) {
+        ws.getRow(rowNum).values = [
+          rowNum - 2, this.niceDate(r.date), r.deptName, r.plan, r.materialType,
+          r.partName || '', r.issueType || '', r.shortageQty, r.status || '', r.person || '',
+        ];
+        for (let c = 1; c <= 10; c++) {
+          const cell = ws.getRow(rowNum).getCell(c);
+          cell.border = B;
+          cell.alignment = { horizontal: c === 1 || c === 2 || c === 7 ? 'center' : 'left', vertical: 'middle', wrapText: c === 6 };
+        }
+        rowNum++;
+      }
+      const buf = await wb.xlsx.writeBuffer();
+      this.downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Material_shortage_report.xlsx');
+    } catch (e) {
+      console.error('Shortage Excel export failed:', e);
+      this.errorMessage = 'Failed to generate the shortage Excel.';
+    } finally { this.isExporting = false; }
+  }
+
   /** Load + aggregate shortage by the chosen dimension for the resolved window. */
   loadBreakdown(): void {
     if (!this.breakdownFrom || !this.breakdownTo) this.resolveBreakdownRange();
@@ -399,9 +655,13 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     this.service.getTrend(this.breakdownFrom, this.breakdownTo).subscribe({
       next: (rawRows) => {
         this.chartLoading = false;
-        const rows = (this.showCompanyPicker && this.chartCompany)
+        const byCompany = (this.showCompanyPicker && this.chartCompany)
           ? (rawRows || []).filter((r) => (r.companyCode || '') === this.chartCompany)
           : (rawRows || []);
+        // issue-type filter: Wrong / Damaged / Shortage (or everything)
+        const rows = this.breakdownIssue === 'all'
+          ? byCompany
+          : byCompany.filter((r) => (r.issueType || '') === this.breakdownIssue);
 
         // flat "where is shortage" report: every dated line with a shortage
         this.shortageReport = rows
@@ -412,10 +672,11 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
           (this.breakdownDim === 'department' ? r.deptName
             : this.breakdownDim === 'person' ? r.person
               : this.breakdownDim === 'part' ? r.partName
-                : r.materialType) || '—';
+                : this.breakdownDim === 'kva' ? (r.plan ? 'KVA ' + r.plan : '')
+                  : r.materialType) || '—';
 
         const map = new Map<string, { short: number; open: number }>();
-        const dateMap = new Map<string, Map<string, number>>();
+        const dateMap = new Map<string, Map<string, { short: number; reasons: Set<string>; issues: Set<string> }>>();
         for (const r of rows) {
           const q = r.shortageQty || 0;
           if (q <= 0) continue;
@@ -426,7 +687,11 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
           map.set(key, cur);
           let byDate = dateMap.get(key);
           if (!byDate) { byDate = new Map(); dateMap.set(key, byDate); }
-          byDate.set(r.date, (byDate.get(r.date) || 0) + q);
+          const cell = byDate.get(r.date) || { short: 0, reasons: new Set<string>(), issues: new Set<string>() };
+          cell.short += q;
+          if ((r.remark || '').trim()) cell.reasons.add(r.remark.trim());
+          if ((r.issueType || '').trim()) cell.issues.add(r.issueType.trim());
+          byDate.set(r.date, cell);
         }
         this.breakdownRows = Array.from(map.entries())
           .map(([label, v]) => ({ label, short: v.short, open: v.open }))
@@ -439,12 +704,12 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   /** Flatten the per-date map into tidy grid rows (single / head + sub). */
-  private rebuildBreakdownDetail(dateMap: Map<string, Map<string, number>>): void {
+  private rebuildBreakdownDetail(dateMap: Map<string, Map<string, { short: number; reasons: Set<string>; issues: Set<string> }>>): void {
     this.breakdownDateMap = new Map(
       Array.from(dateMap.entries()).map(([label, byDate]) => [
         label,
         Array.from(byDate.entries())
-          .map(([date, short]) => ({ date, short }))
+          .map(([date, v]) => ({ date, short: v.short, reason: Array.from(v.reasons).join(' | '), issue: Array.from(v.issues).join(' | ') }))
           .filter((d) => d.short > 0)
           .sort((a, b) => a.date.localeCompare(b.date)),
       ]),
@@ -454,10 +719,10 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       const dates = this.breakdownDateMap.get(agg.label) || [];
       if (!dates.length) continue;
       if (dates.length === 1) {
-        detail.push({ kind: 'single', label: agg.label, date: dates[0].date, days: 1, short: dates[0].short });
+        detail.push({ kind: 'single', label: agg.label, date: dates[0].date, days: 1, reason: dates[0].reason, issue: dates[0].issue, short: dates[0].short });
       } else {
-        detail.push({ kind: 'head', label: agg.label, date: '', days: dates.length, short: agg.short });
-        for (const d of dates) detail.push({ kind: 'sub', label: agg.label, date: d.date, days: 0, short: d.short });
+        detail.push({ kind: 'head', label: agg.label, date: '', days: dates.length, reason: '', issue: '', short: agg.short });
+        for (const d of dates) detail.push({ kind: 'sub', label: agg.label, date: d.date, days: 0, reason: d.reason, issue: d.issue, short: d.short });
       }
     }
     this.breakdownDetailRows = detail;
@@ -465,11 +730,19 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   private ensureChartJs(): Promise<any> {
     if (!this.chartJs) {
-      this.chartJs = (window as any).Chart
+      this.chartJs = ((window as any).Chart
         ? Promise.resolve((window as any).Chart)
-        : this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js').then(() => (window as any).Chart);
+        : this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js').then(() => (window as any).Chart)
+      ).catch((e) => { this.chartJs = undefined; throw e; });   // never cache a failed CDN load
     }
     return this.chartJs;
+  }
+
+  /** Hard refresh: destroy the chart and reload the panel (for the odd blank chart). */
+  refreshCharts(): void {
+    if (this.breakdownChart) { this.breakdownChart.destroy(); this.breakdownChart = null; }
+    this.chartJs = undefined;
+    this.loadBreakdown();
   }
 
   /** Bar chart of shortage by the chosen dimension (smooth in-place updates). */
@@ -544,7 +817,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
       doc.text(pdfSafe(this.chartsCompanyName), pageW / 2, 14, { align: 'center' });
       doc.setFontSize(11); doc.setTextColor(40, 40, 40);
-      doc.text(pdfSafe(`Material shortage by ${this.dimLabel.toLowerCase()}  ·  ` + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+      doc.text(pdfSafe(`Material shortage by ${this.dimLabel.toLowerCase()}  ·  ${this.issueLabel}  ·  ` + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
 
       let startY = 26;
       if (this.breakdownView !== 'grid') {
@@ -568,19 +841,21 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
           return [
             r.kind !== 'sub' ? this.breakdownRankOf(r.label) : '',
             r.kind !== 'sub' ? pdfSafe(r.label) : '',
-            r.kind === 'head' ? `${r.days} days` : this.niceDate(r.date),
+            r.kind === 'head' ? '' : this.niceDate(r.date),
+            r.kind === 'head' ? '' : pdfSafe(r.reason || ''),
+            r.kind === 'head' ? '' : pdfSafe(r.issue || ''),
             r.short,
             this.breakdownShare(r).toFixed(1) + '%',
           ];
         });
         kinds.push('total');
-        body.push(['', 'Total', '', this.breakdownShortTotal, '100%']);
+        body.push(['', 'Total', '', '', '', this.breakdownShortTotal, '100%']);
         (doc as any).autoTable({
-          head: [['#', this.dimLabel, 'Date', 'Shortage (Nos.)', 'Share']],
+          head: [['#', this.dimLabel, 'Date', 'Reason', 'Issue', 'Shortage (Nos.)', 'Share']],
           body, startY, theme: 'grid',
           styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle' },
           headStyles: { fillColor: [15, 108, 141], textColor: 255, halign: 'center' },
-          columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'left' }, 2: { halign: 'center', cellWidth: 26 }, 3: { halign: 'right' }, 4: { halign: 'right' } },
+          columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'left' }, 2: { halign: 'center', cellWidth: 24 }, 3: { halign: 'left', cellWidth: 56 }, 4: { halign: 'center', cellWidth: 22 }, 5: { halign: 'right' }, 6: { halign: 'right' } },
           didParseCell: (d: any) => {
             const k = kinds[d.row.index];
             if (k === 'total') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [235, 242, 246]; }
@@ -615,17 +890,17 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
       doc.text(pdfSafe(this.chartsCompanyName), pageW / 2, 14, { align: 'center' });
       doc.setFontSize(11); doc.setTextColor(40, 40, 40);
-      doc.text(pdfSafe('Shortage report  ·  ' + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+      doc.text(pdfSafe(`Shortage report  ·  ${this.issueLabel}  ·  ` + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
       const body = this.shortageReport.map((r, i) => [
         i + 1, this.niceDate(r.date), pdfSafe(r.deptName), r.plan, pdfSafe(r.materialType),
-        pdfSafe(r.partName || '-'), r.shortageQty, pdfSafe(r.status || '-'), pdfSafe(r.person || '-'),
+        pdfSafe(r.partName || '-'), pdfSafe(r.issueType || '-'), r.shortageQty, pdfSafe(r.status || '-'), pdfSafe(r.person || '-'),
       ]);
       (doc as any).autoTable({
-        head: [['#', 'Date', 'Department', 'Plan (KVA)', 'Type', 'Part', 'Shortage', 'Status', 'Person']],
+        head: [['#', 'Date', 'Department', 'Plan (KVA)', 'Type', 'Part', 'Issue', 'Shortage', 'Status', 'Responsible person']],
         body, startY: 26, theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 1.5, valign: 'middle' },
         headStyles: { fillColor: [15, 108, 141], textColor: 255, halign: 'center' },
-        columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 6: { halign: 'right' } },
+        columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 6: { halign: 'center' }, 7: { halign: 'right' } },
       });
       doc.save('Material_shortage_report.pdf');
     } catch (e) {
@@ -636,6 +911,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   /* ---------------- view <-> add ---------------- */
   showForm(): void {
+    this.editingRef = null;
     this.isFormVisible = true;
     this.isEditMode = false;
     this.lockHeader(false);
@@ -646,6 +922,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   showList(): void {
+    this.editingRef = null;
     this.isFormVisible = false;
     this.isEditMode = false;
     this.lockHeader(false);
@@ -655,51 +932,36 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   /** Open the Add form in edit mode, pre-loaded with that day + department's saved rows. */
   editRecord(r: MaterialRecord): void {
+    this.clearMessages();
     if (r.espReqCode) {
-      this.errorMessage = `ESP already raised (${r.espReqCode}) — this line is locked.`;
+      this.errorMessage = `ESP already sent (${r.espReqCode}) — this line is locked.`;
       return;
     }
+    this.editingRef = { mcode: r.mcode, srNo: r.srNo };
     this.isFormVisible = true;
     this.isEditMode = true;
-    this.clearMessages();
-    this.form.patchValue({ date: r.date, deptCode: r.deptCode });
-    this.lockHeader(true);          // don't let date/department change mid-edit
-
-    this.isLoading = true;
-    this.service.getMaterialRecords(r.date, r.deptCode).subscribe({
-      next: (rows) => {
-        this.isLoading = false;
-        this.rows.clear();
-        (rows || []).forEach((x) =>
-          this.rows.push(
-            this.fb.group({
-              plan: [x.plan, Validators.required],
-              planQuantity: [x.planQuantity, [Validators.required, Validators.min(0)]],
-              materialType: [x.materialType || 'Raw', Validators.required],
-              partCode: [x.partCode || ''],
-              partName: [x.partName || ''],
-              shortageQty: [x.shortageQty || 0],
-              status: [x.status || 'Open', Validators.required],
-              remark: [x.remark || ''],
-              person: [x.person || ''],
-            }),
-          ),
-        );
-        if (this.rows.length === 0) this.rows.push(this.newRow());
-        // pre-load part options for Raw rows so their dropdowns show the saved part
-        (rows || []).forEach((x) => { if ((x.materialType || '') === 'Raw' && x.plan) this.ensureParts(x.plan); });
-      },
-      error: () => {
-        this.isLoading = false;
-        this.errorMessage = 'Could not load the rows for editing.';
-      },
-    });
+    this.form.patchValue({ date: r.date });
+    while (this.rows.length) this.rows.removeAt(0);
+    this.rows.push(this.fb.group({
+      deptCode: [{ value: r.deptCode, disabled: true }],          // a line cannot move departments
+      plan: [r.plan, Validators.required],
+      planQuantity: [r.planQuantity, [Validators.required, Validators.min(0)]],
+      materialType: [r.materialType || 'Raw', Validators.required],
+      partCode: [r.partCode || ''],
+      partName: [r.partName || ''],
+      shortageQty: [r.shortageQty || 0],
+      issueType: [r.issueType || ''],
+      status: ['Open', Validators.required],
+      remark: [r.remark || ''],
+      person: [r.person || ''],
+    }));
+    if ((r.materialType || '') === 'Raw' && r.plan) this.ensureParts(r.plan);
   }
 
   /** Soft-delete one material line. */
   deleteRecord(r: MaterialRecord): void {
     if (r.espReqCode) {
-      this.errorMessage = `ESP already raised (${r.espReqCode}) — this line cannot be deleted.`;
+      this.errorMessage = `ESP already sent (${r.espReqCode}) — this line cannot be deleted.`;
       return;
     }
     const ok = confirm(`Delete material row "${r.plan}" (${r.materialType}) on ${r.date}?`);
@@ -779,16 +1041,10 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       this.errorMessage = 'Please select a date.';
       return;
     }
-    if (!this.form.get('deptCode')?.value) {
-      this.form.get('deptCode')?.markAsTouched();
-      this.errorMessage = 'Please select a department.';
-      return;
-    }
-
     // Every row must be complete: Plan, Type of material, Quantity and Status.
     if (this.rows.invalid) {
       this.rows.markAllAsTouched();
-      this.errorMessage = 'Each row needs Plan, Type of material, Quantity and Status.';
+      this.errorMessage = 'Each row needs Department, Plan (KVA), Plan Qty and Type of material.';
       return;
     }
 
@@ -802,6 +1058,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     //   return;
     // }
 
+    if (this.editingRef) { this.saveSingleEdit(); return; }
     const payload: SaveMaterialBatchRequest = {
       date: this.form.get('date')?.value,
       companyCode: this.service.companyCode,
@@ -809,15 +1066,17 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       deptName: this.selectedDeptName,
       createdBy: this.service.sessionUser,
       entries: this.rows.controls.map((r) => ({
+        deptCode: r.value.deptCode || '',
         plan: r.value.plan,
         planQuantity: Number(r.value.planQuantity),
         materialType: r.value.materialType,
-        partCode: r.value.materialType === 'Raw' ? (r.value.partCode || '') : '',
-        partName: r.value.materialType === 'Raw'
-          ? (this.partsFor(r.value.plan).find((p) => p.partCode === r.value.partCode)?.partName || r.value.partName || '')
-          : (r.value.partName || ''),
+        partCode: r.value.materialType === 'Raw'
+          ? (this.partsFor(r.value.plan).find((p) => p.partName === r.value.partName)?.partCode || '')
+          : '',
+        partName: r.value.partName || '',
         shortageQty: Number(r.value.shortageQty) || 0,
-        status: r.value.status || '',
+        issueType: r.value.issueType || '',
+        status: r.value.status || 'Open',
         remark: r.value.remark || '',
         person: r.value.person || '',
       })),
@@ -828,7 +1087,13 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       next: () => {
         this.isLoading = false;
         const n = payload.entries.length;
-        this.successMessage = `Saved ${n} material ${n === 1 ? 'row' : 'rows'} for ${this.selectedDeptName}.`;
+        this.successMessage = `Saved ${n} material ${n === 1 ? 'row' : 'rows'}.`;
+        // land the Records view on the company that was just fed, so the new rows are visible
+        const firstDept = payload.entries[0]?.deptCode || '';
+        if (this.showCompanyPicker && firstDept) {
+          const cc = firstDept.slice(0, 2);
+          if (this.viewCompanies.some((c) => c.companyCode === cc)) this.selectedCompany = cc;
+        }
         this.isFormVisible = false;
         this.isEditMode = false;
         this.lockHeader(false);
@@ -899,41 +1164,46 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('Material');
       ws.columns = [
-        { width: 6 }, { width: 12 }, { width: 26 }, { width: 14 },
-        { width: 16 }, { width: 10 }, { width: 28 }, { width: 24 },
+        { width: 6 }, { width: 12 }, { width: 24 }, { width: 10 },
+        { width: 9 }, { width: 12 }, { width: 36 }, { width: 10 },
+        { width: 11 }, { width: 9 }, { width: 18 }, { width: 24 },
       ];
 
-      ws.mergeCells('A1:H1');
+      ws.mergeCells('A1:L1');
       const t1 = ws.getCell('A1');
       t1.value = {
         richText: [
           { text: this.chartCompanyName + '\n', font: { bold: true, size: 15, color: { argb: 'FFFFFFFF' } } },
-          { text: `Production Material U1        ${this.exportDateLabel()}`, font: { bold: true, size: 11, color: { argb: 'FFFFFFFF' } } },
+          { text: `Production Material        ${this.exportDateLabel()}`, font: { bold: true, size: 11, color: { argb: 'FFFFFFFF' } } },
         ],
       };
       t1.alignment = center;
       t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
       ws.getRow(1).height = 40;
 
-      const headers = ['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Plan Qty', 'Type', 'Part Name', 'Shortage Qty', 'Status', 'Remark', 'Person to communicate'];
+      const headers = ['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Plan Qty', 'Type', 'Part Name', 'Shortage Qty', 'Issue', 'Status', 'Remark', 'Responsible person'];
       headers.forEach((h, i) => {
         const c = ws.getCell(2, i + 1);
         c.value = h;
         c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
         c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TEAL } };
-        c.alignment = center;
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
         c.border = allBorders;
       });
+      ws.getRow(2).height = 26;                     // wrapped headers get room — nothing clips
 
       let sr = 1, rowNum = 3;
       for (const r of this.filteredRecords) {
         ws.getRow(rowNum).values = [
-          sr++, r.date, r.deptName, r.plan, r.planQuantity, r.materialType, r.partName || '', r.shortageQty || '', r.status || '', r.remark || '', r.person || '',
+          sr++, r.date, r.deptName, r.plan, r.planQuantity, r.materialType, r.partName || '', r.shortageQty || '', r.issueType || '', r.status || '', r.remark || '', r.person || '',
         ];
-        for (let c = 1; c <= 11; c++) {
+        for (let c = 1; c <= 12; c++) {
           const cell = ws.getRow(rowNum).getCell(c);
           cell.border = allBorders;
-          cell.alignment = { horizontal: c === 1 || c === 6 ? 'center' : 'left', vertical: 'middle', wrapText: c === 7 };
+          cell.alignment = {
+            horizontal: c === 1 || c === 6 || c === 8 || c === 9 ? 'center' : 'left',
+            vertical: 'middle', wrapText: c === 7 || c === 11 || c === 12,
+          };
         }
         rowNum++;
       }
@@ -991,11 +1261,11 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       doc.line(M, 72, pageW - M, 72);
 
       const body = this.filteredRecords.map((r, i) => [
-        i + 1, r.date, r.deptName, r.plan, r.planQuantity, r.materialType, r.partName || '', r.shortageQty || '', r.status || '', r.remark || '', r.person || '',
+        i + 1, r.date, r.deptName, r.plan, r.planQuantity, r.materialType, r.partName || '', r.shortageQty || '', r.issueType || '', r.status || '', r.remark || '', r.person || '',
       ]);
 
       (doc as any).autoTable({
-        head: [['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Plan Qty', 'Type', 'Part Name', 'Shortage', 'Status', 'Remark', 'Person']],
+        head: [['Sr.no', 'Date', 'Department', 'Plan (KVA)', 'Plan Qty', 'Type', 'Part Name', 'Shortage', 'Issue', 'Status', 'Remark', 'Responsible person']],
         body,
         startY: 84,
         styles: { fontSize: 8, cellPadding: 4 },
