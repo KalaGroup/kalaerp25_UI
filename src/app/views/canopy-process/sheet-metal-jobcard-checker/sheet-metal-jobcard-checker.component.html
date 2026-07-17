@@ -1,0 +1,493 @@
+<style>
+  .fa-spinner { animation: spin 1s linear infinite; }
+  @keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+</style>
+
+<div class="card m-1 checker-card">
+  <div class="card-header checker-header">
+    <b>Sheet Metal Checker (Primary Plan)</b>
+  </div>
+  <div class="card-body checker-body">
+    <form #SheetMetalJobcardChecker="ngForm">
+
+      <div class="filter-row">
+        <div class="filter-field">
+          <label for="txtJBDt">JobCard Date</label>
+          <input [readonly]="true" id="txtJBDt" type="text" class="form-control form-control-sm"
+                 name="txtJBDt" [(ngModel)]="today">
+        </div>
+
+        <div class="filter-field">
+          <label for="txtPC">Profitcenter</label>
+          <input [readonly]="true" id="txtPC" type="text" class="form-control form-control-sm"
+                 name="txtPC" [(ngModel)]="PC">
+        </div>
+
+        <!-- <div class="filter-field">
+          <label for="ddlShift">Shift Type</label>
+          <select id="ddlShift" class="form-control form-control-sm" [(ngModel)]="shiftType" name="shiftType"
+                  (change)="onShiftSelectPlanLoad($any($event.target).value)">
+            <option value="" disabled>-- Select Shift --</option>
+            @for (p of shiftTypes; track p.id) {
+              <option [value]="p.name">{{ p.name }}</option>
+            }
+          </select>
+        </div> -->
+
+        <div class="filter-field">
+          <label for="ddlPlanCode">PlanCode</label>
+          <select id="ddlPlanCode" class="form-control form-control-sm" [(ngModel)]="PlanCode" name="PlanCode"
+                  (change)="onPlanCodeChange($any($event.target).value)">
+            <option value="" disabled>-- Select PlanCode --</option>
+            @for (p of planCodes; track p.id) {
+              <option [value]="p.name">{{ p.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-action">
+          <button type="button" class="btn btn-info btn-sm btn-search"
+                  (click)="onClickSearch()" [disabled]="isLoading">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <div class="results-section">
+        <div class="section-header">
+          <h5 class="section-title">Jobcard PartCode Details</h5>
+          @if (SheetMetalJobcardCheckerDetailsList?.length) {
+            <span class="record-pill">{{ SheetMetalJobcardCheckerDetailsList.length }} Records</span>
+          }
+        </div>
+
+        <div class="tableFixHead">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col" class="col-srno">SrNo</th>
+                <th scope="col">CPCode</th>
+                <th scope="col" class="col-kva">KVA</th>
+                <th scope="col">Model</th>
+                <th scope="col" class="col-num">PlanQty</th>
+                <th scope="col" class="col-num">BatchQty</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!SheetMetalJobcardCheckerDetailsList || SheetMetalJobcardCheckerDetailsList.length === 0) {
+                <tr class="empty-row">
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <div class="empty-icon">📋</div>
+                      <p class="empty-title">No Records Found</p>
+                      <p class="empty-hint">Select Shift Type and PlanCode, then click <b>Search</b> to load data.</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (DGDetails of SheetMetalJobcardCheckerDetailsList; track DGDetails.CPCode; let i = $index) {
+                  <tr>
+                    <td class="indextd">{{ i + 1 }}</td>
+                    <td>
+                      <a class="cp-link" (click)="openCPCodePopup(DGDetails)">
+                        {{ DGDetails.CPCode }}
+                      </a>
+                    </td>
+                    <td class="col-kva"><span class="kva-badge">{{ DGDetails.KVA }}</span></td>
+                    <td>{{ DGDetails.Model }}</td>
+                    <td class="num-cell col-num">{{ DGDetails.PenPlanQty }}</td>
+                    <td class="num-cell col-num">{{ DGDetails.BatchQty }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== CHECKER DONE REPORT ===== -->
+      <div class="results-section report-section">
+        <div class="section-header">
+          <h5 class="section-title">Checker Done Report</h5>
+          @if (reportList?.length) {
+            <span class="record-pill">{{ reportList.length }} Records</span>
+          }
+        </div>
+
+        <div class="tableFixHead">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col" class="col-srno">SrNo</th>
+                <th scope="col">CPCode</th>
+                <th scope="col" class="col-kva">KVA</th>
+                <th scope="col">Model</th>
+                <th scope="col">PartCode</th>
+                <th scope="col" class="col-num">PlanQty</th>
+                <th scope="col" class="col-num">BatchQty</th>
+                <th scope="col">Status</th>
+                <!-- <th scope="col" class="col-qr">Barcode</th> -->
+                <th scope="col" class="col-qr">CNC</th>
+                <th scope="col" class="col-qr">Bending</th>
+                 <th scope="col" class="col-qr">fabrication</th>
+                <th scope="col" class="col-qr">Powder coting</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!reportList || reportList.length === 0) {
+                <tr class="empty-row">
+                  <td colspan="8">
+                    <div class="empty-state">
+                      <div class="empty-icon">📄</div>
+                      <p class="empty-title">No Report Records</p>
+                      <p class="empty-hint">Checker-done plans will appear here.</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (rpt of reportList; track rpt.CPCode; let i = $index) {
+                  <tr>
+                    <td class="indextd">{{ i + 1 }}</td>
+                    <td>{{ rpt.CPCode }}</td>
+                    <td class="col-kva"><span class="kva-badge">{{ rpt.KVA }}</span></td>
+                    <td>{{ rpt.Model }}</td>
+                    <td>{{ rpt.Partcode }}</td>
+                    
+                    <td class="num-cell col-num">{{ rpt.PenPlanQty }}</td>
+                    <td class="num-cell col-num">{{ rpt.BatchQty }}</td>
+                    <td><span class="status-badge">{{ $any(rpt).Status || 'Auth' }}</span></td>
+                    <!-- <td class="col-qr">
+                      <button type="button" class="btn btn-qr" (click)="openQrPopup(rpt)">
+                        <i class="fa fa-barcode" aria-hidden="true"></i>
+                        Barcode
+                      </button>
+                    </td> -->
+
+                    <td class="col-qr">
+                      <div class="stage-cell">
+                        @if ($any(rpt).CNCStatus === 'Done') {
+                          <span class="done-badge">Done</span>
+                        } 
+                        <!-- @else {
+                          <span class="pending-badge">Pending</span>
+                        } -->
+                        <button type="button" class="btn btn-qr"
+                                (click)="openStageQrPopup(rpt, 'CNC')">
+                          <i class="fa fa-qrcode" aria-hidden="true"></i>
+                          PDF
+                        </button>
+                      </div>
+                    </td>
+                    <td class="col-qr">
+                      <div class="stage-cell">
+                        @if ($any(rpt).BendingStatus === 'Done') {
+                          <span class="done-badge">Done</span>
+                        } 
+                        <!-- @else {
+                          <span class="pending-badge">Pending</span>
+                        } -->
+                        <button type="button" class="btn btn-qr"
+                                (click)="openStageQrPopup(rpt, 'Bending')">
+                          <i class="fa fa-qrcode" aria-hidden="true"></i>
+                          PDF
+                        </button>
+                      </div>
+                    </td>
+                    <td class="col-qr">
+                      <div class="stage-cell">
+                        @if ($any(rpt).FabricationStatus === 'Done') {
+                          <span class="done-badge">Done</span>
+                        } 
+                        <!-- @else {
+                          <span class="pending-badge">Pending</span>
+                        } -->
+                        <button type="button" class="btn btn-qr"
+                                (click)="openStageQrPopup(rpt, 'Fabrication')">
+                          <i class="fa fa-qrcode" aria-hidden="true"></i>
+                         PDF
+                        </button>
+                      </div>
+                    </td>
+                    <td class="col-qr">
+                      <div class="stage-cell">
+                        @if ($any(rpt).PowderCotingStatus === 'Done') {
+                          <span class="done-badge">Done</span>
+                        } 
+                        <!-- @else {
+                          <span class="pending-badge">Pending</span>
+                        } -->
+                        <button type="button" class="btn btn-qr"
+                                (click)="openStageQrPopup(rpt, 'PowderCoating')">
+                          <i class="fa fa-qrcode" aria-hidden="true"></i>
+                          PDF
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </form>
+
+    @if (isLoading) {
+      <div class="loading-overlay">
+        <i class="fa fa-spinner"></i>
+        <span>Please Wait.</span>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Popup -->
+@if (showPopup) {
+  <div class="modal-backdrop" (click)="closePopup()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h5>Sheet Metal JobCard Code Details</h5>
+        <div>
+          <small class="text-muted mr-3">Selected: {{ selectedProduction.length }}</small>
+          <button class="modal-close" aria-label="Close" (click)="closePopup()">✕</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="control-col">
+
+            <div class="summary-card">
+              <div class="summary-item">
+                <span>Plan Code:-</span>
+                <b>{{ selectedDG?.CPCode }}</b>
+              </div>
+              <div class="summary-item">
+                <span>KVA:-</span>
+                <b>{{ selectedDG?.KVA }}</b>
+              </div>
+              <div class="summary-item">
+                <span>Model:-</span>
+                <b>{{ selectedDG?.Model }}</b>
+              </div>
+              <div class="summary-item">
+                <span>Batch Qty:-</span>
+                <b>{{ selectedDG?.BatchQty }}</b>
+              </div>
+            </div>
+
+            <div class="sixm-table-container">
+              <table class="sixm-table">
+                <thead>
+                  <tr>
+                    <th class="col-sr">Sr.No</th>
+                    <th class="col-checkbox"></th>
+                    <th class="col-6m">6M</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-assign">Assign To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of productionItems; track item.id; let i = $index) {
+                    <tr>
+                      <td class="col-sr">{{ i + 1 }}</td>
+                      <td class="col-checkbox">
+                        <input type="checkbox" class="form-check-input" [id]="'prod_' + item.name"
+                               [checked]="item.selected"
+                               (change)="toggleProduction(item, $any($event.target).checked)" />
+                      </td>
+                      <td class="col-6m">
+                        <label [for]="'prod_' + item.name">{{ item.name }}</label>
+                      </td>
+                      <td class="col-description">
+                        <input type="text" class="form-control form-control-sm"
+                               [(ngModel)]="item.description" [disabled]="!item.selected"
+                               [name]="'desc_' + i"
+                               placeholder="Enter description..." />
+                      </td>
+                      <td class="col-assign">
+                        <select class="form-control form-control-sm" [(ngModel)]="item.assignTo"
+                                [disabled]="!item.selected" [name]="'assign_' + i"
+                                (ngModelChange)="onToEmpChange($event)">
+                          @for (user of ToEmpNamePCode; track user.ECode) {
+                            <option [ngValue]="user.ECode">{{ user.FullName }}</option>
+                          }
+                        </select>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closePopup()">Close</button>
+        <button class="btn btn-primary" [disabled]="!canAuth()" (click)="onAccept()">Auth</button>
+        <button class="btn btn-danger" [disabled]="!canReject()" (click)="onReject()">Reject</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- QR Code Popup -->
+@if (showQrPopup) {
+  <div class="modal-backdrop qr-print-backdrop" (click)="closeQrPopup()">
+    <div class="modal-box qr-modal-box qr-print-area" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h5>Plan Barcode</h5>
+        <button class="modal-close" aria-label="Close" (click)="closeQrPopup()">✕</button>
+      </div>
+
+      <div class="modal-body qr-modal-body">
+        <div class="qr-meta">
+          <div class="summary-item"><span>Plan Code:-</span><b>{{ qrPlan?.CPCode }}</b></div>
+          <div class="summary-item"><span>KVA:-</span><b>{{ qrPlan?.KVA }}</b></div>
+          <div class="summary-item"><span>Model:-</span><b>{{ qrPlan?.Model }}</b></div>
+        </div>
+
+        <div #qrHost class="qr-host" id="qrHost"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeQrPopup()">Close</button>
+        <button class="btn btn-primary" (click)="printQr()">Print</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Stage Sheet Popup (CNC / Bending / Fabrication / PowderCoating) -->
+@if (showStagePopup) {
+  <div class="modal-backdrop qr-print-backdrop" (click)="closeStagePopup()">
+    <div class="modal-box stage-modal-box qr-print-area" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h5>{{ stageName }} List</h5>
+        <button class="modal-close" aria-label="Close" (click)="closeStagePopup()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="summary-card">
+          <div class="summary-item"><span>Plan Code:-</span><b>{{ stagePlan?.CPCode }}</b></div>
+          <div class="summary-item"><span>Part Code:-</span><b>{{ stagePlan?.Partcode }}</b></div>
+          <div class="summary-item"><span>Stage:-</span><b>{{ stageName }}</b></div>
+          <div class="summary-item"><span>PlanQty:-</span><b>{{ stagePlan?.BatchQty }}</b></div>
+          @if (stageRows?.length) {
+            <div class="summary-item"><span>Rows:-</span><b>{{ stageRows.length }}</b></div>
+          }
+        </div>
+
+        @if (stagePlan?.PartDesc) {
+          <div class="summary-card desc-card">
+            <div class="summary-item part-desc">
+              <span>Part Description:-</span>
+              <b>{{ stagePlan?.PartDesc }}</b>
+            </div>
+          </div>
+        }
+
+        <div class="tableFixHead">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-srno">SrNo</th>
+                @for (col of currentStageColumns; track $index) {
+                  <th [class]="col.key ? ('col-' + col.key.toLowerCase()) : 'col-manual'"
+                      [class.col-num]="col.type === 'num'">{{ col.label }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @if (isStageLoading) {
+                <tr class="empty-row">
+                  <td [attr.colspan]="currentStageColumns.length + 1">
+                    <div class="empty-state">
+                      <i class="fa fa-spinner"></i>
+                      <p class="empty-title">Loading…</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else if (!stageRows || stageRows.length === 0) {
+                <tr class="empty-row">
+                  <td [attr.colspan]="currentStageColumns.length + 1">
+                    <div class="empty-state">
+                      <div class="empty-icon">📄</div>
+                      <p class="empty-title">No Records Found</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (row of stageRows; track $index; let i = $index) {
+                  <tr>
+                    <td class="indextd">{{ i + 1 }}</td>
+                    @for (col of currentStageColumns; track $index) {
+                      <td [class]="col.key ? ('col-' + col.key.toLowerCase()) : 'col-manual'"
+                          [class.num-cell]="col.type === 'num'"
+                          [class.col-num]="col.type === 'num'">
+                        {{ col.key ? stageCellValue(row, col) : '' }}
+                      </td>
+                    }
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeStagePopup()">Close</button>
+        <button class="btn btn-primary" [disabled]="isStageLoading || !stageRows?.length"
+                (click)="downloadStagePdf()">
+          <i class="fa fa-download" aria-hidden="true"></i>
+          Download
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ===== Result Popup (Auth / Reject) ===== -->
+@if (showResultPopup) {
+  <div class="result-backdrop" (click)="closeResultPopup()">
+    <div class="result-modal" (click)="$event.stopPropagation()"
+         [class.result-modal--reject]="resultAction === 'REJECT'">
+
+      <div class="result-modal__icon">
+        @if (resultAction === 'REJECT') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        }
+      </div>
+
+      <h3 class="result-modal__title">{{ resultTitle }}</h3>
+      <p class="result-modal__message">{{ resultMessage }}</p>
+
+      <button type="button" class="result-modal__btn"
+              (click)="closeResultPopup()">OK</button>
+    </div>
+  </div>
+}

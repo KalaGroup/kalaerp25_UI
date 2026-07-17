@@ -34,6 +34,7 @@ export class Signin2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
+    debugger;
     this.signinForm = new UntypedFormGroup({
       username: new UntypedFormControl('', Validators.required),
       password: new UntypedFormControl('', Validators.required),
@@ -55,6 +56,7 @@ export class Signin2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   signin() {
+    debugger;
     const signinData = this.signinForm.value
     this.submitButton.disabled = true;
     //this.progressBar.mode = 'indeterminate';

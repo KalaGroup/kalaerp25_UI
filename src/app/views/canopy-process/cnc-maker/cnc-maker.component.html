@@ -1,0 +1,322 @@
+<div class="sm-page">
+  <form #cncprc="ngForm" (ngSubmit)="onFormSubmit(cncprc)" class="sm-card">
+    <!-- ===== Header ===== -->
+    <div class="sm-header">
+      <span class="sm-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>
+      </span>
+      <span class="sm-title">CNC PROCESS &mdash; MAKER</span>
+    </div>
+
+    <div class="sm-body">
+      <!-- ===== Primary selectors ===== -->
+      <div class="sm-grid">
+        <div class="sm-field">
+          <label>Line</label>
+          <select [(ngModel)]="selectedLine" name="ddlLine"
+            (change)="onLineSelect($any($event.target).value)">
+            <option value="" disabled>-- Select Line --</option>
+            @for (line of lineList; track line.LineWisePC) {
+              <option [value]="line.LineWisePC">{{ line.LineDesc }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>Select Machine</label>
+          <select [(ngModel)]="selectedMachine" name="ddlSelectedMachine"
+            (change)="onMachineSelect(selectedMachine)">
+            <option value="">-- Select Machine --</option>
+            @for (Machine of MachineList; track Machine.PartCode) {
+              <option [value]="Machine.PartCode">{{ Machine.Part }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>Sel Supplier</label>
+          <select [(ngModel)]="selectedOSSupplier" name="ddlSelectedOSSupplier"
+                  (change)="onSupplierSelect($any($event.target).value)">
+            <option value="">-- Select Supplier --</option>
+            @for (OSSupplier of OSSupplierList; track OSSupplier.SCode) {
+              <option [value]="OSSupplier.SCode">{{ OSSupplier.SName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>Select KVA</label>
+          <select [(ngModel)]="selectedKVA" name="ddlSelectedKVA"
+            (change)="onKVASelect(selectedKVA!)">
+            <option value="">-- Select KVA --</option>
+            @for (KVA of KVAList; track KVA.KVA1) {
+              <option [value]="KVA.KVA1">{{ KVA.KVA }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>{{ lblModelCPTypeText }}</label>
+          <select [(ngModel)]="selectedModel" name="ddlSelectedModel"
+            (change)="onModelSelect(selectedKVA!, selectedModel!)">
+            <option value="">-- Select Model --</option>
+            @for (Modlist of ModelList; track Modlist.Model1) {
+              <option [value]="Modlist.Model1">{{ Modlist.Model }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>Select Category</label>
+          <select [(ngModel)]="selectedCatID" name="ddlSelectedCatID"
+            (change)="onCatagorySelect(selectedCatID)">
+            <option value="">-- Select Category --</option>
+            @for (Cat of LoadCatagoryList; track Cat.CatID) {
+              <option [value]="Cat.CatID">{{ Cat.CatagoryName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>Sel Sheet</label>
+          <select [(ngModel)]="selectedSheet" name="ddlSelectedSheet"
+            (change)="onSheetSelect(selectedSheet!)">
+            <option value="">-- Select Sheet --</option>
+            @for (Sheet of SheetList; track Sheet.SheetCode) {
+              <option [value]="Sheet.SheetCode">{{ Sheet.Sheet }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- ===== Computed / read-only row + Search ===== -->
+      <div class="sm-grid sm-grid-computed">
+        <div class="sm-field">
+          <label>CpyPlan Code</label>
+          <input type="text" readonly class="sm-readonly" name="txtCpyPlanCode"
+            placeholder="Auto" [(ngModel)]="CpyPlanCode" />
+        </div>
+
+        <div class="sm-field">
+          <label>CpyPlan Date</label>
+          <input type="text" readonly class="sm-readonly" name="txtCpyPlanDt"
+            placeholder="&mdash;" [(ngModel)]="CpyPlanDt" />
+        </div>
+
+        <div class="sm-field">
+          <label>Sel SrNo</label>
+          <select [(ngModel)]="selectedSheetSrno" name="ddlSelectedSheetSrno"
+            (change)="onSelectSheetSrNo(selectedSheetSrno!)">
+            <option [ngValue]="null">-- SrNo --</option>
+            @for (SheetSrno of SheetSrnoList; track SheetSrno.SerialNo1) {
+              <option [value]="SheetSrno.SerialNo1">{{ SheetSrno.SerialNo }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sm-field">
+          <label>Sh Stk</label>
+          <input type="text" readonly class="sm-readonly" name="txtSheetStock"
+            placeholder="0" [(ngModel)]="SheetStock" />
+        </div>
+
+        <div class="sm-field">
+          <label>Wt / Batch</label>
+          <input type="text" readonly class="sm-readonly" name="txtSheetWtPerBatch"
+            placeholder="0" [(ngModel)]="SheetWtPerBatch" />
+        </div>
+
+        <div class="sm-field sm-field-action" style="visibility: hidden">
+          <label>&nbsp;</label>
+          <button type="button" class="sm-btn sm-btn-teal" (click)="onClickSearch()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Part Details ===== -->
+      <div class="sm-section-label">CNC PART DETAILS</div>
+      <div class="sm-table-wrap">
+        <table class="sm-table">
+          <thead>
+            <tr>
+              <th style="width: 60px">#</th>
+              <th>Part Desc</th>
+              <th style="width: 90px">UOM</th>
+              <th class="th-teal" style="width: 120px">Kit Qty</th>
+              <th class="th-green" style="width: 120px">Batch Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (PartDts of PartDtsList; track $index) {
+              <tr>
+                <td class="td-center">{{ $index + 1 }}</td>
+                <td>{{ PartDts.Part }}</td>
+                <td class="td-center">{{ PartDts.UName }}</td>
+                <td class="td-center td-teal">{{ PartDts.KitQty }}</td>
+                <td class="td-center td-green">{{ PartDts.BatchQty }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="sm-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                      <line x1="12" y1="22.08" x2="12" y2="12" />
+                    </svg>
+                    <p>No records found. Click <b>Search</b> to load CNC part data.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ===== Attachment Details ===== -->
+      <div class="sm-section-label">ATTACHMENT DETAILS</div>
+      <ng-form #AttachmentDetails="ngForm">
+        <div class="sm-table-wrap">
+          <table class="sm-table">
+            <thead>
+              <tr>
+                <th style="width: 60px">#</th>
+                <th>Attachment</th>
+                <th style="width: 120px">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (Attachmentfield of AttachmentfieldArray; track $index) {
+                <tr>
+                  <td class="td-center">
+                    {{ $index + 1 }}
+                    <input [(ngModel)]="Attachmentfield.SrNo" readonly hidden type="text"
+                      [name]="'srno_' + $index" />
+                  </td>
+                  <td>
+                    <span class="sm-file-name">{{ Attachmentfield.Attachfile }}</span>
+                    <input [(ngModel)]="Attachmentfield.Attachfile" readonly hidden type="text"
+                      [name]="'attachfile_' + $index" />
+                  </td>
+                  <td class="td-center">
+                    <button type="button" class="sm-btn sm-btn-danger sm-btn-xs"
+                      (click)="deleteAttachmentFieldValue($index)">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">
+                    <div class="sm-empty sm-empty-sm">
+                      <p>No attachments added yet.</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+
+              <tr class="sm-add-row">
+                <td class="td-center">
+                  <input readonly hidden type="text"
+                    [(ngModel)]="newAttributeAttachment.SrNo" name="newAttributeAttachmentSrNo" />
+                  <span class="sm-muted">new</span>
+                </td>
+                <td>
+                  <input type="file" class="sm-file" name="newAttributeAttachmentAttachfile"
+                    (change)="getAttachmentFileDetails($event)" />
+                  @if (uploadedPercentage > 0 && uploadedPercentage < 100) {
+                    <div class="sm-progress">
+                      <div class="sm-progress-bar" [style.width.%]="uploadedPercentage"></div>
+                    </div>
+                  }
+                  @if (showMessage) {
+                    <p class="sm-msg">{{ message }}</p>
+                  }
+                </td>
+                <td class="td-center">
+                  <button type="button" class="sm-btn sm-btn-teal sm-btn-xs" title="Add"
+                    (click)="addAttachmentFieldValue(AttachmentDetails.valid!)">
+                    + Add
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-form>
+
+      <!-- ===== Footer: Remark + Submit ===== -->
+      <div class="sm-footer">
+        <label class="sm-footer-label">REMARK</label>
+        <input type="text" class="sm-remark" name="txtRemark" [(ngModel)]="remark"
+          placeholder="Enter remark before submitting..." />
+        <button type="submit" class="sm-btn sm-btn-green sm-btn-submit" name="btnSave"
+          [disabled]="loading">
+          @if (loading) {
+            <span class="sm-spinner-sm"></span>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          }
+          {{ lblSaveCaption }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+@if (isLoading) {
+  <div class="loading-overlay">
+    <div class="loading-box">
+      <span class="spinner-border text-light"></span>
+      <p class="loading-text">Please Wait.</p>
+    </div>
+  </div>
+}
+
+<!-- ===== Result Popup (Submit / End) ===== -->
+@if (showResultPopup) {
+  <div class="result-backdrop" (click)="closeResultPopup()">
+    <div class="result-modal" (click)="$event.stopPropagation()"
+         [class.result-modal--end]="resultAction === 'End'">
+
+      <div class="result-modal__icon">
+        @if (resultAction === 'End') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        }
+      </div>
+
+      <h3 class="result-modal__title">{{ resultTitle }}</h3>
+      <p class="result-modal__message">{{ resultMessage }}</p>
+
+      <button type="button" class="result-modal__btn"
+              (click)="closeResultPopup()">
+        OK
+      </button>
+    </div>
+  </div>
+}

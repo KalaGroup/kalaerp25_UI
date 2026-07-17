@@ -1,0 +1,146 @@
+<div class="card m-1 checker-card">
+  <div class="card-header checker-header">
+    <b>Job Card Canopy Requisition — In-Active</b>
+  </div>
+
+  <div class="card-body checker-body">
+    <form #InActiveForm="ngForm">
+
+      <!-- ===== Filter / header row ===== -->
+      <div class="filter-row">
+        <div class="filter-field">
+          <label for="txtDt">Date</label>
+          <input [readonly]="true" id="txtDt" type="text"
+                 class="form-control form-control-sm" name="txtDt" [(ngModel)]="today">
+        </div>
+
+        <div class="filter-field">
+          <label for="txtPCName">ProfitCenter</label>
+          <input [readonly]="true" id="txtPCName" type="text"
+                 class="form-control form-control-sm" name="txtPCName" [(ngModel)]="PCName">
+        </div>
+
+        <div class="filter-field">
+          <label for="txtPC">ProfitCenter Code</label>
+          <input [readonly]="true" id="txtPC" type="text"
+                 class="form-control form-control-sm" name="txtPC" [(ngModel)]="PC">
+        </div>
+
+        <div class="filter-action">
+          <button type="button" class="btn btn-search" (click)="onSearch()" [disabled]="isLoading">
+            <i class="fa fa-search" aria-hidden="true"></i> Search
+          </button>
+          <button type="button" class="btn btn-hold" (click)="onHold()"
+                  [disabled]="isLoading || !rows.length">
+            Hold
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Grid ===== -->
+      <div class="results-section">
+        <div class="section-header">
+          <h5 class="section-title">Requisition Details</h5>
+          @if (rows.length) {
+            <span class="record-pill">{{ rows.length }} Records · {{ selectedCount }} Selected</span>
+          }
+        </div>
+
+        <div class="tableFixHead">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-srno">SrNo</th>
+                <th class="col-sel">Select</th>
+                <th class="col-remark">InActive Remark</th>
+                <th class="col-cpcode">CPCode</th>
+                <th class="col-dt">Date</th>
+                <th class="col-kva">KVA</th>
+                <th class="col-model">Model</th>
+                <th class="col-partdesc">PartDesc</th>
+                <th class="col-partcode">Partcode</th>
+                <th class="col-num">BatchQty</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!rows.length) {
+                <tr class="empty-row">
+                  <td colspan="10">
+                    <div class="empty-state">
+                      <div class="empty-icon">📋</div>
+                      <p class="empty-title">No Records Found</p>
+                      <p class="empty-hint">Click <b>Search</b> to load requisitions.</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (row of rows; track $index; let i = $index) {
+                  <tr [class.row-selected]="row.selected">
+                    <td class="indextd">{{ i + 1 }}</td>
+                    <td class="col-sel">
+                      <input type="checkbox" [(ngModel)]="row.selected" [name]="'sel_' + i" />
+                    </td>
+                    <td class="col-remark">
+                      <input type="text" class="form-control form-control-sm"
+                             [(ngModel)]="row.InActiveRemark" [name]="'rmk_' + i"
+                             [disabled]="!row.selected" placeholder="Enter remark..." />
+                    </td>
+                    <td class="col-cpcode">{{ row.CPCode }}</td>
+                    <td class="col-dt">{{ row.Dt }}</td>
+                    <td class="col-kva">{{ row.kva }}</td>
+                    <td class="col-model">{{ row.Model }}</td>
+                    <td class="col-partdesc">{{ row.PartDesc }}</td>
+                    <td class="col-partcode">{{ row.partcode }}</td>
+                    <td class="col-num">{{ row.Batch }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ===== Loading overlay ===== -->
+@if (isLoading) {
+  <div class="loading-overlay">
+    <div class="loading-box">
+      <i class="fa fa-spinner"></i>
+      <span class="loading-text">Please Wait.</span>
+    </div>
+  </div>
+}
+
+<!-- ===== Result Popup ===== -->
+@if (showResultPopup) {
+  <div class="result-backdrop" (click)="closeResultPopup()">
+    <div class="result-modal" (click)="$event.stopPropagation()"
+         [class.result-modal--reject]="!resultOk">
+
+      <div class="result-modal__icon">
+        @if (resultOk) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        }
+      </div>
+
+      <h3 class="result-modal__title">{{ resultTitle }}</h3>
+      <p class="result-modal__message">{{ resultMessage }}</p>
+
+      <button type="button" class="result-modal__btn" (click)="closeResultPopup()">OK</button>
+    </div>
+  </div>
+}

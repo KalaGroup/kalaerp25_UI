@@ -1,0 +1,273 @@
+<div class="bm-page">
+  <form #BendingPrc="ngForm" (ngSubmit)="onFormSubmit(BendingPrc)" class="bm-card">
+
+    <!-- ===== Header ===== -->
+    <div class="bm-header">
+      <span class="bm-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h4l3-9 4 18 3-9h4"/>
+        </svg>
+      </span>
+      <span class="bm-title">BENDING PROCESS &mdash; MAKER</span>
+    </div>
+
+    <div class="bm-body">
+
+      <!-- ===== Primary selectors ===== -->
+      <div class="bm-grid">
+        <div class="bm-field">
+          <label>Line</label>
+          <select [(ngModel)]="selectedLine" name="ddlLine"
+                  (change)="onLineSelect($any($event.target).value)">
+            <option value="" disabled>-- Select Line --</option>
+            @for (line of lineList(); track line.LineWisePC) {
+              <option [value]="line.LineWisePC">{{ line.LineDesc }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="bm-field">
+          <label>Select Bending Machine</label>
+          <select [(ngModel)]="selectedMachine" name="ddlSelectedMachine"
+                  (change)="onMachineSelect($any($event.target).value)">
+            <option value="">-- Select Machine --</option>
+            @for (machine of machineList(); track machine.PartCode) {
+              <option [value]="machine.PartCode">{{ machine.Part }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="bm-field">
+          <label>Select KVA</label>
+          <select [(ngModel)]="selectedKVA" name="ddlSelectedKVA"
+                  (change)="onKVASelect($any($event.target).value)">
+            <option value="">-- Select KVA --</option>
+            @for (kva of kvaList(); track kva.KVA1) {
+              <option [value]="kva.KVA1">{{ kva.KVA }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="bm-field">
+          <label>Select Model</label>
+          <select [(ngModel)]="selectedModel" name="ddlSelectedModel"
+                  (change)="onModelSelect(selectedKVA, $any($event.target).value)">
+            <option value="">-- Select Model --</option>
+            @for (mod of modelList(); track mod.Model1) {
+              <option [value]="mod.Model1">{{ mod.Model }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- ===== Computed / read-only row ===== -->
+      <div class="bm-grid bm-grid-computed">
+        <div class="bm-field">
+          <label>CpyPlan Code</label>
+          <input type="text" readonly class="bm-readonly" name="txtCpyPlanCode"
+                 placeholder="Auto" [(ngModel)]="cpyPlanCode" />
+        </div>
+
+        <div class="bm-field">
+          <label>CpyPlan Date</label>
+          <input type="text" readonly class="bm-readonly" name="txtCpyPlanDt"
+                 placeholder="&mdash;" [(ngModel)]="cpyPlanDt" />
+        </div>
+
+        <div class="bm-field bm-field-wide">
+          <label>Sel Cpy Kit</label>
+          <select [(ngModel)]="selectedCpyKit" name="ddlSelectedCpyKit"
+                  (change)="onCpyKitSelect($any($event.target).value)">
+            <option value="">-- Select Cpy Kit --</option>
+            @for (kit of cpyKitList(); track kit.KitCode) {
+              <option [value]="kit.KitCode">{{ kit.KitDesc }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="bm-field">
+          <label>BatchQty (Bal)</label>
+          <input type="text" readonly class="bm-readonly" name="txtPlanQtyBal"
+                 placeholder="0" [(ngModel)]="planQtyBal" />
+        </div>
+      </div>
+
+      <!-- ===== Part Details ===== -->
+      <div class="bm-section-label">BENDING PART DETAILS</div>
+      <div class="bm-table-wrap">
+        <table class="bm-table">
+          <thead>
+            <tr>
+              <th style="width: 60px">#</th>
+              <th>Part Desc</th>
+              <th style="width: 90px">UOM</th>
+              <th class="th-teal" style="width: 110px">Kit Qty</th>
+              <th class="th-green" style="width: 110px">Batch Qty</th>
+              <th style="width: 110px">Stk Qty</th>
+              <th>Partcode</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (part of (partDtsList() ?? []); track part.PartCode; let i = $index) {
+              <tr>
+                <td class="td-center">{{ i + 1 }}</td>
+                <td>{{ part.Part }}</td>
+                <td class="td-center">{{ part.UName }}</td>
+                <td class="td-center td-teal">{{ part.KitQty }}</td>
+                <td class="td-center td-green">{{ part.BatchQty }}</td>
+                <td class="td-center">{{ part.StkQty }}</td>
+                <td>{{ part.PartCode }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="bm-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    <p>No records found. Select machine / KVA / Model / Cpy Kit to load Bending part data.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ===== Attachment Details ===== -->
+      <div class="bm-section-label">ATTACHMENT DETAILS</div>
+      <ng-form #AttachmentDetails="ngForm">
+        <div class="bm-table-wrap">
+          @if (uploadPercent() > 0 && uploadPercent() < 100) {
+            <div class="bm-progress">
+              <div class="bm-progress-bar" [style.width.%]="uploadPercent()"></div>
+            </div>
+          }
+
+          <table class="bm-table">
+            <thead>
+              <tr>
+                <th style="width: 60px">#</th>
+                <th>Attachment</th>
+                <th style="width: 120px">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (att of attachments(); track att.SrNo; let i = $index) {
+                <tr>
+                  <td class="td-center">{{ i + 1 }}</td>
+                  <td>
+                    <span class="bm-file-name">{{ att.Attachfile }}</span>
+                  </td>
+                  <td class="td-center">
+                    <button type="button" class="bm-btn bm-btn-danger bm-btn-xs"
+                            (click)="deleteAttachmentFieldValue(i)">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">
+                    <div class="bm-empty bm-empty-sm">
+                      <p>No attachments added yet.</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+
+              <tr class="bm-add-row">
+                <td class="td-center">
+                  <span class="bm-muted">new</span>
+                </td>
+                <td>
+                  <input type="file" class="bm-file" name="newAttachmentFile"
+                         (change)="getAttachmentFileDetails($event)">
+                  @if (showMessage()) {
+                    <p class="bm-msg">{{ message() }}</p>
+                  }
+                </td>
+                <td class="td-center">
+                  <button type="button" class="bm-btn bm-btn-teal bm-btn-xs" title="Add"
+                          (click)="addAttachmentFieldValue(true)">
+                    + Add
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-form>
+
+      <!-- ===== Footer: Submit ===== -->
+      <div class="bm-footer">
+        <button type="submit" class="bm-btn bm-btn-green bm-btn-submit"
+                name="btnSave" [disabled]="loading()">
+          @if (loading()) {
+            <span class="bm-spinner-sm"></span>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          }
+          {{ lblSaveCaption }}
+        </button>
+      </div>
+
+      <!-- ===== Hidden technical fields (kept for ngModel binding) ===== -->
+      <div class="bm-hidden">
+        <input type="text" name="txtBOMCode" [(ngModel)]="bomCode">
+        <input type="text" name="txtPartdesc" [(ngModel)]="cpyPlanPart">
+        <input type="text" name="txtPC" [(ngModel)]="PC">
+        <input type="text" name="txtPrcDt" [(ngModel)]="today">
+        <input type="text" name="txtPrcQty" [(ngModel)]="prcQty">
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ===== Loading overlay ===== -->
+@if (loading()) {
+  <div class="bm-overlay">
+    <div class="bm-overlay-box">
+      <span class="bm-spinner"></span>
+      <p>Please Wait.</p>
+    </div>
+  </div>
+}
+
+<!-- ===== Result Popup (Submit / End) ===== -->
+@if (showResultPopup) {
+  <div class="result-backdrop" (click)="closeResultPopup()">
+    <div class="result-modal" (click)="$event.stopPropagation()"
+         [class.result-modal--end]="resultAction === 'End'">
+
+      <div class="result-modal__icon">
+        @if (resultAction === 'End') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        }
+      </div>
+
+      <h3 class="result-modal__title">{{ resultTitle }}</h3>
+      <p class="result-modal__message">{{ resultMessage }}</p>
+
+      <button type="button" class="result-modal__btn"
+              (click)="closeResultPopup()">OK</button>
+    </div>
+  </div>
+}

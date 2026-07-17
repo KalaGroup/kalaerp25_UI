@@ -25,6 +25,7 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { ErrorHandlerService } from './shared/services/error-handler.service';
 import { TokenInterceptor } from './shared/interceptors/token.interceptor';
+
 // AoT requires an exported function for factories
 // Explicit relative prefix so the translation file resolves under the deployed
 // <base href> (e.g. /ERPAngularUINew26/). Without this, ngx-translate defaults

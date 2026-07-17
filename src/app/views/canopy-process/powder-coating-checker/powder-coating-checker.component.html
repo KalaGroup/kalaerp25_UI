@@ -1,0 +1,235 @@
+<div class="card m-1 checker-card">
+  <div class="card-header checker-header">
+    <b>Powder Coating Process Checker</b>
+  </div>
+
+  <div class="card-body checker-body">
+    <form #PowderCoating_Cheker="ngForm">
+
+      <!-- ===== Filter row ===== -->
+      <div class="filter-row">
+        <div class="filter-field">
+          <label for="txtJBDt">Powder Coating Checker Date</label>
+          <input [readonly]="true" id="txtJBDt" type="text"
+                 class="form-control form-control-sm"
+                 name="txtJBDt" [(ngModel)]="today">
+        </div>
+
+        <div class="filter-field">
+          <label for="ddlLine">Line</label>
+          <select id="ddlLine" class="form-control form-control-sm"
+                  [(ngModel)]="selectedLine" name="ddlLine"
+                  (change)="onLineSelect($any($event.target).value)">
+            <option value="" disabled>-- Select Line --</option>
+            @for (line of lineList; track line.LineWisePC) {
+              <option [value]="line.LineWisePC">{{ line.LineDesc }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="ddlPlanCode">PlanCode</label>
+          <select id="ddlPlanCode" class="form-control form-control-sm"
+                  [(ngModel)]="PlanCode" name="PlanCode"
+                  (change)="onPlanCodeChange($any($event.target).value)">
+            <option value="" disabled>-- Select PlanCode --</option>
+            @for (p of planCodes; track p.id) {
+              <option [value]="p.name">{{ p.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-action">
+          <button type="button" class="btn btn-search"
+                  (click)="onClickSearch()" [disabled]="isLoading">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Grid ===== -->
+      <div class="results-section">
+        <div class="section-header">
+          <h5 class="section-title">Powder Coating PartCode Details</h5>
+          @if (PcCheckerprcDetailsList?.length) {
+            <span class="record-pill">{{ PcCheckerprcDetailsList.length }} Records</span>
+          }
+        </div>
+
+        <div class="tableFixHead">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col" class="col-srno">SrNo</th>
+                <th scope="col" class="col-pfbcode">PFBCode</th>
+                <th scope="col" class="col-dt">Dt</th>
+                <th scope="col" class="col-canopy">CanopyPlanCode</th>
+                <th scope="col" class="col-partdesc">ProcessPart</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!PcCheckerprcDetailsList || PcCheckerprcDetailsList.length === 0) {
+                <tr class="empty-row">
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <div class="empty-icon">📋</div>
+                      <p class="empty-title">No Records Found</p>
+                      <p class="empty-hint">Select PlanCode and click <b>Search</b> to load data.</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (PCDetails of PcCheckerprcDetailsList; track $index; let i = $index) {
+                  <tr>
+                    <td class="indextd">{{ i + 1 }}</td>
+                    <td class="col-pfbcode">
+                      <a class="cp-link" (click)="openCPCodePopup(PCDetails)">
+                        {{ PCDetails.PFBCode }}
+                      </a>
+                    </td>
+                    <td class="col-dt">{{ PCDetails.Dt }}</td>
+                    <td class="col-canopy">{{ PCDetails.CanopyPlanCode }}</td>
+                    <td class="col-partdesc">{{ PCDetails.ProcessPart }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ===== 6M Popup ===== -->
+@if (showPopup) {
+  <div class="modal-backdrop" (click)="closePopup()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h5>Powder Coating Process Checker Details</h5>
+        <div>
+          <small class="text-muted mr-3">Selected: {{ selectedProduction.length }}</small>
+          <button class="modal-close" aria-label="Close" (click)="closePopup()">✕</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="control-col">
+
+            <div class="summary-card">
+              <div class="summary-item">
+                <span>PFBCode:-</span>
+                <b>{{ selectedPC?.PFBCode }}</b>
+              </div>
+              <div class="summary-item">
+                <span>Canopy Plan Code:-</span>
+                <b>{{ selectedPC?.CanopyPlanCode }}</b>
+              </div>
+            </div>
+
+            <div class="sixm-table-container">
+              <table class="sixm-table">
+                <thead>
+                  <tr>
+                    <th class="col-sr">Sr.No</th>
+                    <th class="col-checkbox"></th>
+                    <th class="col-6m">6M</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-assign">Assign To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of productionItems; track item.id; let i = $index) {
+                    <tr>
+                      <td class="col-sr">{{ i + 1 }}</td>
+                      <td class="col-checkbox">
+                        <input type="checkbox" class="form-check-input"
+                               [id]="'prod_' + item.name"
+                               [checked]="item.selected"
+                               (change)="toggleProduction(item, $any($event.target).checked)" />
+                      </td>
+                      <td class="col-6m">
+                        <label [for]="'prod_' + item.name">{{ item.name }}</label>
+                      </td>
+                      <td class="col-description">
+                        <input type="text" class="form-control form-control-sm"
+                               [(ngModel)]="item.description"
+                               [disabled]="!item.selected"
+                               [name]="'desc_' + i"
+                               placeholder="Enter description..." />
+                      </td>
+                      <td class="col-assign">
+                        <select class="form-control form-control-sm"
+                                [(ngModel)]="item.assignTo"
+                                [disabled]="!item.selected"
+                                [name]="'assign_' + i"
+                                (ngModelChange)="onToEmpChange($event)">
+                          @for (user of ToEmpNamePCode; track user.ECode) {
+                            <option [ngValue]="user.ECode">{{ user.FullName }}</option>
+                          }
+                        </select>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closePopup()">Close</button>
+        <button class="btn btn-primary" [disabled]="!canAuth()"   (click)="onAccept()">Auth</button>
+        <button class="btn btn-danger"  [disabled]="!canReject()" (click)="onReject()">Reject</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ===== Loading overlay ===== -->
+@if (isLoading) {
+  <div class="loading-overlay">
+    <div class="loading-box">
+      <i class="fa fa-spinner"></i>
+      <span class="loading-text">Please Wait.</span>
+    </div>
+  </div>
+}
+
+<!-- ===== Result Popup (Auth / Reject) ===== -->
+@if (showResultPopup) {
+  <div class="result-backdrop" (click)="closeResultPopup()">
+    <div class="result-modal" (click)="$event.stopPropagation()"
+         [class.result-modal--reject]="resultAction === 'REJECT'">
+
+      <div class="result-modal__icon">
+        @if (resultAction === 'REJECT') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        }
+      </div>
+
+      <h3 class="result-modal__title">{{ resultTitle }}</h3>
+      <p class="result-modal__message">{{ resultMessage }}</p>
+
+      <button type="button" class="result-modal__btn"
+              (click)="closeResultPopup()">OK</button>
+    </div>
+  </div>
+}

@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════
-     Canopy Plan — Primary Plan
+     Sheet Metal — Primary Plan (JobCard)
      ════════════════════════════════════════════════════ -->
 <div class="jc-card">
 
@@ -15,7 +15,14 @@
   <!-- ── Success Modal ─────────────────────────────────── -->
   <div *ngIf="successMessage" class="successModal">
     <div class="successModal_content">
-      <p>{{ successMessage }}</p>
+      <div class="success-icon">✓</div>
+      <h3 class="success-title">Submitted Successfully</h3>
+      <ul class="success-msg-list">
+        <li *ngFor="let part of successMessageParts">
+          <span *ngIf="part.label" class="msg-label">{{ part.label }}</span>
+          <span class="msg-value">{{ part.value }}</span>
+        </li>
+      </ul>
       <button class="success-ok-button" (click)="onSuccessOk()">OK</button>
     </div>
   </div>
@@ -31,8 +38,8 @@
   <!-- ── Header ──────────────────────────────────────── -->
   <div class="jc-header">
     <div class="jc-title">
-      <span class="icon-box">🏭</span>
-      Canopy — Primary Plan
+      <span class="icon-box">🔧</span>
+      Sheet Metal — Primary Plan
     </div>
   </div>
 
@@ -45,8 +52,13 @@
       <div class="field-row">
 
         <div class="f-wrap">
-          <label>JobCard Code (Primary Plan)</label>
-          <input type="text" name="txtJOBNo" ngModel readonly placeholder="Auto-generated on save" />
+          <label>Line</label>
+          <select name="ddlLine" [(ngModel)]="selectedLine" class="shift-select">
+            <option value="" disabled>-- Select Line --</option>
+            <option *ngFor="let line of lineList" [value]="line.LineWisePC">
+              {{ line.LineDesc }}
+            </option>
+          </select>
         </div>
 
         <div class="f-wrap">
@@ -58,6 +70,14 @@
           <label>Profit Center</label>
           <input type="text" name="txtPC" [(ngModel)]="PC" readonly />
         </div>
+
+        <!-- Shift dropdown (single value for whole submission) -->
+        <!-- <div class="f-wrap">
+          <label>Shift</label>
+          <select name="shiftType" [(ngModel)]="shiftType" class="shift-select">
+            <option *ngFor="let s of shiftTypes" [ngValue]="s.id">{{ s.name }}</option>
+          </select>
+        </div> -->
 
         <div class="btn-wrap">
           <button type="button" class="btn-search"
@@ -75,11 +95,12 @@
       <div class="stats-bar" *ngIf="planList.length">
         <span class="pill pill-total">📋 {{ totalRows }} Records</span>
         <span class="pill pill-today">📅 {{ todayRows }} Today</span>
-        <span class="pill pill-selected">✅ {{ selectedCount }} Selected</span>
+        <!-- <span class="pill pill-selected">✅ {{ selectedCount }} Selected</span> -->
+        <!-- <span class="pill pill-shift">🕐 {{ shiftType === 1 ? 'Day' : 'Night' }} Shift</span> -->
       </div>
 
       <!-- Section title -->
-      <div class="sec-title">DG PartCode Details</div>
+      <div class="sec-title">CPY PartCode Details</div>
 
       <!-- Table -->
       <div class="tbl-wrap">
@@ -95,12 +116,7 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>
-                  <input type="checkbox"
-                         [checked]="allChecked"
-                         [disabled]="!planList.length"
-                         (change)="toggleAll($any($event.target).checked)" />
-                </th>
+                <th></th>
                 <th>KVA</th>
                 <th>Model</th>
                 <th class="hdr-plan">Plan Date</th>
@@ -123,7 +139,7 @@
                 <td colspan="15">
                   <div class="empty-state">
                     <div class="empty-icon">📦</div>
-                    <p>No records found. Click <strong>Search</strong> to load canopy plan data.</p>
+                    <p>No records found. Click <strong>Search</strong> to load Sheet Metal plan data.</p>
                   </div>
                 </td>
               </tr>
@@ -136,9 +152,10 @@
 
                 <td class="td-check">
                   <input type="checkbox"
-                         [(ngModel)]="row.SelectR"
+                         [checked]="row.SelectR"
                          [name]="'chk_' + i"
-                         autocomplete="off" />
+                         autocomplete="off"
+                         (change)="selectOnly(i, $any($event.target).checked)" />
                 </td>
 
                 <td>

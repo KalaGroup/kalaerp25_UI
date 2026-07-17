@@ -1,0 +1,172 @@
+<div class="card">
+  <div class="card-header">
+    PowderCoating Process
+  </div>
+  <div class="card-body">
+    <form #PowderCoatPrc="ngForm" (ngSubmit)="onFormSubmit(PowderCoatPrc)">
+
+      <!-- ===== Primary selectors ===== -->
+      <div class="pc-grid">
+        <div class="pc-field">
+          <label>Line</label>
+          <select [(ngModel)]="selectedLine" name="ddlLine"
+                  (change)="onLineSelect($any($event.target).value)" class="form-control form-control-sm">
+            <option value="" disabled>-- Select Line --</option>
+            <option *ngFor="let line of lineList" [value]="line.LineWisePC">{{ line.LineDesc }}</option>
+          </select>
+        </div>
+
+        <div class="pc-field">
+          <label>Select Supplier</label>
+          <select [(ngModel)]="selectedSupplier" name="ddlSelectedSupplier"
+                  (change)="onSupplier($any($event.target).value)" class="form-control form-control-sm">
+            <option value="0" disabled>-- Select Supplier --</option>
+            <option *ngFor="let Supplier of SupplierList" [value]="Supplier.SCode">{{ Supplier.SName }}</option>
+          </select>
+        </div>
+
+        <div class="pc-field">
+          <label>Select Machine</label>
+          <select [(ngModel)]="selectedMachine" name="ddlSelectedMachine"
+                  (change)="onMachineSelect($any($event.target).value)" class="form-control form-control-sm">
+            <option value="0" disabled>-- Select Machine --</option>
+            <option *ngFor="let Machine of MachineList" [value]="Machine.PartCode">{{ Machine.Part }}</option>
+          </select>
+        </div>
+
+        <div class="pc-field">
+          <label>Select KVA</label>
+          <select [(ngModel)]="selectedKVA" name="ddlSelectedKVA"
+                  (change)="onKVASelect($any($event.target).value)" class="form-control form-control-sm">
+            <option value="0" disabled>-- Select KVA --</option>
+            <option *ngFor="let KVA of KVAList" [value]="KVA.KVA1">{{ KVA.KVA }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ===== Attachment Details ===== -->
+      <div class="row">
+        <div class="col-md-12">
+          <div class="table-responsive-sm">
+            <h5><b>Attachment Details :</b></h5>
+
+            <div *ngIf="uploadedPercentage > 0 && uploadedPercentage < 100" class="progress mb-1" style="height: 6px;">
+              <div class="progress-bar" role="progressbar" [style.width.%]="uploadedPercentage"></div>
+            </div>
+
+            <table class="table table-sm table-bordered table-hover pc-attach-table">
+              <thead class="thead-light">
+                <tr>
+                  <th scope="col" class="col-srno">SrNo</th>
+                  <th scope="col">Attachment</th>
+                  <th scope="col" class="col-action">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let Attachmentfield of AttachmentfieldArray; let i = index">
+                  <td class="indextd">{{ i + 1 }}</td>
+                  <td>
+                    <span class="pc-file-name">{{ Attachmentfield.Attachfile }}</span>
+                  </td>
+                  <td class="col-action">
+                    <button type="button" class="btn btn-warning btn-sm"
+                            (click)="deleteAttachmentFieldValue(i)">Delete</button>
+                  </td>
+                </tr>
+
+                <tr *ngIf="AttachmentfieldArray.length == 0">
+                  <td colspan="3" class="pc-empty">No Record(s) Found</td>
+                </tr>
+
+                <tr class="pc-add-row">
+                  <td class="indextd"><span class="pc-muted">new</span></td>
+                  <td>
+                    <input type="file" id="newAttributeAttachmentAttachfile"
+                           name="newAttributeAttachmentAttachfile"
+                           (change)="getAttachmentFileDetails($event)">
+                    <p *ngIf="showMessage" class="pc-msg">{{ message }}</p>
+                  </td>
+                  <td class="col-action">
+                    <button type="button" class="btn btn-info btn-sm" title="Add"
+                            (click)="addAttachmentFieldValue(true)">+ Add</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Save ===== -->
+      <div class="pc-footer">
+        <button type="submit" class="btn btn-primary btn-submit" name="btnSave"
+                [disabled]="loading || (lblSaveCaption !== 'End' && !hasSelectedRows())">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
+          {{ lblSaveCaption }}
+        </button>
+      </div>
+
+      <!-- ===== Process Details ===== -->
+      <div class="row">
+        <div class="col-md-12">
+          <div class="table-responsive-sm">
+            <h6>Process Details</h6>
+            <table class="table table-sm table-bordered table-hover pc-process-table" id="Table1">
+              <thead class="thead-light">
+                <tr>
+                  <th scope="col" class="c-no">No</th>
+                  <th scope="col" class="c-sel">Sel</th>
+                  <th scope="col" class="c-kva">KVA</th>
+                  <th scope="col" class="c-model">Model/ CPType</th>
+                  <th scope="col" class="c-kit">KitDesc</th>
+                  <th scope="col" class="c-num">Batch Qty</th>
+                  <th scope="col" class="c-num">Bal Qty</th>
+                  <th scope="col" class="c-num">Prc Qty</th>
+                  <th scope="col" class="c-plan">PlanCode</th>
+                  <th scope="col" class="c-dt">PlanDts</th>
+                  <th scope="col" class="c-cat">CatID</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let PartDts of PartDtsList; let i = index;">
+                  <td class="c-no indextd">{{ i + 1 }}</td>
+                  <td class="c-sel">
+                    <input type="checkbox" name="chkSelect{{ i + 1 }}"
+                           [(ngModel)]="PartDts.SelectPC" autocomplete="off" />
+                  </td>
+                  <td class="c-kva">{{ PartDts.KVA }}</td>
+                  <td class="c-model">{{ PartDts.ModelCPType }}</td>
+                  <td class="c-kit">{{ PartDts.KitDesc }}</td>
+                  <td class="c-num">{{ PartDts.BatchQty }}</td>
+                  <td class="c-num">{{ PartDts.BatchBalQty }}</td>
+                  <td class="c-num">{{ PartDts.PrcQty }}</td>
+                  <td class="c-plan">{{ PartDts.PlanCode }}</td>
+                  <td class="c-dt">{{ PartDts.PlanDt }}</td>
+                  <td class="c-cat">{{ PartDts.CatID }}</td>
+                </tr>
+
+                <tr *ngIf="PartDtsList.length == 0">
+                  <td colspan="11" class="pc-empty">No Record(s) Found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Hidden technical fields ===== -->
+      <div class="row" style="visibility: hidden;">
+        <input type="text" name="txtPC" [(ngModel)]="PC">
+        <input type="text" name="txtPrcDt" [(ngModel)]="today">
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Loading overlay ===== -->
+<div *ngIf="loading" class="pc-overlay">
+  <div class="pc-overlay-box">
+    <span class="spinner-border text-light"></span>
+    <p>Please Wait.</p>
+  </div>
+</div>
