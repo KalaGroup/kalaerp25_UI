@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   Canopy Plan Component
-   Clean, consistent enterprise UI — single font stack, clear hierarchy
+   Sheet Metal Jobcard Component
+   Same enterprise UI as canopy-plan, slate accent for visual distinction
    ═══════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -9,22 +9,24 @@
 $clr-bg:         #f0f2f5;
 $clr-surface:    #ffffff;
 $clr-border:     #dee2e8;
-$clr-header-bg:  #1a2233;
-$clr-accent:     #2563eb;
-$clr-accent-lt:  #dbeafe;
+$clr-header-bg:  #1f2937;          // slightly different shade than canopy
+$clr-accent:     #0f766e;          // teal to distinguish from canopy blue
+$clr-accent-lt:  #ccfbf1;
 $clr-success:    #16a34a;
 $clr-success-lt: #dcfce7;
 $clr-warn:       #d97706;
 $clr-warn-lt:    #fef3c7;
 $clr-danger:     #dc2626;
-$clr-plan-col:   #eff6ff;
-$clr-plan-hdr:   #dbeafe;
+$clr-plan-col:   #f0fdfa;
+$clr-plan-hdr:   #ccfbf1;
 $clr-qty-col:    #f0fdf4;
 $clr-qty-hdr:    #dcfce7;
 $clr-text:       #1e293b;
 $clr-text-muted: #64748b;
 $clr-row-hover:  #f8fafc;
 $clr-today-bg:   #fffbeb;
+$clr-shift-bg:   #ede9fe;
+$clr-shift-fg:   #6d28d9;
 $radius-card:    8px;
 $radius-sm:      5px;
 $font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -87,7 +89,7 @@ $font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 // ── Field row ────────────────────────────────────────────────────
 .field-row {
   display: grid;
-  grid-template-columns: 2fr 1.6fr 2fr auto;
+  grid-template-columns: 1.8fr 1.4fr 1.8fr 1fr auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 14px;
@@ -104,7 +106,8 @@ $font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     margin-bottom: 4px;
   }
 
-  input {
+  input,
+  select {
     width: 100%;
     padding: 8px 10px;
     border: 1px solid $clr-border;
@@ -127,6 +130,23 @@ $font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: #fff;
     }
   }
+}
+
+.shift-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, $clr-text-muted 50%),
+    linear-gradient(135deg, $clr-text-muted 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 16px,
+    calc(100% - 9px)  16px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 28px !important;
+  cursor: pointer;
+  background-color: #fff !important;
 }
 
 .btn-wrap {
@@ -192,9 +212,10 @@ $font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 13px;
   font-weight: 600;
 
-  &-total    { background: #e2e8f0; color: #475569; }
+  &-total    { background: #e2e8f0;        color: #475569; }
   &-today    { background: $clr-warn-lt;   color: $clr-warn; }
   &-selected { background: $clr-accent-lt; color: $clr-accent; }
+  &-shift    { background: $clr-shift-bg;  color: $clr-shift-fg; }
 }
 
 // ── Section title ─────────────────────────────────────────────────
@@ -287,7 +308,7 @@ thead th {
   text-align: center;
   white-space: nowrap;
 
-  &.hdr-plan { background: $clr-plan-hdr; color: #1d4ed8; }
+  &.hdr-plan { background: $clr-plan-hdr; color: #115e59; }
   &.hdr-qty  { background: $clr-qty-hdr;  color: #15803d; }
 }
 
@@ -487,6 +508,64 @@ input[type='checkbox'] {
   }
 }
 
+/* Success popup — formatted compound message */
+.successModal_content {
+  max-width: 440px;
+
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #047857;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .success-title {
+    margin: 0 0 14px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .success-msg-list {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+    text-align: left;
+
+    li {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: $clr-text;
+      border-bottom: 1px solid #eef0f3;
+
+      &:first-child {
+        font-weight: 600;
+        color: #0f172a;
+      }
+      &:last-child { border-bottom: none; }
+    }
+
+    .msg-label {
+      flex: none;
+      font-weight: 700;
+      color: #0f766e;
+    }
+
+    .msg-value { word-break: break-word; }
+  }
+}
+
 .error-ok-button {
   padding: 7px 20px;
   background: #e53e3e;
@@ -527,7 +606,11 @@ input[type='checkbox'] {
 }
 
 // ── Responsive ────────────────────────────────────────────────────
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .field-row  { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+@media (max-width: 700px) {
   .field-row  { grid-template-columns: 1fr 1fr; }
   .remark-row { grid-template-columns: 1fr; }
 }

@@ -18,11 +18,34 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CanopyProcessRoutes } from './canopy-process.routing';
-import { CanopyPlanComponent } from './canopy-plan/canopy-plan.component';
+import { SheetMetalJobcardComponent } from './sheet-metal-jobcard/sheet-metal-jobcard.component';
+import { SheetMetalJobcardCheckerComponent } from './sheet-metal-jobcard-checker/sheet-metal-jobcard-checker.component';
+import { CNCMakerComponent } from './cnc-maker/cnc-maker.component';
+import { CNCCheckerComponent } from './cnc-checker/cnc-checker.component';
+import { BendingMakerComponent } from './bending-maker/bending-maker.component';
+import { BendingCheckerComponent } from './bending-checker/bending-checker.component';
+import { FabricationMakerComponent } from './fabrication-maker/fabrication-maker.component';
+import { FabricationCheckerComponent } from './fabrication-checker/fabrication-checker.component';
+import { PowderCoatingCheckerComponent } from './powder-coating-checker/powder-coating-checker.component';
+import { PowderCoatingMakerComponent } from './powder-coating-maker/powder-coating-maker.component';
+import { JobCardConopyReqInActiveComponent } from './job-card-conopy-req-in-active/job-card-conopy-req-in-active.component';
+import { SheetMetalReverseProcessComponent } from './sheet-metal-reverse-process/sheet-metal-reverse-process.component';
 
 @NgModule({
   declarations: [
-    CanopyPlanComponent
+    //CanopyPlanComponent,
+    SheetMetalJobcardComponent,
+    SheetMetalJobcardCheckerComponent,
+    CNCMakerComponent,
+    CNCCheckerComponent,
+    BendingMakerComponent,
+    BendingCheckerComponent,
+    FabricationMakerComponent,
+    FabricationCheckerComponent,
+    PowderCoatingCheckerComponent,
+    PowderCoatingMakerComponent,
+    JobCardConopyReqInActiveComponent,
+    SheetMetalReverseProcessComponent,
   ],
   imports: [
     CommonModule,

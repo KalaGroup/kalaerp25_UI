@@ -60,4 +60,66 @@ $flag-icons-path: '/assets/flags' !default;
 // Open _views.scss and remove unnecessary view related files
 @import "scss/views/views";
 
+/* ============================================
+   PRINT: show only the Plan QR Code popup
+   ============================================ */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .qr-print-area,
+  .qr-print-area * {
+    visibility: visible !important;
+  }
+
+  .qr-print-backdrop {
+    position: absolute !important;
+    inset: 0 !important;
+    background: #fff !important;
+    display: block !important;
+  }
+
+  .qr-print-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+  }
+
+  /* Let nested scroll/flex containers grow so EVERY row prints. */
+  .qr-print-area .modal-body,
+  .qr-print-area .tableFixHead {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    flex: none !important;
+    min-height: 0 !important;
+  }
+
+  /* Avoid cutting a row across page boundaries. */
+  .qr-print-area .data-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Sticky headers don't work in print; let them flow normally. */
+  .qr-print-area .data-table thead th {
+    position: static !important;
+  }
+
+  /* Hide popup chrome that shouldn't print */
+  .qr-print-area .modal-header .modal-close,
+  .qr-print-area .modal-footer {
+    display: none !important;
+  }
+}
+
 

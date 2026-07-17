@@ -1,0 +1,254 @@
+<div class="card m-1 checker-card">
+  <div class="card-header checker-header">
+    <b>Reverse Process</b>
+  </div>
+
+  <div class="card-body checker-body">
+    <form #ReversePrc="ngForm">
+
+      <!-- ===== Header (read-only) ===== -->
+      <div class="filter-row">
+        <div class="filter-field">
+          <label for="txtRevCode">Reverse Tran Code</label>
+          <input [readonly]="true" id="txtRevCode" type="text"
+                 class="form-control form-control-sm" name="txtRevCode"
+                 placeholder="Auto-generated on save" ngModel>
+        </div>
+        <div class="filter-field">
+          <label for="txtRTDt">Reverse Tran Date</label>
+          <input [readonly]="true" id="txtRTDt" type="text"
+                 class="form-control form-control-sm" name="txtRTDt" [(ngModel)]="today">
+        </div>
+        <div class="filter-field">
+          <label for="txtPC">Profitcenter</label>
+          <input [readonly]="true" id="txtPC" type="text"
+                 class="form-control form-control-sm" name="txtPC" [(ngModel)]="PC">
+        </div>
+      </div>
+
+      <!-- ===== Filters ===== -->
+      <div class="filter-row">
+        <div class="filter-field">
+          <label for="ddlCatagory">Select Category</label>
+          <select id="ddlCatagory" class="form-control form-control-sm"
+                  [(ngModel)]="selectedCatagory" name="ddlSelectedCatagory"
+                  (change)="onCategoryChange()">
+            <option value="" disabled>-- Select Category --</option>
+            @for (cat of CatagoryTypelist; track cat.CatagoryCode) {
+              <option [value]="cat.CatagoryCode">{{ cat.CName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="ddlPC">Select ProfitCenter</label>
+          <select id="ddlPC" class="form-control form-control-sm"
+                  [(ngModel)]="selectedPC" name="ddlSelectedPC" [disabled]="!selectedCatagory">
+            <option value="" disabled>-- Select ProfitCenter --</option>
+            @for (pc of PCCodeList; track pc.PCCode) {
+              <option [value]="pc.PCCode">{{ pc.PCName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="ddlTransType">TransType</label>
+          <select id="ddlTransType" class="form-control form-control-sm"
+                  [(ngModel)]="selectedTransType" name="ddlSelectedTransType">
+            <option value="0" disabled>-- Select TransType --</option>
+            @for (tt of TransTypeList; track tt.TransTypeCode) {
+              <option [value]="tt.TransTypeCode">{{ tt.TransType }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-action">
+          <button type="button" class="btn btn-search" (click)="onClickSearch()" [disabled]="isLoading">
+            <i class="fa fa-search" aria-hidden="true"></i> Search
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Grid ===== -->
+      <div class="results-section">
+        <div class="section-header">
+          <h5 class="section-title">Reverse Details</h5>
+          @if (ReverseDetailsList?.length) {
+            <span class="record-pill">{{ ReverseDetailsList.length }} Records</span>
+          }
+        </div>
+
+        <div class="tableFixHead">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-srno">SrNo</th>
+                <th class="col-cpcode">CPCode</th>
+                <th class="col-kva">KVA</th>
+                <th class="col-model">Model</th>
+                <th class="col-dt">PlanDt</th>
+                <th class="col-dt">PrcSDt</th>
+                <th class="col-dt">PrcEDt</th>
+                <th class="col-product">ProductCode</th>
+                <th class="col-cat">CatID</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!ReverseDetailsList || ReverseDetailsList.length === 0) {
+                <tr class="empty-row">
+                  <td colspan="9">
+                    <div class="empty-state">
+                      <div class="empty-icon">📋</div>
+                      <p class="empty-title">No Records Found</p>
+                      <p class="empty-hint">Select Category / ProfitCenter and click <b>Search</b>.</p>
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (row of ReverseDetailsList; track $index; let i = $index) {
+                  <tr class="clickable-row" (click)="openRowPopup(row)">
+                    <td class="indextd">{{ i + 1 }}</td>
+                    <td class="col-cpcode"><a class="cp-link">{{ row.CPCode }}</a></td>
+                    <td class="col-kva">{{ row.KVA }}</td>
+                    <td class="col-model">{{ row.Model }}</td>
+                    <td class="col-dt">{{ row.PlanDt }}</td>
+                    <td class="col-dt">{{ row.PrcSDt }}</td>
+                    <td class="col-dt">{{ row.PrcEDt }}</td>
+                    <td class="col-product">{{ row.ProductCode }}</td>
+                    <td class="col-cat">{{ row.CatID }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ===== Loading overlay ===== -->
+@if (isLoading) {
+  <div class="loading-overlay">
+    <div class="loading-box">
+      <i class="fa fa-spinner"></i>
+      <span class="loading-text">Please Wait.</span>
+    </div>
+  </div>
+}
+
+<!-- ===== Row Detail Popup ===== -->
+@if (showRowPopup && selectedRow) {
+  <div class="modal-backdrop" (click)="closeRowPopup()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h5>Reverse Process — Details</h5>
+        <button class="modal-close" aria-label="Close" (click)="closeRowPopup()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="rev-summary">
+          <div class="rev-item"><span>CPCode</span><b>{{ selectedRow.CPCode }}</b></div>
+          <div class="rev-item"><span>KVA</span><b>{{ selectedRow.KVA }}</b></div>
+          <div class="rev-item"><span>Model</span><b>{{ selectedRow.Model }}</b></div>
+          <div class="rev-item"><span>ProductCode</span><b>{{ selectedRow.ProductCode }}</b></div>
+          <div class="rev-item"><span>CatID</span><b>{{ selectedRow.CatID }}</b></div>
+          <div class="rev-item"><span>Plan Date</span><b>{{ selectedRow.PlanDt }}</b></div>
+          <div class="rev-item"><span>Prc Start</span><b>{{ selectedRow.PrcSDt }}</b></div>
+          <div class="rev-item"><span>Prc End</span><b>{{ selectedRow.PrcEDt }}</b></div>
+        </div>
+
+        <div class="popup-field">
+          <label for="txtRowRemark">Remark</label>
+          <input type="text" class="form-control form-control-sm" id="txtRowRemark"
+                 name="txtRowRemark" [(ngModel)]="rowRemark" placeholder="Enter remark...">
+        </div>
+
+        <!-- ===== 6M Table ===== -->
+        <div class="sixm-table-container">
+          <table class="sixm-table">
+            <thead>
+              <tr>
+                <th class="col-sr">Sr.No</th>
+                <th class="col-checkbox"></th>
+                <th class="col-6m">6M</th>
+                <th class="col-description">Description</th>
+                <th class="col-assign">Assign To</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of productionItems; track item.id; let i = $index) {
+                <tr>
+                  <td class="col-sr">{{ i + 1 }}</td>
+                  <td class="col-checkbox">
+                    <input type="checkbox" class="form-check-input"
+                           [id]="'prod_' + item.name"
+                           [checked]="item.selected"
+                           (change)="toggleProduction(item, $any($event.target).checked)" />
+                  </td>
+                  <td class="col-6m">
+                    <label [for]="'prod_' + item.name">{{ item.name }}</label>
+                  </td>
+                  <td class="col-description">
+                    <input type="text" class="form-control form-control-sm"
+                           [(ngModel)]="item.description" [disabled]="!item.selected"
+                           [name]="'desc_' + i" placeholder="Enter description..." />
+                  </td>
+                  <td class="col-assign">
+                    <select class="form-control form-control-sm"
+                            [(ngModel)]="item.assignTo" [disabled]="!item.selected"
+                            [name]="'assign_' + i">
+                      @for (user of ToEmpNamePCode; track user.ECode) {
+                        <option [ngValue]="user.ECode">{{ user.FullName }}</option>
+                      }
+                    </select>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeRowPopup()">Close</button>
+        <button class="btn btn-primary" (click)="submitRow()"
+                [disabled]="isLoading || !canSubmit()">Submit</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ===== Result Popup ===== -->
+@if (showResultPopup) {
+  <div class="result-backdrop" (click)="closeResultPopup()">
+    <div class="result-modal" (click)="$event.stopPropagation()"
+         [class.result-modal--reject]="!resultOk">
+
+      <div class="result-modal__icon">
+        @if (resultOk) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        }
+      </div>
+
+      <h3 class="result-modal__title">{{ resultTitle }}</h3>
+      <p class="result-modal__message">{{ resultMessage }}</p>
+
+      <button type="button" class="result-modal__btn" (click)="closeResultPopup()">OK</button>
+    </div>
+  </div>
+}
