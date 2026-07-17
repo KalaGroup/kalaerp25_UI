@@ -41,7 +41,7 @@
               <label>Company</label>
               <select [value]="selectedCompany"
                 (change)="selectedCompany = $any($event.target).value; onRecordsCompanyChange()">
-                <option *ngFor="let c of viewCompanies" [value]="c.companyCode">{{ c.companyName }}</option>
+                <option *ngFor="let c of viewCompanies" [value]="c.companyCode" [selected]="c.companyCode === selectedCompany">{{ c.companyName }}</option>
               </select>
             </div>
             <div class="ctrl">
@@ -153,7 +153,7 @@
             <label>Company</label>
             <select [value]="selectedCompany"
               (change)="selectedCompany = $any($event.target).value; onCompanyChange()">
-              <option *ngFor="let c of viewCompanies" [value]="c.companyCode">{{ c.companyName }}</option>
+              <option *ngFor="let c of viewCompanies" [value]="c.companyCode" [selected]="c.companyCode === selectedCompany">{{ c.companyName }}</option>
             </select>
           </div>
           <div class="ctrl">

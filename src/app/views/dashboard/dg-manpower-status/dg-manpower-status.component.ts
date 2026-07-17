@@ -87,6 +87,7 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
   summaryTotals: SummaryTotals = this.blankTotals();
   stationRows: { station: string; short: number }[] = [];   // station-wise shortage for the chart
   private stationChart: any = null;
+  private chartLib?: any;               // our Chart.js v4 (the app ships v2 globally)
   dailyView: 'both' | 'chart' | 'grid' = 'both';            // daily station-wise: chart, grid, or both
 
   // breakdown report (weekly · monthly · all + custom range)
@@ -1376,11 +1377,32 @@ export class DgManpowerStatusComponent implements OnInit, OnDestroy {
   }
 
   /** Ensure Chart.js is loaded (reuses the same CDN-loader the exports use). */
+  /** Our own Chart.js v4.
+   *  The app already exposes Chart.js **v2** globally (ng2-charts/CoreUI). Rendering with it
+   *  silently ignores every v3/v4 option we set — that's why axes auto-scaled (starting at 15
+   *  instead of 0), legends showed, tooltips were default and value labels never drew.
+   *  So: load v4 for this page, keep it privately, and hand the global back to the app. */
   private async ensureChartJs(): Promise<any> {
-    if (!(window as any).Chart) {
+    if (this.chartLib) return this.chartLib;
+    const w = window as any;
+    if (w.__ChartV4) return (this.chartLib = w.__ChartV4);
+
+    const existing = w.Chart;
+    const existingMajor = existing?.version ? parseInt(String(existing.version), 10) : (existing ? 2 : 0);
+    if (existingMajor >= 3) { w.__ChartV4 = existing; return (this.chartLib = existing); }
+
+    try {
       await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js');
+      const v4 = w.Chart;
+      if (v4 && v4 !== existing) {
+        w.__ChartV4 = v4;
+        if (existing) w.Chart = existing;      // the rest of the app keeps its own Chart.js
+        return (this.chartLib = v4);
+      }
+    } catch {
+      /* CDN blocked — fall back to whatever the app has (charts still draw) */
     }
-    return (window as any).Chart;
+    return (this.chartLib = existing);
   }
 
   private fmtDate(d: Date): string { return d.toISOString().slice(0, 10); }
