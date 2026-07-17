@@ -100,6 +100,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   private breakdownChart: any = null;
   private machineChart: any = null;     // Chart.js instances (destroyed on re-render)
   private lineChart: any = null;        // line-wise day chart
+  private chartLib?: any;               // our Chart.js v4 (the app ships v2 globally)
 
   // consistent metric colours, reused across the chart, the grid bars + the KPI chips
   private readonly MACHINE_COLOR = '#0f6c8d';   // machine down time -> teal
@@ -346,8 +347,16 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
 
   private applyExisting(existing: DownTimeEntry[]): void {
     if (!existing || existing.length === 0) return;
+    const norm = (v: any) => (v || '').toString().trim().toLowerCase();
     this.entries.controls.forEach((row) => {
-      const match = existing.find((e) => e.machineCode === row.get('machineCode')!.value);
+      const code = row.get('machineCode')!.value;
+      const name = row.get('machineName')!.value;
+      // Several machines share one MachineCode (PartCode), so the machine NAME
+      // (AliseSerialNo) is the real identity — match on it first, and only fall
+      // back to the code for legacy rows saved before the serial was stored.
+      const match =
+        existing.find((e) => norm(e.machineName) && norm(e.machineName) === norm(name)) ||
+        existing.find((e) => !norm(e.machineName) && e.machineCode === code);
       if (match) {
         row.patchValue({
           shift1Min: match.shift1Min,
@@ -473,6 +482,11 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
         this.isEditMode = false;
         this.lockFilters(false);
         this.successMessage = `Saved ${payload.entries.length} machine(s) for ${payload.date}.`;
+        // land the Records view on the company just fed, so the new rows are visible
+        if (this.showCompanyPicker && payload.deptCode) {
+          const cc = payload.deptCode.slice(0, 2);
+          if (this.viewCompanies.some((c) => c.companyCode === cc)) this.selectedCompany = cc;
+        }
         // Show the View grid with the just-saved rows; keep the success message visible.
         this.isFormVisible = false;
         this.fetchRecords();
@@ -565,7 +579,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   /** Scales for a vertical bar chart, value axis forced to start at 0 — works on Chart.js v2/v3/v4. */
   private barScales(valueLabel: string, rotateX: boolean): any {
     const Chart = (window as any).Chart;
-    const major = Chart && Chart.version ? parseInt(String(Chart.version), 10) : 4;
+    const major = Chart && Chart.version ? parseInt(String(Chart.version), 10) : 2;   // no .version => v2
     const xTicks = rotateX ? { maxRotation: 60, minRotation: 0, autoSkip: false } : {};
     if (major === 2) {
       return {
@@ -580,11 +594,32 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
   }
 
   /** Ensure Chart.js is loaded (used for chart images in Excel + the in-app trend charts). */
+  /** Our own Chart.js v4.
+   *  The app already exposes Chart.js **v2** globally (ng2-charts/CoreUI). Rendering with it
+   *  silently ignores every v3/v4 option we set — that's why axes auto-scaled (starting at 15
+   *  instead of 0), legends showed, tooltips were default and value labels never drew.
+   *  So: load v4 for this page, keep it privately, and hand the global back to the app. */
   private async ensureChartJs(): Promise<any> {
-    if (!(window as any).Chart) {
+    if (this.chartLib) return this.chartLib;
+    const w = window as any;
+    if (w.__ChartV4) return (this.chartLib = w.__ChartV4);
+
+    const existing = w.Chart;
+    const existingMajor = existing?.version ? parseInt(String(existing.version), 10) : (existing ? 2 : 0);
+    if (existingMajor >= 3) { w.__ChartV4 = existing; return (this.chartLib = existing); }
+
+    try {
       await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js');
+      const v4 = w.Chart;
+      if (v4 && v4 !== existing) {
+        w.__ChartV4 = v4;
+        if (existing) w.Chart = existing;      // the rest of the app keeps its own Chart.js
+        return (this.chartLib = v4);
+      }
+    } catch {
+      /* CDN blocked — fall back to whatever the app has (charts still draw) */
     }
-    return (window as any).Chart;
+    return (this.chartLib = existing);
   }
 
   /** Render a bar chart off-screen and return a PNG data URL (for embedding into Excel). */
