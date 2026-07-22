@@ -16,6 +16,7 @@ import { EngAltCertificateComponent } from './eng-alt-certificate/eng-alt-certif
 import { DgMachineWiseDownTimeComponent } from './dg-machine-wise-down-time/dg-machine-wise-down-time.component'; //nik
 import { DgManpowerStatusComponent } from './dg-manpower-status/dg-manpower-status.component'; //nik
 import { DgMaterialStatusComponent } from './dg-material-status/dg-material-status.component'; //nik
+import { JobcardMttrReportComponent } from './jobcard-mttr_report/jobcard-mttr_report.component';
 
 export const DashboardRoutes: Routes = [
   {
@@ -85,8 +86,13 @@ export const DashboardRoutes: Routes = [
     data: { title: 'Manpower Status (Unit-1)', breadcrumb: 'Manpower Status (Unit-1)' }
   },
   {
-    path: 'dg-material-status', 
+    path: 'dg-material-status',
     component: DgMaterialStatusComponent,
     data: { title: 'Material Entry', breadcrumb: 'Material Entry' }
+  },
+  {
+    path: 'jobcard-mttr-report',
+    component: JobcardMttrReportComponent,
+    data: { title: 'Jobcard MTTR Report', breadcrumb: 'Jobcard MTTR Report' }
   },
 ];

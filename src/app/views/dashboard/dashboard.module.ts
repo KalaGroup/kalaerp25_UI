@@ -42,6 +42,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { DgMachineWiseDownTimeComponent } from './dg-machine-wise-down-time/dg-machine-wise-down-time.component';
 import { DgManpowerStatusComponent } from './dg-manpower-status/dg-manpower-status.component';
 import { DgMaterialStatusComponent } from './dg-material-status/dg-material-status.component';
+import { JobcardMttrReportComponent } from './jobcard-mttr_report/jobcard-mttr_report.component';
 
 @NgModule({
   imports: [
@@ -87,6 +88,7 @@ import { DgMaterialStatusComponent } from './dg-material-status/dg-material-stat
     DgMachineWiseDownTimeComponent,
     DgManpowerStatusComponent,
     DgMaterialStatusComponent,
+    JobcardMttrReportComponent,
   ],
 
 })

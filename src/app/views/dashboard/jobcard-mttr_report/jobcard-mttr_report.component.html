@@ -1,0 +1,88 @@
+<div class="mttr-container">
+
+  <!-- Loading bar during Search -->
+  <div class="mttr-loader" *ngIf="isLoading">
+    <div class="mttr-loader-bar"></div>
+  </div>
+
+  <!-- Header -->
+  <div class="mttr-header">
+    <div class="mttr-title">JobCard MTTR Report</div>
+  </div>
+
+  <!-- Filter strip -->
+  <div class="mttr-filters">
+    <div class="mttr-field">
+      <label>Line <span class="mttr-required">*</span></label>
+      <select class="mttr-input mttr-select"
+              [(ngModel)]="selectedLineWisePC">
+        <option value="" disabled>Select Line</option>
+        <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
+          {{ l.LineDesc }}
+        </option>
+      </select>
+    </div>
+
+    <div class="mttr-field">
+      <label>Search By <span class="mttr-required">*</span></label>
+      <select class="mttr-input mttr-select"
+              [(ngModel)]="selectedSearchCode">
+        <option *ngFor="let s of stageList" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+
+    <div class="mttr-field">
+      <label>From Date</label>
+      <input class="mttr-input" type="date" [(ngModel)]="fromDate" />
+    </div>
+
+    <div class="mttr-field">
+      <label>To Date</label>
+      <input class="mttr-input" type="date" [(ngModel)]="toDate" />
+    </div>
+
+    <div class="mttr-field mttr-field-action">
+      <label>&nbsp;</label>
+      <button class="mttr-btn mttr-btn-search"
+              type="button"
+              [disabled]="isLoading"
+              (click)="onSearch()">
+        {{ isLoading ? 'Searching…' : 'Search' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Results table — columns are derived from the first row (SP-driven schema) -->
+  <div class="mttr-table-wrapper">
+    <table class="mttr-table">
+      <thead>
+        <tr>
+          <th class="mttr-th-num">SrNo</th>
+          <th *ngFor="let col of columns">{{ col }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="rows.length === 0">
+          <td [attr.colspan]="columns.length + 1" class="mttr-empty">
+            <ng-container *ngIf="isLoading">Loading…</ng-container>
+            <ng-container *ngIf="!isLoading">No record(s) found. Pick filters and click Search.</ng-container>
+          </td>
+        </tr>
+        <tr *ngFor="let row of rows; let i = index">
+          <td class="mttr-num">{{ i + 1 }}</td>
+          <td *ngFor="let col of columns"
+              class="mttr-truncate"
+              [title]="row[col] ?? ''">{{ row[col] }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Error modal -->
+  <div class="mttr-error-overlay" *ngIf="errorMessage">
+    <div class="mttr-error-content">
+      <p>{{ errorMessage }}</p>
+      <button class="mttr-btn mttr-btn-search" type="button" (click)="closeError()">OK</button>
+    </div>
+  </div>
+</div>
