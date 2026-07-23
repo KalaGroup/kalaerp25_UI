@@ -15,8 +15,11 @@
     <div class="mttr-field">
       <label>Line <span class="mttr-required">*</span></label>
       <select class="mttr-input mttr-select"
-              [(ngModel)]="selectedLineWisePC">
-        <option value="" disabled>Select Line</option>
+              [(ngModel)]="selectedLineWisePC"
+              [disabled]="isLoadingLines">
+        <option value="" disabled>
+          {{ isLoadingLines ? 'Loading lines…' : 'Select Line' }}
+        </option>
         <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
           {{ l.LineDesc }}
         </option>
@@ -48,6 +51,22 @@
               [disabled]="isLoading"
               (click)="onSearch()">
         {{ isLoading ? 'Searching…' : 'Search' }}
+      </button>
+    </div>
+
+    <div class="mttr-field mttr-field-action">
+      <label>&nbsp;</label>
+      <button class="mttr-btn mttr-btn-excel"
+              type="button"
+              title="Download report as Excel"
+              [disabled]="isLoadingExcel || rows.length === 0"
+              (click)="onExportExcel()">
+        <!-- Inline Excel-ish glyph so no external icon dependency is needed. -->
+        <svg class="mttr-btn-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path fill="currentColor"
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8.5 14.5l1.6 2.4 1.6-2.4h2l-2.6 3.8L13.9 22h-2l-1.8-2.7L8.4 22h-2l2.8-4.1-2.6-3.4h1.9z"/>
+        </svg>
+        {{ isLoadingExcel ? 'Preparing…' : 'Excel' }}
       </button>
     </div>
   </div>

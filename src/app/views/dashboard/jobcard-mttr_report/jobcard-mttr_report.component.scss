@@ -79,6 +79,15 @@
   &:hover:not(:disabled) { background: linear-gradient(180deg, #0d6efd 0%, #0b5ed7 100%); }
 }
 
+.mttr-btn-excel {
+  background: linear-gradient(180deg, #2a8a56 0%, #1d6f42 100%);
+  color: #fff;
+  gap: 8px;   // spacing between the inline SVG glyph and the "Excel" label
+
+  &:hover:not(:disabled) { background: linear-gradient(180deg, #1d6f42 0%, #145730 100%); }
+}
+.mttr-btn-icon { display: inline-block; line-height: 1; opacity: 0.95; }
+
 // ── Results table ──
 .mttr-table-wrapper {
   padding: 12px 24px 0;

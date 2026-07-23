@@ -12,19 +12,14 @@ import {
   standalone: false,
 })
 export class JobcardMttrReportComponent implements OnInit {
-  // ── Line dropdown (hardcoded) ─────────────────────────────────
-  // Six DG-Assembly lines shared across the three plants (01 / 03 / 28).
-  // CompanyCode passed to the API is the first two chars of LineWisePC —
-  // ParentDgPC is kept in the model in case a future backend needs it.
-  readonly lineRights: LineRight[] = [
-    { LineWisePC: '01.106', LineDesc: 'Unit I Line A DG Assembly',    ParentDgPC: '01.104' },
-    { LineWisePC: '03.092', LineDesc: 'Unit 4 Line B DG Assembly',    ParentDgPC: '03.051' },
-    { LineWisePC: '03.123', LineDesc: 'Unit 4 Line C DG Assembly',    ParentDgPC: '03.051' },
-    { LineWisePC: '28.037', LineDesc: 'Bengalore Line A DG Assembly', ParentDgPC: '28.001' },
-    { LineWisePC: '28.040', LineDesc: 'Bengalore Line B DG Assembly', ParentDgPC: '28.001' },
-    { LineWisePC: '28.117', LineDesc: 'Bengalore Line C DG Assembly', ParentDgPC: '28.001' },
-  ];
+  // ── Line dropdown (loaded from backend) ───────────────────────
+  // Populated by DGAssemblly/GetLineRights keyed on positionRoleId from
+  // localStorage — same pattern used across canopy-assembly-plan /
+  // canopy-assembly-process / dg-stage-* forms.
+  prmCode: string = '';
+  lineRights: LineRight[] = [];
   selectedLineWisePC: string = '';
+  isLoadingLines: boolean = false;
 
   // ── Filter strip state ────────────────────────────────────────
   // stageList order + labels match the legacy Angular v11 form so operators
@@ -48,6 +43,7 @@ export class JobcardMttrReportComponent implements OnInit {
   rows: JobcardMttrRow[] = [];
   columns: string[] = [];      // derived from the first result row
   isLoading: boolean = false;
+  isLoadingExcel: boolean = false;
   errorMessage: string = '';
 
   constructor(private mttrService: JobcardMttrReportService) {}
@@ -59,11 +55,38 @@ export class JobcardMttrReportComponent implements OnInit {
     yesterday.setDate(today.getDate() - 1);
     this.fromDate = this.toIsoDate(yesterday);
     this.toDate   = this.toIsoDate(today);
+
+    this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.loadLineRights();
   }
 
   // Resolved LineRight for the currently selected LineWisePC.
   get selectedLineRight(): LineRight | undefined {
     return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
+  }
+
+  // ── Line-rights load ──────────────────────────────────────────
+  // Uses positionRoleId (NOT ProfitCenter) — same key PositionLineRights.PrmCode
+  // stores; same convention as canopy-assembly-plan.
+  private loadLineRights(): void {
+    if (!this.prmCode) { this.lineRights = []; return; }
+    this.isLoadingLines = true;
+    this.mttrService.getLineRights(this.prmCode).subscribe({
+      next: (rows) => {
+        this.lineRights = Array.isArray(rows) ? rows : [];
+        this.isLoadingLines = false;
+        // Auto-select if the position is entitled to a single line — matches
+        // the other canopy / DG forms so single-line users don't have to click.
+        if (this.lineRights.length === 1) {
+          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+        }
+      },
+      error: (err) => {
+        this.isLoadingLines = false;
+        this.errorMessage =
+          err?.error?.message ?? err?.message ?? 'Failed to load Line list.';
+      },
+    });
   }
 
   // ── Search ───────────────────────────────────────────────────
@@ -117,6 +140,70 @@ export class JobcardMttrReportComponent implements OnInit {
             err?.error?.message ?? err?.message ?? 'Failed to load MTTR report.';
         },
       });
+  }
+
+  // ── Excel export ──────────────────────────────────────────────
+  // Uses SheetJS loaded on-demand from CDN (same pattern as the canopy
+  // process-checker report). We build the sheet directly from `rows` +
+  // `columns` so whatever the SP returns is what the workbook contains,
+  // in the SP's column order. SrNo is prepended for readability.
+  async onExportExcel(): Promise<void> {
+    if (this.isLoadingExcel) return;
+    if (this.rows.length === 0) {
+      this.errorMessage = 'No records to export. Please Search first.';
+      return;
+    }
+
+    this.isLoadingExcel = true;
+    try {
+      if (!(window as any).XLSX) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      }
+      const XLSX = (window as any).XLSX;
+      if (!XLSX) {
+        this.errorMessage = 'Excel library failed to load. Please check your connection and try again.';
+        return;
+      }
+
+      // Preserve SP column order + prepend SrNo.
+      const headers = ['SrNo', ...this.columns];
+      const rows = this.rows.map((r, i) => {
+        const out: Record<string, any> = { SrNo: i + 1 };
+        for (const c of this.columns) out[c] = r[c] ?? '';
+        return out;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'MTTR Report');
+
+      const safe = (s: string) => (s || '').replace(/[\\/:*?"<>|]/g, '-');
+      const filename = `JobCardMTTR_${safe(this.selectedLineWisePC)}`
+        + `_${safe(this.selectedSearchCode)}`
+        + `_${safe(this.fromDate)}_to_${safe(this.toDate)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch {
+      this.errorMessage = 'Failed to generate Excel. Please try again.';
+    } finally {
+      this.isLoadingExcel = false;
+    }
+  }
+
+  private loadScript(src: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
+      if (existing) {
+        if ((existing as any).dataset.loaded === '1') { resolve(); return; }
+        existing.addEventListener('load',  () => resolve());
+        existing.addEventListener('error', () => reject(new Error(`Failed to load: ${src}`)));
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload  = () => { (script as any).dataset.loaded = '1'; resolve(); };
+      script.onerror = () => reject(new Error(`Failed to load: ${src}`));
+      document.head.appendChild(script);
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────────
