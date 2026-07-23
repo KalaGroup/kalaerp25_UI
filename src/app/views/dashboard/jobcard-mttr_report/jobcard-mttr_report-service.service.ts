@@ -22,6 +22,14 @@ export class JobcardMttrReportService {
 
   constructor(private http: HttpClient) {}
 
+  // Lines this user is entitled to see — same shared endpoint used across
+  // canopy-assembly-plan / canopy-assembly-process / dg-stage-* forms.
+  // Backed by PositionLineRights ⨝ LinePcmst on the API side.
+  getLineRights(prmCode: string): Observable<LineRight[]> {
+    const url = `${this.baseUrl}DGAssemblly/GetLineRights?prmCode=${encodeURIComponent(prmCode)}`;
+    return this.http.get<LineRight[]>(url);
+  }
+
   // GET /api/Jobcard/GetJobCardMttrReport
   //   ?companyCode=<CompId derived from LineWisePC>
   //   &assemblyLine=<LineWisePC>
