@@ -13,8 +13,10 @@
     <!-- Engine Sr No Section -->
     <div class="form-group">
       <label class="form-label">Engine Sr No:</label>
-      <input isFormValid type="text" class="form-input" [class.input-error]="engineSrNo && engineSrNo.length < 10"
-        placeholder="Enter Engine Serial Number (e.g., 3H.8407/1724185)" [(ngModel)]="engineSrNo">
+      <input type="text" class="form-input"
+        [class.input-error]="engineSrNo && engineSrNo.length < 10"
+        placeholder="Enter Engine Serial Number (e.g., 3H.8407/1724185)"
+        [(ngModel)]="engineSrNo">
       <span class="error-text" *ngIf="engineSrNo && engineSrNo.length > 0 && engineSrNo.length < 10">
         Engine Sr No must be at least 10 characters
       </span>
@@ -31,22 +33,26 @@
         <span class="file-name">{{ selectedFileName || 'No file chosen' }}</span>
       </div>
 
-      <!-- File Preview -->
+      <!-- File Preview — with inline video player when a video is selected -->
       <div class="file-preview" *ngIf="selectedFile">
         <div class="preview-item">
           <i [class]="getFileIcon()"></i>
-          <span class="preview-name">{{ selectedFileName }}</span>
+          <span class="preview-name" [title]="selectedFileName">{{ selectedFileName }}</span>
           <span class="preview-size">{{ getFileSize() }}</span>
-          <button class="remove-btn" (click)="removeFile()">
+          <button class="remove-btn" (click)="removeFile()" title="Remove file">
             <mat-icon>close</mat-icon>
           </button>
+        </div>
+
+        <!-- Inline video review — works for both recorded and picked videos -->
+        <div class="preview-video-wrapper" *ngIf="isVideoSelected() && previewUrl">
+          <video class="preview-video" [src]="previewUrl" controls playsinline></video>
         </div>
       </div>
 
       <p class="file-hint">
-        Supported formats: JPG, JPEG, PNG, MP3, MP4, MOV, PDF, WMV, FLV, AVI, MPG, WAV, MPEG, DAT (Max 500MB)
+        Supported formats: JPG, JPEG, PNG, MP3, MP4, WebM, MOV, PDF, WMV, FLV, AVI, MPG, WAV, MPEG, DAT (Max 500MB)
       </p>
-
     </div>
 
     <!-- Submit Button -->
@@ -57,7 +63,7 @@
   </div>
 </div>
 
-<!-- File Chooser Bottom Sheet -->
+<!-- ─── File Chooser Bottom Sheet ─── -->
 <div class="overlay" *ngIf="showFileChooser" (click)="closeFileChooser()"></div>
 <div class="file-chooser-sheet" [class.open]="showFileChooser">
   <div class="sheet-header">
@@ -68,11 +74,12 @@
   </div>
 
   <div class="sheet-content">
+    <!-- Camera option now opens the in-app recorder instead of the OS camera app -->
     <div class="chooser-option" (click)="openCamera()">
       <div class="option-icon camera">
-        <mat-icon>photo_camera</mat-icon>
+        <mat-icon>videocam</mat-icon>
       </div>
-      <span class="option-label">Camera</span>
+      <span class="option-label">Record Video</span>
     </div>
 
     <div class="chooser-option" (click)="openGallery()">
@@ -91,15 +98,137 @@
   </div>
 </div>
 
-<!-- Hidden File Inputs -->
-<input type="file" #cameraInput accept="image/*" capture="environment" (change)="onFileSelected($event)"
-  style="display: none;">
-
-<input type="file" #galleryInput accept="image/jpg,image/jpeg,image/png,video/mp4,video/quicktime"
+<!-- Hidden File Inputs — for Photos/videos and Browse sheet options -->
+<input type="file" #galleryInput accept="image/jpg,image/jpeg,image/png,video/mp4,video/webm,video/quicktime"
+  (change)="onFileSelected($event)" style="display: none;">
+<input type="file" #fileInput [accept]="acceptedFileTypes"
   (change)="onFileSelected($event)" style="display: none;">
 
-<input type="file" #fileInput [accept]="acceptedFileTypes" (change)="onFileSelected($event)" style="display: none;">
+<!-- ─── In-App Video Recorder Overlay ─── -->
+<div class="recorder-overlay" *ngIf="recorderState !== 'closed'">
+  <div class="recorder-panel">
 
+    <!-- Header — always visible, always closable -->
+    <div class="recorder-header">
+      <span class="recorder-title">
+        <i class="fas fa-video"></i>
+        <ng-container [ngSwitch]="recorderState">
+          <span *ngSwitchCase="'requesting'">Opening camera…</span>
+          <span *ngSwitchCase="'ready'">Ready to record</span>
+          <span *ngSwitchCase="'recording'">Recording</span>
+          <span *ngSwitchCase="'preview'">Review recording</span>
+          <span *ngSwitchCase="'error'">Camera error</span>
+        </ng-container>
+      </span>
+      <button class="recorder-close" (click)="closeRecorder()" title="Close" aria-label="Close recorder">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Camera picker — hidden while recording so the take can't be interrupted -->
+    <div class="recorder-camera-picker"
+         *ngIf="recorderState !== 'error' && cameras.length > 1 && recorderState !== 'preview'">
+      <label class="picker-label">Camera</label>
+      <select class="picker-select"
+              [(ngModel)]="selectedCameraId"
+              (ngModelChange)="onCameraChange()"
+              [disabled]="recorderState === 'recording' || recorderState === 'stopping' || recorderState === 'requesting'">
+        <option *ngFor="let c of cameras" [value]="c.deviceId">{{ c.label }}</option>
+      </select>
+      <span class="picker-hint" *ngIf="recorderState === 'recording' || recorderState === 'stopping'">Stop recording to switch cameras</span>
+    </div>
+
+    <!-- Video area -->
+    <div class="recorder-body">
+
+      <!-- ready / recording / stopping — live camera feed -->
+      <div class="recorder-live" *ngIf="recorderState === 'ready' || recorderState === 'recording' || recorderState === 'stopping' || recorderState === 'requesting'">
+        <video #livePreview class="recorder-video" autoplay muted playsinline></video>
+
+        <div class="recorder-loading" *ngIf="recorderState === 'requesting'">
+          <div class="spinner"></div>
+          <span>Waiting for camera permission…</span>
+        </div>
+
+        <div class="recording-badge" *ngIf="recorderState === 'recording'">
+          <span class="rec-dot"></span> REC {{ formatDuration(recordingDuration) }}
+        </div>
+
+        <div class="recording-size" *ngIf="recorderState === 'recording'">
+          {{ formatBytes(recordingSize) }} / 500 MB
+          <div class="size-bar">
+            <div class="size-bar-fill" [style.width.%]="recordingSizePct"></div>
+          </div>
+        </div>
+
+        <!-- Stopping — brief overlay so the user sees the tap was accepted -->
+        <div class="recorder-loading" *ngIf="recorderState === 'stopping'">
+          <div class="spinner"></div>
+          <span>Finishing recording…</span>
+        </div>
+      </div>
+
+      <!-- preview — playback of the just-recorded take -->
+      <div class="recorder-playback" *ngIf="recorderState === 'preview' && recordedVideoUrl">
+        <video class="recorder-video" [src]="recordedVideoUrl" controls playsinline></video>
+        <div class="playback-meta">
+          <i class="fas fa-check-circle"></i>
+          {{ formatDuration(recordingDuration) }} · {{ formatBytes(recordingSize) }}
+        </div>
+      </div>
+
+      <!-- error — clear message + retry -->
+      <div class="recorder-error" *ngIf="recorderState === 'error'">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ recorderError }}</p>
+        <button class="recorder-btn primary" (click)="retryRecorder()">
+          <i class="fas fa-redo"></i> Try Again
+        </button>
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="recorder-actions">
+      <ng-container [ngSwitch]="recorderState">
+
+        <!-- ready — big Record button -->
+        <ng-container *ngSwitchCase="'ready'">
+          <button class="recorder-btn record" (click)="startRecording()">
+            <span class="rec-dot"></span> Start Recording
+          </button>
+        </ng-container>
+
+        <!-- recording — Stop button -->
+        <ng-container *ngSwitchCase="'recording'">
+          <button class="recorder-btn stop" (click)="stopRecording()">
+            <i class="fas fa-stop"></i> Stop Recording
+          </button>
+        </ng-container>
+
+        <!-- stopping — same slot but disabled + spinner so the operator
+             knows the tap registered (usually gone in <200 ms) -->
+        <ng-container *ngSwitchCase="'stopping'">
+          <button class="recorder-btn stop" type="button" disabled>
+            <span class="recorder-btn-spinner"></span> Stopping…
+          </button>
+        </ng-container>
+
+        <!-- preview — Retake or Use -->
+        <ng-container *ngSwitchCase="'preview'">
+          <button class="recorder-btn secondary" (click)="retakeRecording()">
+            <i class="fas fa-redo"></i> Retake
+          </button>
+          <button class="recorder-btn primary" (click)="useRecording()">
+            <i class="fas fa-check"></i> Use This Video
+          </button>
+        </ng-container>
+
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Message modals ─── -->
 <div *ngIf="errorMessage" class="errorModal">
   <div class="errorModal-content">
     <h2>Alert</h2>
@@ -119,6 +248,17 @@
   <div class="warningModal_content">
     <p>{{ warningMessage }}</p>
     <button class="warning-ok-button" (click)="clearMessages()">OK</button>
+  </div>
+</div>
+
+<!-- ─── Confirm dialog — replaces window.confirm() for a consistent look ─── -->
+<div *ngIf="confirmMessage" class="confirmModal">
+  <div class="confirmModal_content">
+    <p>{{ confirmMessage }}</p>
+    <div class="confirm-actions">
+      <button class="confirm-yes-button" (click)="onConfirmYes()">{{ confirmYesLabel }}</button>
+      <button class="confirm-no-button"  (click)="onConfirmNo()">{{ confirmNoLabel }}</button>
+    </div>
   </div>
 </div>
 
