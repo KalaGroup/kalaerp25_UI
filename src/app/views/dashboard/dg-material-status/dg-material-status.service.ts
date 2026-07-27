@@ -10,6 +10,7 @@ import { environment } from 'environments/environment';
 export interface MaterialDept {
   deptCode: string;     // ProfitCenter.PCCode
   deptName: string;     // ProfitCenter.PCName  (e.g. "Unit 1 Line A BENDING")
+  companyCode: string;  // the dept's TRUE unit from the master (01.104 -> '28')
 }
 
 /** KVA option for the Plan dropdown (from GetActivePartKVAList). */
@@ -170,7 +171,7 @@ export class DgMaterialStatusService {
   getDepartments(companyCode: string): Observable<MaterialDept[]> {
     const params = new HttpParams().set('companyCode', companyCode);
     return this.http.get<any[]>(this.apiDepartments, { params }).pipe(
-      map((rows) => (rows || []).map((x) => ({ deptCode: x.DeptCode, deptName: x.DeptName }))),
+      map((rows) => (rows || []).map((x) => ({ deptCode: x.DeptCode, deptName: x.DeptName, companyCode: x.CompanyCode || (x.DeptCode || '').slice(0, 2) }))),
     );
   }
 

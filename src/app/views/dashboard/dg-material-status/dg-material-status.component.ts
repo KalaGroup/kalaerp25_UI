@@ -45,6 +45,9 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   employees: EmployeeOption[] = [];
   /** Single-row edit: identity of the line being edited (null = adding). */
   editingRef: { mcode: string; srNo: number } | null = null;
+  editingDeptName = '';                 // shown read-only while editing (always displays)
+  /** The ENTRY panel: fields filled here, "+ Add" stages them into `rows` below. */
+  entry!: FormGroup;
   private partsByKva = new Map<string, PartOption[]>();   // KVA -> parts (Raw dropdown cache)
 
   // chart/records company picker (parent login like 33 spans 01/03/28)
@@ -120,6 +123,29 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     });
   }
 
+  /** "+ Add": validate the entry panel, stage it as a row, keep context fields. */
+  addStagedRow(): void {
+    this.clearMessages();
+    const g = this.ensureEntry();
+    if (!g.get('deptCode')?.value || !g.get('plan')?.value || g.get('planQuantity')?.value == null || g.get('planQuantity')?.value === '') {
+      g.markAllAsTouched();
+      this.errorMessage = 'Fill Department, Plan (KVA) and Plan Qty before Add.';
+      return;
+    }
+    const row = this.newRow();
+    row.patchValue(g.getRawValue());
+    this.rows.push(row);
+    // keep the feeding context (dept / KVA / type / person); clear the per-part fields
+    g.patchValue({ planQuantity: null, partCode: '', partName: '', shortageQty: 0, issueType: '', remark: '' });
+    g.markAsUntouched();
+  }
+
+  /** ✎ on a staged row: pull it back into the entry panel for correction. */
+  editStagedRow(i: number): void {
+    this.ensureEntry().patchValue((this.rows.at(i) as FormGroup).getRawValue());
+    this.rows.removeAt(i);
+  }
+
   addRow(): void {
     if (this.rows.invalid) {
       this.rows.markAllAsTouched();
@@ -127,7 +153,6 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       return;
     }
     this.clearMessages();
-    this.rows.push(this.newRow());
   }
 
   removeRow(i: number): void {
@@ -180,13 +205,30 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   private ddCache = { key: '', list: [] as string[], total: 0 };
 
   /** Open the panel under the focused input (fixed-positioned, so table scroll can't clip it). */
+  /** The entry panel group is created on first use, wherever that happens. */
+  private ensureEntry(): FormGroup {
+    if (!this.entry) this.entry = this.newRow();
+    return this.entry;
+  }
+
+  /** Department display name for a code (staged table shows names, not codes). */
+  deptNameOf(code: string): string {
+    const d = this.departments.find((x) => x.deptCode === code);
+    return d ? d.deptName : (code || '');
+  }
+
+  /** i = -1 addresses the ENTRY panel; 0.. address staged rows (edit mode uses rows[0]). */
+  grpAt(i: number): FormGroup {
+    return i < 0 ? this.ensureEntry() : (this.rows.at(i) as FormGroup);
+  }
+
   sddShow(i: number, field: 'plan' | 'partName' | 'person', ev: Event): void {
     const el = ev.target as HTMLElement;
     const r = el.getBoundingClientRect();
     this.ddPos = { left: r.left, top: r.bottom + 2, width: Math.max(r.width, field === 'plan' ? 140 : 320) };
     this.ddRow = i;
     this.ddField = field;
-    if (field === 'partName') this.ensureParts(this.rows.at(i).get('plan')?.value);
+    if (field === 'partName') this.ensureParts(this.grpAt(i).get('plan')?.value);
   }
 
   sddClose(): void {
@@ -195,8 +237,8 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   /** Filter once per real change (not on every change-detection pass). */
   private sddCompute(i: number): void {
-    if (i < 0 || !this.ddField) { this.ddCache = { key: '', list: [], total: 0 }; return; }
-    const g = this.rows.at(i);
+    if (!this.ddField) { this.ddCache = { key: '', list: [], total: 0 }; return; }   // -1 = the entry panel, fully valid
+    const g = this.grpAt(i);
     const q = ((g.get(this.ddField)?.value) || '').toString().trim().toLowerCase();
     let src: string[] = [];
     if (this.ddField === 'plan') src = this.kvaOptions.map((k) => String(k.kva));
@@ -221,7 +263,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   sddPick(i: number, val: string): void {
-    const g = this.rows.at(i);
+    const g = this.grpAt(i);
     const field = this.ddField;
     g.get(field)?.setValue(val);
     this.ddRow = -1; this.ddField = '';
@@ -252,7 +294,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   /** Row's Plan (KVA) changed — load its parts if the row is Raw, and clear a stale part. */
   onRowPlanChange(i: number): void {
-    const g = this.rows.at(i);
+    const g = this.grpAt(i);
     g.get('partCode')?.setValue('');
     g.get('partName')?.setValue('');
     if (g.get('materialType')?.value === 'Raw') this.ensureParts(g.get('plan')?.value);
@@ -260,7 +302,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   /** Row's Type changed — Raw needs the part list; switching away keeps free text. */
   onRowTypeChange(i: number): void {
-    const g = this.rows.at(i);
+    const g = this.grpAt(i);
     g.get('partCode')?.setValue('');
     g.get('partName')?.setValue('');
     if (g.get('materialType')?.value === 'Raw') this.ensureParts(g.get('plan')?.value);
@@ -283,22 +325,28 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     return this.reportRows.filter((r) => (r.companyCode || (r.deptCode || '').slice(0, 2)) === this.selectedCompany);
   }
 
-  /** Departments offered in the filters — narrowed to the picked company (PCCode prefix). */
+  /** A department's unit: the master's CompanyCode first, code prefix as fallback. */
+  private deptUnit(deptCode: string): string {
+    const d = this.departments.find((x) => x.deptCode === deptCode);
+    return (d && d.companyCode) || (deptCode || '').slice(0, 2);
+  }
+
+  /** Departments offered in the filters — grouped by the dept's TRUE unit. */
   get filteredDepartments(): MaterialDept[] {
     if (!this.showCompanyPicker || !this.selectedCompany) return this.departments;
-    return this.departments.filter((d) => (d.deptCode || '').slice(0, 2) === this.selectedCompany);
+    return this.departments.filter((d) => (d.companyCode || (d.deptCode || '').slice(0, 2)) === this.selectedCompany);
   }
 
   /** Company changed from the Records toolbar — drop a mismatched department filter. */
   onRecordsCompanyChange(): void {
     const dept = this.form.get('deptCode')?.value as string;
-    if (dept && dept.slice(0, 2) !== this.selectedCompany) {
+    if (dept && this.deptUnit(dept) !== this.selectedCompany) {
       this.form.get('deptCode')?.setValue('');
     }
     // per-row departments too: drop any that belong to a different company
     this.rows.controls.forEach((g) => {
       const d = (g.get('deptCode')?.value || '') as string;
-      if (d && d.slice(0, 2) !== this.selectedCompany) g.get('deptCode')?.setValue('');
+      if (d && this.deptUnit(d) !== this.selectedCompany) g.get('deptCode')?.setValue('');
     });
   }
 
@@ -931,19 +979,25 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   /* ---------------- view <-> add ---------------- */
+  private resetEntry(): void {
+    this.ensureEntry().reset({ deptCode: '', plan: '', planQuantity: null, materialType: 'Raw', partCode: '', partName: '', shortageQty: 0, issueType: '', status: 'Open', remark: '', person: '' });
+    this.entry.get('deptCode')?.enable();
+  }
+
   showForm(): void {
     this.editingRef = null;
+    this.resetEntry();
     this.isFormVisible = true;
     this.isEditMode = false;
     this.lockHeader(false);
     this.rows.clear();
-    this.rows.push(this.newRow());
     this.form.patchValue({ deptCode: '' });
     this.clearMessages();
   }
 
   showList(): void {
     this.editingRef = null;
+    this.resetEntry();
     this.isFormVisible = false;
     this.isEditMode = false;
     this.lockHeader(false);
@@ -959,23 +1013,19 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       return;
     }
     this.editingRef = { mcode: r.mcode, srNo: r.srNo };
+    this.editingDeptName = r.deptName || r.deptCode || '';
     this.isFormVisible = true;
     this.isEditMode = true;
     this.form.patchValue({ date: r.date });
     while (this.rows.length) this.rows.removeAt(0);
-    this.rows.push(this.fb.group({
-      deptCode: [{ value: r.deptCode, disabled: true }],          // a line cannot move departments
-      plan: [r.plan, Validators.required],
-      planQuantity: [r.planQuantity, [Validators.required, Validators.min(0)]],
-      materialType: [r.materialType || 'Raw', Validators.required],
-      partCode: [r.partCode || ''],
-      partName: [r.partName || ''],
-      shortageQty: [r.shortageQty || 0],
-      issueType: [r.issueType || ''],
-      status: ['Open', Validators.required],
-      remark: [r.remark || ''],
-      person: [r.person || ''],
-    }));
+    this.ensureEntry().patchValue({
+      deptCode: r.deptCode, plan: r.plan, planQuantity: r.planQuantity,
+      materialType: r.materialType || 'Raw', partCode: r.partCode || '', partName: r.partName || '',
+      shortageQty: r.shortageQty || 0, issueType: r.issueType || '',
+      status: 'Open', remark: r.remark || '', person: r.person || '',
+    });
+    this.entry.get('deptCode')?.disable();
+
     if ((r.materialType || '') === 'Raw' && r.plan) this.ensureParts(r.plan);
   }
 
@@ -1062,6 +1112,10 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
       this.errorMessage = 'Please select a date.';
       return;
     }
+    if (!this.editingRef && this.rows.length === 0) {
+      this.errorMessage = 'Add at least one row — fill the fields and press + Add.';
+      return;
+    }
     // Every row must be complete: Plan, Type of material, Quantity and Status.
     if (this.rows.invalid) {
       this.rows.markAllAsTouched();
@@ -1079,7 +1133,15 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     //   return;
     // }
 
-    if (this.editingRef) { this.saveSingleEdit(); return; }
+    if (this.editingRef) {
+      // the ENTRY panel holds the edited line — mirror it into rows[0] for the update path
+      while (this.rows.length) this.rows.removeAt(0);
+      const row = this.newRow();
+      row.patchValue(this.ensureEntry().getRawValue());
+      this.rows.push(row);
+      this.saveSingleEdit();
+      return;
+    }
     const payload: SaveMaterialBatchRequest = {
       date: this.form.get('date')?.value,
       companyCode: this.service.companyCode,
@@ -1112,7 +1174,7 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
         // land the Records view on the company that was just fed, so the new rows are visible
         const firstDept = payload.entries[0]?.deptCode || '';
         if (this.showCompanyPicker && firstDept) {
-          const cc = firstDept.slice(0, 2);
+          const cc = this.deptUnit(firstDept);
           if (this.viewCompanies.some((c) => c.companyCode === cc)) this.selectedCompany = cc;
         }
         this.isFormVisible = false;
@@ -1129,8 +1191,8 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
 
   clear(): void {
     this.clearMessages();
-    this.rows.clear();
-    this.rows.push(this.newRow());
+    this.rows.clear();                 // staged list model: no default empty row
+    this.resetEntry();
   }
 
   private clearMessages(): void {

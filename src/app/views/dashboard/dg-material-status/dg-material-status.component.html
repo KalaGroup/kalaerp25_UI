@@ -345,7 +345,7 @@
   </div>
 
   <!-- ===== searchable dropdown panel (fixed — follows the focused input) ===== -->
-  <div class="sdd-panel" *ngIf="ddRow > -1"
+  <div class="sdd-panel" *ngIf="ddField"
     [style.left.px]="ddPos.left" [style.top.px]="ddPos.top" [style.width.px]="ddPos.width">
     <div class="sdd-opt" *ngFor="let v of sddList(ddRow)" [title]="v"
       (mousedown)="$event.preventDefault(); sddPick(ddRow, v)">{{ v }}</div>
@@ -419,108 +419,132 @@
         </div>
 
         <!-- material grid -->
-        <div class="table-card">
-          <table class="entry-grid">
+        <!-- ================= ENTRY PANEL: fill -> + Add stages it below ================= -->
+        <div class="entry-panel" [formGroup]="entry">
+          <div class="e-ctrl e-dept">
+            <label>Department <span class="req">*</span></label>
+            <input *ngIf="editingRef" type="text" class="dept-locked" [value]="editingDeptName" readonly
+              [title]="editingDeptName" />
+            <select *ngIf="!editingRef" formControlName="deptCode">
+              <option value="">Select department…</option>
+              <option *ngFor="let d of filteredDepartments" [value]="d.deptCode">{{ d.deptName }}</option>
+            </select>
+          </div>
+          <div class="e-ctrl e-kva">
+            <label>Plan (KVA) <span class="req">*</span></label>
+            <input type="text" formControlName="plan" placeholder="KVA…" autocomplete="off"
+              (focus)="sddShow(-1, 'plan', $event)" (input)="sddShow(-1, 'plan', $event)"
+              (blur)="sddClose()" (change)="onRowPlanChange(-1)" />
+          </div>
+          <div class="e-ctrl e-qty">
+            <label>Plan Qty <span class="req">*</span></label>
+            <input type="number" min="0" step="1" formControlName="planQuantity" placeholder="0" />
+          </div>
+          <div class="e-ctrl e-type">
+            <label>Type of material</label>
+            <select formControlName="materialType" (change)="onRowTypeChange(-1)">
+              <option *ngFor="let t of materialTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="e-ctrl e-part">
+            <label>Part Name</label>
+            <input type="text" formControlName="partName" autocomplete="off"
+              [placeholder]="entry.get('materialType')?.value === 'Raw' ? 'Search part…' : 'Part name (optional)'"
+              (focus)="entry.get('materialType')?.value === 'Raw' && sddShow(-1, 'partName', $event)"
+              (input)="entry.get('materialType')?.value === 'Raw' && sddShow(-1, 'partName', $event)"
+              (blur)="sddClose()" />
+          </div>
+          <div class="e-ctrl e-issue">
+            <label>Issue Type</label>
+            <select formControlName="issueType">
+              <option value="">—</option>
+              <option *ngFor="let t of issueTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="e-ctrl e-short">
+            <label>Shortage Qty</label>
+            <select formControlName="shortageQty">
+              <option [ngValue]="0">—</option>
+              <option *ngFor="let n of shortageOptions" [ngValue]="n">{{ n }}</option>
+            </select>
+          </div>
+          <div class="e-ctrl e-status">
+            <label>Status <span class="req">*</span></label>
+            <select formControlName="status">
+              <option *ngFor="let st of statusOptions" [value]="st">{{ st }}</option>
+            </select>
+          </div>
+          <div class="e-ctrl e-remark">
+            <label>Remarks</label>
+            <input type="text" formControlName="remark" placeholder="Remark" />
+          </div>
+          <div class="e-ctrl e-person">
+            <label>Responsible person</label>
+            <input type="text" formControlName="person" placeholder="Search employee…" autocomplete="off"
+              (focus)="sddShow(-1, 'person', $event)" (input)="sddShow(-1, 'person', $event)"
+              (blur)="sddClose()" />
+          </div>
+          <div class="e-ctrl e-addbtn" *ngIf="!editingRef">
+            <label>&nbsp;</label>
+            <button type="button" class="e-add" (click)="addStagedRow()">+ Add</button>
+          </div>
+        </div>
+
+        <!-- ================= STAGED ROWS (the "temporary table") ================= -->
+        <div class="table-card staged-card" *ngIf="!editingRef">
+          <table class="staged-grid">
             <colgroup>
               <col style="width:3%" />
-              <col style="width:12%" />
+              <col style="width:15%" />
+              <col style="width:6%" />
+              <col style="width:5%" />
+              <col style="width:8%" />
+              <col style="width:20%" />
               <col style="width:7%" />
               <col style="width:6%" />
-              <col style="width:8%" />
-              <col style="width:18%" />
-              <col style="width:8%" />
               <col style="width:6%" />
-              <col style="width:6%" />
-              <col style="width:11%" />
-              <col style="width:12%" />
-              <col style="width:3%" />
+              <col style="width:10%" />
+              <col style="width:10%" />
+              <col style="width:4%" />
             </colgroup>
             <thead>
               <tr>
-                <th>Sr</th>
-                <th>Department <span class="req">*</span></th>
-                <th>Plan (KVA) <span class="req">*</span></th>
-                <th>Plan Qty <span class="req">*</span></th>
-                <th>Type of material</th>
-                <th>Part Name</th>
-                <th>Issue Type</th>
-                <th>Shortage Qty</th>
-                <th>Status <span class="req">*</span></th>
-                <th>Remarks</th>
-                <th>Responsible person</th>
-                <th></th>
+                <th>Sr</th><th>Department</th><th>KVA</th><th>Qty</th><th>Type</th><th>Part Name</th>
+                <th>Issue</th><th>Shortage</th><th>Status</th><th>Remarks</th><th>Responsible person</th><th></th>
               </tr>
             </thead>
-            <tbody formArrayName="rows">
-              <tr *ngFor="let row of rows.controls; let i = index" [formGroupName]="i">
+            <tbody>
+              <tr *ngFor="let row of rows.controls; let i = index">
                 <td class="idx">{{ i + 1 }}</td>
-                <td>
-                  <select formControlName="deptCode">
-                    <option value="">Dept…</option>
-                    <option *ngFor="let d of filteredDepartments" [value]="d.deptCode">{{ d.deptName }}</option>
-                  </select>
+                <td class="wrapcell">{{ deptNameOf(row.get('deptCode')?.value) }}</td>
+                <td class="num">{{ row.get('plan')?.value }}</td>
+                <td class="num">{{ row.get('planQuantity')?.value }}</td>
+                <td>{{ row.get('materialType')?.value }}</td>
+                <td class="wrapcell" [title]="row.get('partName')?.value">{{ row.get('partName')?.value || '—' }}</td>
+                <td>{{ row.get('issueType')?.value || '—' }}</td>
+                <td class="num">
+                  <span class="short-badge" *ngIf="row.get('shortageQty')?.value">{{ row.get('shortageQty')?.value }}</span>
+                  <ng-container *ngIf="!row.get('shortageQty')?.value">—</ng-container>
                 </td>
-                <td>
-                  <input type="text" formControlName="plan" placeholder="KVA…" autocomplete="off"
-                    (focus)="sddShow(i, 'plan', $event)" (input)="sddShow(i, 'plan', $event)"
-                    (blur)="sddClose()" (change)="onRowPlanChange(i)" />
-                </td>
-                <td>
-                  <input type="number" min="0" step="1" formControlName="planQuantity" placeholder="0" />
-                </td>
-                <td>
-                  <select formControlName="materialType" (change)="onRowTypeChange(i)">
-                    <option *ngFor="let t of materialTypes" [value]="t">{{ t }}</option>
-                  </select>
-                </td>
-                <td>
-                  <!-- Raw -> searchable list of the row's KVA parts; other types -> free text -->
-                  <input type="text" formControlName="partName" autocomplete="off"
-                    [placeholder]="row.get('materialType')?.value === 'Raw' ? 'Search part…' : 'Part name (optional)'"
-                    (focus)="row.get('materialType')?.value === 'Raw' && sddShow(i, 'partName', $event)"
-                    (input)="row.get('materialType')?.value === 'Raw' && sddShow(i, 'partName', $event)"
-                    (blur)="sddClose()" />
-                </td>
-                <td>
-                  <select formControlName="issueType">
-                    <option value="">—</option>
-                    <option *ngFor="let t of issueTypes" [value]="t">{{ t }}</option>
-                  </select>
-                </td>
-                <td>
-                  <select formControlName="shortageQty">
-                    <option [ngValue]="0">—</option>
-                    <option *ngFor="let n of shortageOptions" [ngValue]="n">{{ n }}</option>
-                  </select>
-                </td>
-                <td>
-                  <select formControlName="status">
-                    <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
-                  </select>
-                </td>
-                <td>
-                  <input type="text" formControlName="remark" placeholder="Remark" />
-                </td>
-                <td>
-                  <input type="text" formControlName="person" placeholder="Search employee…" autocomplete="off"
-                    (focus)="sddShow(i, 'person', $event)" (input)="sddShow(i, 'person', $event)"
-                    (blur)="sddClose()" />
-                </td>
+                <td>{{ row.get('status')?.value }}</td>
+                <td class="wrapcell">{{ row.get('remark')?.value || '—' }}</td>
+                <td class="wrapcell">{{ row.get('person')?.value || '—' }}</td>
                 <td class="actions">
+                  <button type="button" class="row-edit" (click)="editStagedRow(i)" title="Edit this row">✎</button>
                   <button type="button" class="row-del" (click)="removeRow(i)" title="Remove row">✕</button>
                 </td>
+              </tr>
+              <tr *ngIf="!rows.length">
+                <td colspan="12" class="empty">No rows added yet — fill the fields above and press <b>+ Add</b>.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div class="grid-actions">
-          <button *ngIf="!editingRef" type="button" class="add" (click)="addRow()">+ Add Row</button>
-        </div>
-
         <div class="footer-actions">
-          <button type="button" class="clear" (click)="clear()">Clear</button>
-          <button type="button" class="save" (click)="submit()">{{ isEditMode ? 'Update All' : 'Submit All' }}</button>
+          <button type="button" class="clear" *ngIf="!editingRef" (click)="clear()">Clear</button>
+          <button type="button" class="clear" *ngIf="editingRef" (click)="showList()">← Back</button>
+          <button type="button" class="save" (click)="submit()">{{ editingRef ? 'Update' : 'Submit All' }}</button>
         </div>
 
       </div>
