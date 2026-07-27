@@ -213,7 +213,9 @@ export class DgMaterialStatusService {
 
   /** Companies the login may view for (33 -> 01/03/28, else self). */
   getViewCompanies(): Observable<CompanyOption[]> {
-    const params = new HttpParams().set('companyCode', this.companyCode);
+    // Material form: every unit is visible to everyone, so always pull the full
+    // corporate list (01/03/28) via the '33' roll-up. (Machine/manpower keep their own scope.)
+    const params = new HttpParams().set('companyCode', '33');
     return this.http.get<any[]>(this.apiViewCompanies, { params }).pipe(
       map((res) => (res || []).map((c) => ({ companyCode: c.CompanyCode, companyName: c.CompanyName, shortName: c.ShortName }))),
     );

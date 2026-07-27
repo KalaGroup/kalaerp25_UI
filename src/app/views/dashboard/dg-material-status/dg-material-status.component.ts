@@ -85,7 +85,10 @@ export class DgMaterialStatusComponent implements OnInit, OnDestroy, AfterViewIn
     this.service.getViewCompanies().subscribe({
       next: (res) => {
         this.viewCompanies = res || [];
-        this.selectedCompany = this.viewCompanies.length ? this.viewCompanies[0].companyCode : this.service.companyCode;
+        // default to the login's own unit when present, else the first in the list
+        const own = this.viewCompanies.find((c) => c.companyCode === this.service.companyCode);
+        this.selectedCompany = own ? own.companyCode
+          : (this.viewCompanies.length ? this.viewCompanies[0].companyCode : this.service.companyCode);
         this.chartCompany = this.selectedCompany;
         this.onChartCompanyChange();   // re-filter the charts once the picker resolves
       },
