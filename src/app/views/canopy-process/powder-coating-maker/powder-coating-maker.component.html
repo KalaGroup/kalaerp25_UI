@@ -100,7 +100,7 @@
       <!-- ===== Save ===== -->
       <div class="pc-footer">
         <button type="submit" class="btn btn-primary btn-submit" name="btnSave"
-                [disabled]="loading || (lblSaveCaption !== 'End' && !hasSelectedRows())">
+                [disabled]="loading || isSubmitting || (lblSaveCaption !== 'End' && !hasSelectedRows())">
           <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
           {{ lblSaveCaption }}
         </button>

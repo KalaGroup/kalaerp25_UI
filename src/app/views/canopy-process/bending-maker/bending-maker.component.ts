@@ -50,6 +50,8 @@ export class BendingMakerComponent implements OnInit {
   readonly attachments = signal<IAttachmentRow[]>([]);
  
   readonly loading = signal(false);
+  /** Re-entry guard: blocks a second Submit while a save is in flight (prevents double-entry on double-click). */
+  readonly isSubmitting = signal(false);
   readonly message = signal('');
   readonly showMessage = signal(false);
   readonly uploadPercent = signal(0);
@@ -466,6 +468,10 @@ export class BendingMakerComponent implements OnInit {
       CatID:          this.benCatID         ?? '0',
     };
  
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting()) return;
+    this.isSubmitting.set(true);
+
     this.loading.set(true);
     // Remember whether this submit was a normal Submit or an End,
     // so the result popup can show the right title / message.
@@ -476,6 +482,7 @@ export class BendingMakerComponent implements OnInit {
       .subscribe({
         next: (msg) => {
           this.loading.set(false);
+          this.isSubmitting.set(false);
           const message = (msg ?? '').trim();
           // The controller can return Ok() with a validation message
           // (e.g. "Insufficient Stock ..."), so a 200 may still be a
@@ -485,6 +492,7 @@ export class BendingMakerComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
+          this.isSubmitting.set(false);
           console.error(err);
           const apiMessage =
             (typeof err?.error === 'string' && err.error.trim()) ||

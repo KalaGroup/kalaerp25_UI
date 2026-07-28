@@ -22,21 +22,16 @@
         </div>
 
         <div class="filter-field">
-          <label for="txtPC">Profitcenter</label>
-          <input [readonly]="true" id="txtPC" type="text" class="form-control form-control-sm"
-                 name="txtPC" [(ngModel)]="PC">
-        </div>
-
-        <!-- <div class="filter-field">
-          <label for="ddlShift">Shift Type</label>
-          <select id="ddlShift" class="form-control form-control-sm" [(ngModel)]="shiftType" name="shiftType"
-                  (change)="onShiftSelectPlanLoad($any($event.target).value)">
-            <option value="" disabled>-- Select Shift --</option>
-            @for (p of shiftTypes; track p.id) {
-              <option [value]="p.name">{{ p.name }}</option>
+          <label for="ddlLine">Line</label>
+          <select id="ddlLine" class="form-control form-control-sm"
+                  [(ngModel)]="selectedLine" name="ddlLine"
+                  (change)="onLineSelect($any($event.target).value)">
+            <option value="" disabled>-- Select Line --</option>
+            @for (line of lineList; track line.LineWisePC) {
+              <option [value]="line.LineWisePC">{{ line.LineDesc }}</option>
             }
           </select>
-        </div> -->
+        </div>
 
         <div class="filter-field">
           <label for="ddlPlanCode">PlanCode</label>
@@ -85,7 +80,7 @@
                     <div class="empty-state">
                       <div class="empty-icon">📋</div>
                       <p class="empty-title">No Records Found</p>
-                      <p class="empty-hint">Select Shift Type and PlanCode, then click <b>Search</b> to load data.</p>
+                      <p class="empty-hint">Select Line and PlanCode, then click <b>Search</b> to load data.</p>
                     </div>
                   </td>
                 </tr>
@@ -331,8 +326,8 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closePopup()">Close</button>
-        <button class="btn btn-primary" [disabled]="!canAuth()" (click)="onAccept()">Auth</button>
-        <button class="btn btn-danger" [disabled]="!canReject()" (click)="onReject()">Reject</button>
+        <button class="btn btn-primary" [disabled]="!canAuth() || isSubmitting" (click)="onAccept()">Auth</button>
+        <button class="btn btn-danger" [disabled]="!canReject() || isSubmitting" (click)="onReject()">Reject</button>
       </div>
 
     </div>

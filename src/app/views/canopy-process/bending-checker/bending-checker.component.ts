@@ -34,6 +34,9 @@ export class BendingCheckerComponent implements OnInit {
   /** Drives the in-template loading overlay (replaces ngx-spinner). */
   isLoading = false;
 
+  /** Re-entry guard: blocks a second Auth/Reject while a save is in flight (prevents double-entry on double-click). */
+  isSubmitting = false;
+
   // ---- UI / state ----
   errorMessage: any;
   isShowForm = true;
@@ -383,16 +386,22 @@ export class BendingCheckerComponent implements OnInit {
       }))
     };
 
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     this.isLoading = true;
     this.bendCheckService.postBending_chekerSave(payload).subscribe({
       next: (response: string) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         const message = (response ?? '').trim();
         const isFailure = this.isFailureMessage(message);
         this.openResultPopup(status, message, isFailure);
       },
       error: (error) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         console.error('API Error:', error);
         const apiMessage =
           (typeof error?.error === 'string' && error.error.trim()) ||
