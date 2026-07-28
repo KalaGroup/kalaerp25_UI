@@ -263,7 +263,7 @@
         <input type="text" class="sm-remark" name="txtRemark" [(ngModel)]="remark"
           placeholder="Enter remark before submitting..." />
         <button type="submit" class="sm-btn sm-btn-green sm-btn-submit" name="btnSave"
-          [disabled]="loading">
+          [disabled]="loading || isSubmitting">
           @if (loading) {
             <span class="sm-spinner-sm"></span>
           } @else {

@@ -48,6 +48,9 @@ export class PowderCoatingMakerComponent implements OnInit {
   myAttachmentFilesTemp: any[] = [];
 
   loading = false;
+
+  /** Re-entry guard: blocks a second Submit while a save is in flight (prevents double-entry on double-click). */
+  isSubmitting = false;
   showMessage = false;
   message: string = '';
   uploadedPercentage = 0;
@@ -343,9 +346,14 @@ export class PowderCoatingMakerComponent implements OnInit {
       catID: this.PCCatID
     };
 
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     this.loading = true;
     this.PowderCoatingPrcService.postPCSave(payload).subscribe((data) => {
       this.loading = false;
+      this.isSubmitting = false;
       // The controller can return Ok() with a validation message, so a 200
       // may still be a logical message — show whatever the server returned.
       alert((data ?? '').toString().trim());
@@ -356,6 +364,7 @@ export class PowderCoatingMakerComponent implements OnInit {
       });
     }, (error: any) => {
       this.loading = false;
+      this.isSubmitting = false;
       console.error(error);
       // Same message extraction bending-maker uses, so the user sees a
       // meaningful error instead of a silent failure.

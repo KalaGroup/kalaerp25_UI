@@ -206,7 +206,7 @@
       <!-- ===== Footer: Submit ===== -->
       <div class="bm-footer">
         <button type="submit" class="bm-btn bm-btn-green bm-btn-submit"
-                name="btnSave" [disabled]="loading()">
+                name="btnSave" [disabled]="loading() || isSubmitting()">
           @if (loading()) {
             <span class="bm-spinner-sm"></span>
           } @else {

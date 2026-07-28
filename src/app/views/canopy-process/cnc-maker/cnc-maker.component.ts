@@ -49,6 +49,9 @@ export class CNCMakerComponent implements OnInit {
   errorMessage: any;
   uploadedPercentage = 0;
   loading = false;
+
+  /** Re-entry guard: blocks a second Submit while a save is in flight (prevents double-entry on double-click). */
+  isSubmitting = false;
  
   // Attachment grid
   AttachmentfieldArray: Array<any> = [];
@@ -282,6 +285,7 @@ export class CNCMakerComponent implements OnInit {
   }
  
   loadKVA(): void {
+    debugger
     const PCCode = this.PC;
     this.isLoading = true;
     this.cncService.getKVA(PCCode, this.selectedMachine).subscribe({
@@ -761,6 +765,10 @@ export class CNCMakerComponent implements OnInit {
       });
       this.objtempCNCPrc.AttachFileDts = AttachFileDts.trim();
  
+      // Guard against a double-click firing a second save before the first responds.
+      if (this.isSubmitting) return;
+      this.isSubmitting = true;
+
       this.loading = true;
       // Remember whether this submit was a normal Submit or an End,
       // so the result popup can show the right title / message.
@@ -769,6 +777,7 @@ export class CNCMakerComponent implements OnInit {
       this.cncService.postCNCSave(this.objtempCNCPrc).subscribe({
         next: (data) => {
           this.loading = false;
+          this.isSubmitting = false;
           const message = (data ?? '').trim();
           // The controller returns Ok(result) even when SubmitCNCAsync
           // produces a validation message like "Insufficient Stock ..."
@@ -779,6 +788,7 @@ export class CNCMakerComponent implements OnInit {
         },
         error: (error) => {
           this.loading = false;
+          this.isSubmitting = false;
           console.log(error);
           // Surface whatever the controller actually returned (e.g.
           // "An error occurred while submitting the CNC process.").

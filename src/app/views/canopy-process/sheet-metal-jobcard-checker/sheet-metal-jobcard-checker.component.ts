@@ -45,6 +45,10 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
   planCodes: { id: number; name: string }[] = [];
   selectedPlanCode: string = ' ';
 
+  // ---- Line dropdown (GetLineByProcess) — replaces the fixed Profitcenter ----
+  lineList: any[] = [];
+  selectedLine: string = '';
+
   showPopup = false;
   selectedDG: any;
   remarks: string = '';
@@ -55,6 +59,9 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
   assignTo: string = '';
   EmpPCCode: string = '';
   isLoading: boolean = false;
+
+  /** Re-entry guard: blocks a second Auth/Reject while a save is in flight (prevents double-entry on double-click). */
+  isSubmitting: boolean = false;
 
   // ===== Result popup (shown after AUTH / REJECT) — same pattern as bending-checker =====
   showResultPopup = false;
@@ -197,8 +204,28 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
   ngOnInit(): void {
     this.isLoading = false;
     this.today = formatDate(new Date(), 'dd-MM-yyyy hh:mm:ss a', 'en-US', '+0530');
-    this.loadPlanCodes();
+    this.loadLineByProcess();
    this.loadCheckerDoneReport();
+  }
+
+  /** Loads the lines for this process. ProcessName is hard-coded to "Sheet Metal". */
+  loadLineByProcess(): void {
+    this.canopyService.GetLineByProcess('Sheet Metal', this.LoginCompCode).subscribe({
+      next: (data) => { this.lineList = data ?? []; },
+      error: (err) => { console.error(err); }
+    });
+  }
+
+  /** On line change: use the selected line's LineWisePC as this.PC, then load plan codes. */
+  onLineSelect(lineWisePC: string): void {
+    this.selectedLine = lineWisePC;
+    this.PC = lineWisePC;
+    // Line change → reset PlanCode + grid, then reload plan codes for the new PC.
+    this.PlanCode = '';
+    this.selectedPlanCode = ' ';
+    this.planCodes = [];
+    this.SheetMetalJobcardCheckerDetailsList = [];
+    this.loadPlanCodes();
   }
 
   private loadPlanCodes(): void {
@@ -466,6 +493,10 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
       return;
     }
 
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     const payload = this.buildPayload('AUTH');
     console.log('AUTH Payload:', payload);
 
@@ -473,12 +504,14 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
     this.canopyService.postSheetMetalJobcardCheckerSave(payload).subscribe({
       next: (response: string) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         const message = (response ?? '').trim();
         const isFailure = this.isFailureMessage(message);
         this.openResultPopup('AUTH', message, isFailure);
       },
       error: (error) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         console.error('API Error:', error);
         const apiMessage =
           (typeof error?.error === 'string' && error.error.trim()) ||
@@ -501,6 +534,10 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
       return;
     }
 
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     const payload = this.buildPayload('REJECT');
     console.log('REJECT Payload:', payload);
 
@@ -508,12 +545,14 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
     this.canopyService.postSheetMetalJobcardCheckerSave(payload).subscribe({
       next: (response: string) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         const message = (response ?? '').trim();
         const isFailure = this.isFailureMessage(message);
         this.openResultPopup('REJECT', message, isFailure);
       },
       error: (error) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         console.error('API Error:', error);
         const apiMessage =
           (typeof error?.error === 'string' && error.error.trim()) ||

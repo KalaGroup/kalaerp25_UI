@@ -34,6 +34,9 @@ export class CNCCheckerComponent implements OnInit {
   /** Drives the in-template loading overlay (replaces ngx-spinner). */
   isLoading = false;
 
+  /** Re-entry guard: blocks a second Auth/Reject while a save is in flight (prevents double-entry on double-click). */
+  isSubmitting = false;
+
   // ---- UI / state ----
   optionCollection: string[] = [];
   dis = false;
@@ -396,6 +399,10 @@ export class CNCCheckerComponent implements OnInit {
   }
 
   private submitChecker(status: 'AUTH' | 'REJECT'): void {
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     const payload = this.buildPayload(status);
     console.log(`${status} Payload:`, payload);
 
@@ -403,6 +410,7 @@ export class CNCCheckerComponent implements OnInit {
     this.cncService.postCNC_chekerSave(payload).subscribe({
       next: (response: string) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         const message = (response ?? '').trim();
         // The controller returns Ok() even when the API reports a
         // logical failure ("Insufficient Stock ..."), so detect it.
@@ -411,6 +419,7 @@ export class CNCCheckerComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
+        this.isSubmitting = false;
         console.error('API Error:', error);
         const apiMessage =
           (typeof error?.error === 'string' && error.error.trim()) ||

@@ -53,6 +53,8 @@ export class FabricationMakerComponent implements OnInit {
   readonly attachments    = signal<IAttachmentRow[]>([]);
 
   readonly loading        = signal(false);
+  /** Re-entry guard: blocks a second Submit while a save is in flight (prevents double-entry on double-click). */
+  readonly isSubmitting   = signal(false);
   readonly message        = signal('');
   readonly showMessage    = signal(false);
   readonly uploadPercent  = signal(0);
@@ -508,6 +510,10 @@ export class FabricationMakerComponent implements OnInit {
       CatID:          this.fabCatID         ?? '0',
     };
 
+    // Guard against a double-click firing a second save before the first responds.
+    if (this.isSubmitting()) return;
+    this.isSubmitting.set(true);
+
     this.loading.set(true);
     const action: 'Submit' | 'End' = this.lblSaveCaption === 'End' ? 'End' : 'Submit';
 
@@ -516,12 +522,14 @@ export class FabricationMakerComponent implements OnInit {
       .subscribe({
         next: (msg) => {
           this.loading.set(false);
+          this.isSubmitting.set(false);
           const message = (msg ?? '').trim();
           const isFailure = this.isFailureMessage(message);
           this.openResultPopup(action, message, isFailure);
         },
         error: (err) => {
           this.loading.set(false);
+          this.isSubmitting.set(false);
           console.error(err);
           const apiMessage =
             (typeof err?.error === 'string' && err.error.trim()) ||

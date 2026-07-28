@@ -184,8 +184,8 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closePopup()">Close</button>
-        <button class="btn btn-primary" [disabled]="!canAuth()"   (click)="onAccept()">Auth</button>
-        <button class="btn btn-danger"  [disabled]="!canReject()" (click)="onReject()">Reject</button>
+        <button class="btn btn-primary" [disabled]="!canAuth() || isSubmitting"   (click)="onAccept()">Auth</button>
+        <button class="btn btn-danger"  [disabled]="!canReject() || isSubmitting" (click)="onReject()">Reject</button>
       </div>
 
     </div>
