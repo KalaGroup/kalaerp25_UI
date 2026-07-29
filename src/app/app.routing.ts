@@ -62,6 +62,11 @@ export const rootRouterConfig: Routes = [
         data: { title: 'Canopy Process', breadcrumb: 'CANOPY PROCESS'}
       },
       {
+        path: 'control-panel',
+        loadChildren: () => import('./views/Control Panel/control-panel.module').then(m => m.ControlPanelModule),
+        data: { title: 'Control Panel', breadcrumb: 'CONTROL PANEL'}
+      },
+      {
         path: 'canopy-assembly',
         loadChildren: () => import('./views/canopy-assembly/canopy-assembly.module').then(m => m.CanopyAssemblyModule),
         data: { title: 'Canopy Assembly', breadcrumb: 'CANOPY ASSEMBLY'}
