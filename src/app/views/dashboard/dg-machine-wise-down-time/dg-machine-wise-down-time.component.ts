@@ -986,11 +986,11 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       const doc = new jsPDF('l', 'mm', 'a4');
       const pageW = doc.internal.pageSize.getWidth();
 
-      // header: company + "Down time breakdown · <period>"
+      // header: company + "<Machine|Department> wise downtime report · <period>"
       doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 108, 141);
       doc.text(pdfSafe(this.chartCompanyName), pageW / 2, 14, { align: 'center' });
       doc.setFontSize(11); doc.setTextColor(40, 40, 40);
-      doc.text(pdfSafe('Down time breakdown  ·  ' + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
+      doc.text(pdfSafe(this.breakdownReportTitle + '  ·  ' + this.breakdownPeriodLabel), pageW / 2, 21, { align: 'center' });
 
       let startY = 26;
 
@@ -1048,7 +1048,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
         });
       }
 
-      doc.save('Down_time_breakdown.pdf');
+      doc.save(this.breakdownReportTitle.replace(/\s+/g, '_') + '.pdf');
     } catch (e) {
       console.error('Breakdown PDF export failed:', e);
       this.errorMessage = 'Failed to generate the breakdown PDF. Please try again.';
@@ -1213,6 +1213,11 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Export heading, driven by the Group By selection (machine vs department/line). */
+  get breakdownReportTitle(): string {
+    return this.breakdownDim === 'machine' ? 'Machine wise downtime report' : 'Department wise downtime report';
+  }
+
   /** Heading label for the current window. */
   get breakdownPeriodLabel(): string {
     if (this.breakdownPeriod === 'all') return 'All time';
@@ -1333,7 +1338,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       t1.value = {
         richText: [
           { text: this.chartCompanyName + '\n', font: { bold: true, size: 14, color: { argb: 'FFFFFFFF' } } },
-          { text: `Machine-wise downtime report        ${this.breakdownPeriodLabel}`, font: { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } } },
+          { text: `${this.breakdownReportTitle}        ${this.breakdownPeriodLabel}`, font: { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } } },
         ],
       };
       t1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true } as any;
@@ -1381,7 +1386,7 @@ export class DgMachineWiseDownTimeComponent implements OnInit, OnDestroy {
       writeRow(['', 'Total', '', '', this.breakdownMachineTotal, this.breakdownLineTotal, this.breakdownCombinedTotal, '100%'], 'total');
 
       const buf = await wb.xlsx.writeBuffer();
-      this.downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Down_time_breakdown.xlsx');
+      this.downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), this.breakdownReportTitle.replace(/\s+/g, '_') + '.xlsx');
     } catch (e) {
       console.error('Breakdown Excel export failed:', e);
       this.errorMessage = 'Failed to generate the breakdown Excel. Please try again.';
