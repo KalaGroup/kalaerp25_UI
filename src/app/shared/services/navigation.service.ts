@@ -210,7 +210,7 @@ export class NavigationService {
       icon: 'factory',
       sub: [
           { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
-
+          {name: 'control-panel-plan', state: 'control-panel/control-panel-plan'},
         // Add more items here if needed in future
       ],
     }
@@ -365,8 +365,8 @@ export class NavigationService {
       tooltip: 'Control Panel',
       icon: 'factory',
       sub: [
- { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
-
+           { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
+           {name: 'control-panel-plan', state: 'control-panel/control-panel-plan'},
         // Add more items here if needed in future
       ],
     },
@@ -645,7 +645,7 @@ export class NavigationService {
       icon: 'factory',
       sub: [
            { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
-
+           {name: 'control-panel-plan', state: 'control-panel/control-panel-plan'},
         // Add more items here if needed in future
       ],
     }
