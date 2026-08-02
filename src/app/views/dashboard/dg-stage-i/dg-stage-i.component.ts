@@ -12,6 +12,7 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 })
 export class DgStageIComponent implements OnInit, OnDestroy {
   userId: string = '';
+  empCode: string = '';
   password: string = '';
   profitcenter_act: string = '';
   profitcenter_old: string = '';
@@ -67,6 +68,7 @@ export class DgStageIComponent implements OnInit, OnDestroy {
       this.profitcenter_old = pccode_Old;
     }
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.empCode = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
@@ -855,6 +857,7 @@ export class DgStageIComponent implements OnInit, OnDestroy {
     formData.append('EngPlay', engStartPlayValue);
     formData.append('EngPartCode', this.scanDetails.engCode);
     formData.append('AltPartcode', this.scanDetails1.altPart);
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
 
     this.dgAssemblyService.submitAssemblyData(formData).subscribe(
       (response: any) => {
@@ -896,6 +899,7 @@ export class DgStageIComponent implements OnInit, OnDestroy {
     formData.append('EngPlay', endEnginePlayInput);
     formData.append('EngPartCode', this.scanDetails2.engCode);
     formData.append('AltPartcode', this.scanDetails3.altPart);
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
 
     if (this.selectedSixMItem) {
       formData.append('QA6M', this.selectedSixMItem);

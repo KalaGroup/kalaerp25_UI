@@ -14,6 +14,7 @@ export class Jobcard2Component implements OnInit {
   pcCode_old: string = '';
   pcDisplay: string = '';
   compCode: string = '';
+  empCode: string = '';
   jobCardCode: string = '';
   remarkText: string = '';
 
@@ -72,6 +73,7 @@ export class Jobcard2Component implements OnInit {
 
   ngOnInit(): void {
     this.compCode = localStorage.getItem('companyId')?.trim() ?? '';
+    this.empCode  = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.pcCode_act = localStorage.getItem('ProfitCenter')?.trim() ?? '';
     this.pcCode_old = localStorage.getItem('ProfitCenter_old')?.trim() ?? '';
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
@@ -543,6 +545,7 @@ export class Jobcard2Component implements OnInit {
       PCCode: line.ParentDgPC,
       PCCode_Act: line.LineWisePC,
       Remark: this.remarkText,
+      EmpCode: this.empCode,
       JobCard2Dts: selectedRows,
     };
 

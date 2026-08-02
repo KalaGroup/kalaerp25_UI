@@ -14,6 +14,7 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 export class DgStageIIIComponent implements OnInit, OnDestroy {
   [key: string]: any;
   userId: string = '';
+  empCode: string = '';
   profitcenter_old: string = '';
   profitcenter_act: string = '';
 
@@ -277,6 +278,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
       this.profitcenter_old = pccode_Old;
     }
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.empCode = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
@@ -1252,6 +1254,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
     formData.append('AltPartcode', this.scanDetails.Start.alternator.altPart);
     formData.append('CpySrno', this.scanDetails.Start.canopy.qrSrNo);
     formData.append('CpyPartcode', this.scanDetails.Start.canopy.cpyPart);
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
     this.batteryScanDetailsStart.forEach((battery, index) => {
       const srNoKey = index === 0 ? 'BatSrno' : `Bat${index + 1}Srno`;
       const partCodeKey =
@@ -1329,6 +1332,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
     formdata.append('StageNo', '4');
     formdata.append('PfbCode', this.pFbCode);
     formdata.append('JobCardCode', this.planNoEnd);
+    formdata.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
     if (fetchedCheckPoints.length > 0) {
       formdata.append('PrcChkDtsJson', JSON.stringify(fetchedCheckPoints));
     }

@@ -14,6 +14,7 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 })
 export class DgPackingSlip implements OnInit, OnDestroy {
   userId: string = '';
+  empCode: string = '';
   profitcenter: string = '';
 
   // ── Line-wise PC selector (replaces login-derived PC for save) ─
@@ -246,6 +247,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
       this.profitcenter = pccode;
     }
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.empCode = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
@@ -1101,6 +1103,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
     formData.append('PCCode_Old', pccode_old);
     formData.append('PSTime', 'PSStartTime');
     formData.append('PSStartTime', this.psstarttimePSStart);
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
     formData.append('DGSrNo', this.dgSerialNo);
     formData.append('TRCode', this.trCode);
     formData.append('DiNo', this.diNo);
@@ -1177,6 +1180,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
     formData.append('PCCode_Old', pccode_old);
     formData.append('PSTime', 'PSEndTime');
     formData.append('PSEndTime', this.psendtimePSEnd);
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
     formData.append('PSCode', this.psCode);
     formData.append('strSrNo', this._strSrNo);
     formData.append('TRCode', this.trCode);

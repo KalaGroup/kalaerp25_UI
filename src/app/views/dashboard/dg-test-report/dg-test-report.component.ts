@@ -14,6 +14,7 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 })
 export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   userId: string = '';
+  empCode: string = '';
   profitcenter_old: string = '';
   profitcenter_act: string = '';
 
@@ -371,6 +372,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
       this.profitcenter_old = pccode_Old;
     }
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.empCode = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.loadLineRights();
     this.initReportDateRange();
     this.installZxingConsoleFilter();
@@ -1594,6 +1596,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     formData.append('DGSrNo', this.dgSerialNo);
     formData.append('TRCode', this.trCode);
     formData.append('TRTime', 'TRStart');
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
     formData.append('QA6M', this.selectedSixMItem);
     formData.append('QAStatus', 'D');
     formData.append('DieselQty', this.dieselQtyByUser);
@@ -1634,6 +1637,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     formData.append('DGSrNo', this.dgSerialNo);
     formData.append('TRCode', this.trCode);
     formData.append('TRTime', 'DGEnd');
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
     formData.append('QA6M', this.selectedSixMItem);
     formData.append('QAStatus', 'D');
     formData.append('DieselQty', this.dieselQtyByUser);
@@ -1661,6 +1665,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     formData.append('DGSrNo', this.dgSerialNo);
     formData.append('TRCode', this.trCode);
     formData.append('TRTime', 'DGStart');
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
 
     this.dgAssemblyService.submitTestReportData(formData).subscribe(
       (response: any) => {
@@ -1681,6 +1686,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     formData.append('DGSrNo', this.dgSerialNo);
     formData.append('TRCode', this.trCode);
     formData.append('TRTime', 'TREnd');
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
 
     this.dgAssemblyService.submitTestReportData(formData).subscribe(
       (response: any) => {
