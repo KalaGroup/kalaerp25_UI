@@ -65,7 +65,12 @@ export class Signin2Component implements OnInit, AfterViewInit, OnDestroy {
     .subscribe(response => {
       console.log('Success');
       console.log(this.jwtAuth.return);
-      this.router.navigateByUrl(this.jwtAuth.return);
+      const empCode = (response?.empCode || '').toString().trim().toLowerCase();
+      if (empCode === 'sk') {
+        this.router.navigateByUrl('/marketing/mof-nfa-level');
+      } else {
+        this.router.navigateByUrl(this.jwtAuth.return);
+      }
     }, err => {
       this.submitButton.disabled = false;
       this.errorMsg = err;//.error?.message||'Incorrect username or password..!';

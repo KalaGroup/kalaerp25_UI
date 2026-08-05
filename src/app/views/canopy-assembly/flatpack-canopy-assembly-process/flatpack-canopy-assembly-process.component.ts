@@ -23,13 +23,16 @@ export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
   heading: string = 'Line1';   // legacy "ULHeading" — kept as-is so the SP path is unchanged
 
   // ── Line list (hardcoded) ─────────────────────────────────────
-  // Flat Pack Canopy Assembly is dedicated to three lines — all sharing
-  // ParentDgPC 01.093. Hardcoded on purpose: no backend / position-rights
-  // lookup for this page. If a fourth line joins, add it here.
+  // Flat Pack Canopy Assembly runs against these six canopy-assembly lines.
+  // Hardcoded on purpose — no dynamic position-rights lookup for this form.
+  // (LineWisePC + ParentDgPC are read from the selected row on Save.)
   readonly lineRights: LineRight[] = [
-    { LineWisePC: '01.124', LineDesc: 'Unit 1 Line A Flat Packing', ParentDgPC: '01.093' },
-    { LineWisePC: '01.125', LineDesc: 'Unit 1 Line B Flat Packing', ParentDgPC: '01.093' },
-    { LineWisePC: '01.126', LineDesc: 'Unit 1 Line C Flat Packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.190', LineDesc: 'Unit 1 Line A Canopy Assembly',   ParentDgPC: '01.005' },
+    { LineWisePC: '03.069', LineDesc: 'Unit 4 Line B Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '03.181', LineDesc: 'Unit 4 Line C Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '28.025', LineDesc: 'Unit BLR Line A Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '28.039', LineDesc: 'Unit BLR Line B Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '28.116', LineDesc: 'Unit BLR Line C Canopy Assembly', ParentDgPC: '28.017' },
   ];
   selectedLineWisePC: string = '';
 
@@ -266,13 +269,23 @@ export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
   }
 
   private doSave(): void {
-    const pcForSave = this.selectedLineRight?.LineWisePC ?? '';
-    if (!pcForSave) { this.errorMessage = 'Please select Line!'; return; }
+    // Resolve the selected row ONCE so LineWisePC + ParentDgPC always come
+    // from the same record (never allow drift where PCCode is from one line
+    // and ParentDgPC accidentally blank / stale).
+    const selectedLine = this.selectedLineRight;
+    if (!selectedLine || !selectedLine.LineWisePC) {
+      this.errorMessage = 'Please select Line!'; return;
+    }
+    if (!selectedLine.ParentDgPC) {
+      this.errorMessage = `Line "${selectedLine.LineDesc}" is missing its ParentDgPC — cannot save.`;
+      return;
+    }
+    const pcForSave = selectedLine.LineWisePC;
 
     this.isSaving = true;
     this.flatpackService.submit({
       PCCode:         pcForSave,
-      ParentDgPC:     this.selectedLineRight?.ParentDgPC ?? '',
+      ParentDgPC:     selectedLine.ParentDgPC,
       CompanyCode:    this.companyCode || '01',
       EmpCode:        this.empCode,
       ProcessType:    this.selectedProcessType,

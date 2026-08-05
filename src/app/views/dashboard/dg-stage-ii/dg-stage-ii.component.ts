@@ -13,6 +13,7 @@ import { JwtAuthService } from 'app/shared/services/auth/jwt-auth.service';
 })
 export class DgStageIIComponent implements OnInit, OnDestroy {
   userId: string = '';
+  empCode: string = '';
   password: string = '';
   profitcenter_old: string = '';
   profitcenter_act: string = '';
@@ -168,6 +169,7 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
       this.profitcenter_old = pccode_Old;
     }
     this.prmCode = localStorage.getItem('positionRoleId')?.trim() ?? '';
+    this.empCode = localStorage.getItem('employeeCode')?.trim() ?? '';
     this.loadLineRights();
     this.installZxingConsoleFilter();
     this.installDeviceChangeListener();
@@ -797,6 +799,7 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
     formData.append('AltPartcode', this.alternatorScanDetails.altPart);
     formData.append('CpySrno', this.canopyScandetails.qrSrNo);
     formData.append('CpyPartcode', this.canopyScandetails.cpyPart);
+    formData.append('EmpCode', this.empCode); // for InsertLoginTransactionDetails audit log
 
     this.batteryScanDetails.forEach((battery, index) => {
       const srNoKey = index === 0 ? 'BatSrno' : `Bat${index + 1}Srno`;
