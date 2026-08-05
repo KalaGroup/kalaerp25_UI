@@ -1,8 +1,8 @@
 .mof-container {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   background-color: #673ab7;
-  overflow-y: auto;
 }
 
 /* Header Styles */
@@ -172,8 +172,8 @@
 /* ===== Detail View Styles ===== */
 .mof-detail {
   background-color: white;
-  height: calc(100vh - 56px);
-  overflow-y: auto;
+  min-height: calc(100vh - 56px);
+  min-height: calc(100dvh - 56px);
   display: flex;
   flex-direction: column;
 }
@@ -181,7 +181,8 @@
 .detail-content {
   flex: 1;
   padding: 16px;
-  padding-bottom: 80px;
+  /* keep last field (NFA Level Remark) clear of the fixed HOLD/AUTH bar */
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
 /* --- Row separator lines --- */
@@ -268,6 +269,7 @@
   justify-content: center;
   gap: 16px;
   padding: 10px 20px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
   background-color: white;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
   z-index: 99;
