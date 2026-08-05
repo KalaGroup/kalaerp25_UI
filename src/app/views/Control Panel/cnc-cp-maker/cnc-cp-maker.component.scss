@@ -1,0 +1,554 @@
+/* ============================================================
+   CNC Maker - "Sheet Metal" navy/teal theme
+   Component-scoped. Self-contained (no Bootstrap needed).
+   ============================================================ */
+
+:host {
+  --navy: #1e2a38;
+  --teal: #15a07a;
+  --teal-btn: #0f7a5e;
+  --teal-soft: #dbf3ec;
+  --teal-soft-tx: #0e6b52;
+  --green-btn: #5fae80;
+  --green-soft: #ddf0de;
+  --green-soft-tx: #2f7d4f;
+  --danger: #d9534f;
+  --line: #e7ebef;
+  --label: #8a93a0;
+  --text: #28323d;
+
+  display: block;
+  padding: 16px;
+  max-width: 1240px;
+  margin: 0 auto;
+  color: var(--text);
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ---------- Card ---------- */
+.sm-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(30, 42, 56, 0.08);
+  overflow: hidden;
+}
+
+/* ---------- Header ---------- */
+.sm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  background: var(--navy);
+}
+
+.sm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--teal);
+  color: #fff;
+  flex: none;
+}
+
+.sm-badge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sm-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+}
+
+/* ---------- Body ---------- */
+.sm-body {
+  padding: 22px;
+}
+
+/* ---------- Field grids ---------- */
+.sm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.sm-grid-computed {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-items: end;
+}
+
+.sm-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sm-field label {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.sm-field-action {
+  justify-content: flex-end;
+}
+
+/* ---------- Inputs / selects ---------- */
+.sm-field select,
+.sm-field input,
+.sm-remark {
+  width: 100%;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid #d5dbe1;
+  border-radius: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sm-field select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a93a0' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.sm-field select:focus,
+.sm-field input:focus,
+.sm-remark:focus {
+  outline: 0;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(21, 160, 122, 0.16);
+}
+
+/* Read-only / computed fields */
+.sm-readonly {
+  background: #f3f6f8 !important;
+  color: #51606d;
+  font-weight: 600;
+}
+
+.sm-readonly::placeholder {
+  color: #aab4bd;
+  font-weight: 400;
+}
+
+/* ---------- Buttons ---------- */
+.sm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s, transform 0.05s, opacity 0.15s;
+}
+
+.sm-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sm-btn:hover {
+  filter: brightness(0.95);
+}
+
+.sm-btn:active {
+  transform: translateY(1px);
+}
+
+.sm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sm-btn-teal {
+  background: var(--teal-btn);
+}
+
+.sm-btn-green {
+  background: var(--green-btn);
+}
+
+.sm-btn-danger {
+  background: var(--danger);
+}
+
+.sm-btn-xs {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+.sm-btn-submit {
+  min-width: 130px;
+  flex: none;
+}
+
+/* ---------- Section label ---------- */
+.sm-section-label {
+  margin: 24px 0 10px;
+  padding-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #6c7682;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ---------- Tables ---------- */
+.sm-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.sm-table thead th {
+  padding: 11px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #5c6671;
+  text-align: left;
+  background: #f6f8fa;
+  border-bottom: 1px solid var(--line);
+}
+
+.sm-table thead th.th-teal {
+  background: var(--teal-soft);
+  color: var(--teal-soft-tx);
+}
+
+.sm-table thead th.th-green {
+  background: var(--green-soft);
+  color: var(--green-soft-tx);
+}
+
+.sm-table tbody td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #f0f3f5;
+  color: var(--text);
+}
+
+.sm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sm-table tbody tr:hover td {
+  background: #f9fbfc;
+}
+
+.td-center {
+  text-align: center;
+}
+
+.td-teal {
+  background: rgba(21, 160, 122, 0.06);
+  font-weight: 600;
+}
+
+.td-green {
+  background: rgba(95, 174, 128, 0.1);
+  font-weight: 600;
+}
+
+.sm-add-row td {
+  background: #fbfcfd;
+}
+
+.sm-file-name {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.sm-muted {
+  font-size: 11px;
+  color: #9aa4ae;
+}
+
+/* ---------- Empty state ---------- */
+.sm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 46px 16px;
+  color: #9aa4ae;
+}
+
+.sm-empty svg {
+  width: 40px;
+  height: 40px;
+  color: #cdd5dc;
+}
+
+.sm-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.sm-empty b {
+  color: #5c6671;
+}
+
+.sm-empty-sm {
+  padding: 18px 16px;
+}
+
+/* ---------- File input ---------- */
+.sm-file {
+  font-size: 12px;
+  border: 1px dashed #cbd5dd;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fbfcfd;
+  width: 100%;
+  box-sizing: border-box;
+  height: auto !important;
+}
+
+/* ---------- Upload progress ---------- */
+.sm-progress {
+  margin-top: 6px;
+  height: 5px;
+  width: 100%;
+  background: #e7ebef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sm-progress-bar {
+  height: 100%;
+  background: var(--teal);
+  transition: width 0.2s;
+}
+
+.sm-msg {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--teal-soft-tx);
+}
+
+/* ---------- Footer ---------- */
+.sm-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.sm-footer-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--label);
+  flex: none;
+}
+
+.sm-remark {
+  flex: 1 1 auto;
+}
+
+.sm-spinner-sm {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sm-spin 0.7s linear infinite;
+}
+
+/* ---------- Full-screen loading overlay ---------- */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 42, 56, 0.6);
+  z-index: 1050;
+}
+
+.loading-box {
+  text-align: center;
+  padding: 20px 28px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.loading-text {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.spinner-border {
+  display: inline-block;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 0.25em solid #fff;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sm-spin 0.75s linear infinite;
+}
+
+.text-light {
+  color: #fff;
+}
+
+@keyframes sm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 880px) {
+  .sm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .sm-grid {
+    grid-template-columns: 1fr;
+  }
+  .sm-footer {
+    flex-wrap: wrap;
+  }
+  .sm-remark {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .sm-btn-submit {
+    flex: 1 1 100%;
+  }
+}
+/* ============================================
+   RESULT POPUP (Submit / End success or failure)
+   ============================================ */
+.result-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1080;
+  animation: result-fade 0.18s ease-out;
+}
+
+.result-modal {
+  background: #fff;
+  border-radius: 14px;
+  width: 92%;
+  max-width: 420px;
+  padding: 28px 28px 22px;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.25);
+  animation: result-pop 0.22s ease-out;
+}
+
+.result-modal__icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d1fae5;
+  color: #047857;
+
+  svg {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.result-modal--end .result-modal__icon {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.result-modal__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.result-modal__message {
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #475569;
+  word-break: break-word;
+}
+
+.result-modal__btn {
+  min-width: 120px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: #0f766e;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+
+  &:hover  { background: #0d6660; }
+  &:active { transform: translateY(1px); }
+}
+
+.result-modal--end .result-modal__btn {
+  background: #b91c1c;
+  &:hover { background: #991b1b; }
+}
+
+@keyframes result-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes result-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
