@@ -29,7 +29,7 @@
                 (ngModelChange)="onLineChange()">
           <option value="" disabled>Select Line</option>
           <option *ngFor="let l of lineRights" [value]="l.LineWisePC">
-            {{ l.LineDesc }}
+            {{ l.LineDesc }} &rarr; {{ l.LineWisePC }}
           </option>
         </select>
       </div>
