@@ -62,7 +62,12 @@ export class SigninComponent implements OnInit, AfterViewInit, OnDestroy {
     
     this.jwtAuth.signin(signinData.username, signinData.password)
     .subscribe(response => {
-      this.router.navigateByUrl(this.jwtAuth.return);
+      const empCode = (response?.empCode || '').toString().trim().toLowerCase();
+      if (empCode === 'sk') {
+        this.router.navigateByUrl('/marketing/mof-nfa-level');
+      } else {
+        this.router.navigateByUrl(this.jwtAuth.return);
+      }
     }, err => {
       this.submitButton.disabled = false;
       this.progressBar.mode = 'determinate';
