@@ -439,6 +439,7 @@ export class FabricationMakerComponent implements OnInit {
   // ============ Submit ============
 
   onFormSubmit(_form: NgForm): void {
+    debugger
     const parts = this.partDtsList();
     if (parts == null) {
       alert('Please Search Process Details');

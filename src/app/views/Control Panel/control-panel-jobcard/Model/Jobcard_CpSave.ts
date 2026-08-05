@@ -4,6 +4,6 @@ export interface IJobcard_CpSave {
   PCCode_Act: string;
   PCCode: string;
   CompCode: string;
-  JobCard_CpyDts: string;
+  JobCard_CPDts: string;
   Remark: string;
 }

@@ -210,8 +210,9 @@ export class NavigationService {
       icon: 'factory',
       sub: [
           { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
-
-        // Add more items here if needed in future
+          { name: 'control-panel-jobcard-checker', state: 'control-panel/control-panel-jobcard-checker' },
+          { name: 'cnc-cp-maker', state: 'control-panel/cnc-cp-maker' }
+          // Add more items here if needed in future
       ],
     }
 
@@ -365,9 +366,10 @@ export class NavigationService {
       tooltip: 'Control Panel',
       icon: 'factory',
       sub: [
- { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
-
-        // Add more items here if needed in future
+          { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
+          { name: 'control-panel-jobcard-checker', state: 'control-panel/control-panel-jobcard-checker' },
+          { name: 'cnc-cp-maker', state: 'control-panel/cnc-cp-maker' }
+          // Add more items here if needed in future
       ],
     },
 
@@ -645,8 +647,10 @@ export class NavigationService {
       icon: 'factory',
       sub: [
            { name: 'control-panel-jobcard', state: 'control-panel/control-panel-jobcard' },
+          { name: 'control-panel-jobcard-checker', state: 'control-panel/control-panel-jobcard-checker' },
+          { name: 'cnc-cp-maker', state: 'control-panel/cnc-cp-maker' }
 
-        // Add more items here if needed in future
+          // Add more items here if needed in future
       ],
     }
 

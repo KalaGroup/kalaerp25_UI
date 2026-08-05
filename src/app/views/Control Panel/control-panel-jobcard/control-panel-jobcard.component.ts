@@ -113,6 +113,7 @@ export class ControlPanelJobcardComponent implements OnInit {
   }
 
   onFormSubmit(form: NgForm): void {
+    debugger
     this.clearMessages();
 
     if (!this.planList.length) {
@@ -175,7 +176,7 @@ export class ControlPanelJobcardComponent implements OnInit {
       PCCode_Act:  this.selectedLine,                 // LineWisePC of the selected line
       PCCode:      selectedLineObj?.ParentDgPC ?? '', // ParentDgPC of the selected line
       CompCode:    this.LoginCompCode,
-      JobCard_CpyDts: dtsStr,
+      JobCard_CPDts: dtsStr,
       Remark:         form.value.txtRemark.trim()
     };
 
@@ -265,7 +266,7 @@ export class ControlPanelJobcardComponent implements OnInit {
       PCCode_Act: '',
       PCCode: '',
       CompCode: '',
-      JobCard_CpyDts: '',
+      JobCard_CPDts: '',
       Remark: ''
     };
   }
