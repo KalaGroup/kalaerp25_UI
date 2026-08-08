@@ -456,6 +456,7 @@ export class CanopyAssemblyProcessComponent implements OnInit {
         this.isSaving = false;
         this.successMessage = resp?.Message
           || `Process ${resp?.PFBCode ?? ''} saved successfully.`;
+          this.resetForm();
       },
       error: (err) => {
         this.isSaving = false;
@@ -513,4 +514,30 @@ export class CanopyAssemblyProcessComponent implements OnInit {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
+
+  private resetForm(): void {
+
+  // Keep today's date
+  this.todayIso = this.toIsoDate(new Date());
+
+  // Reset entire form
+  this.selectedLineWisePC = '';
+  this.resetFromLine();
+
+  this.attachments = [];
+  this.pendingFile = null;
+  this.uploadProgress = 0;
+  this.isUploading = false;
+
+  this.partRows = [];
+  this.assemblyKitRows = [];
+
+  this.isLoading = false;
+  this.isSearching = false;
+
+  const input = document.getElementById('attachmentInput') as HTMLInputElement | null;
+  if (input) {
+    input.value = '';
+  }
+}
 }

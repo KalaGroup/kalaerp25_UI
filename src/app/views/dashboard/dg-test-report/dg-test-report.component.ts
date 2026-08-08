@@ -1423,6 +1423,25 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
             dslPartCode: response.DieselPart,
           };
 
+          // ── Auto-verify Engine + Alternator on DGStart / DGEnd / TREnd ─────
+          // TRStart phase still requires a physical Engine + Alternator QR scan
+          // (that's when the DG-engine-alt binding is first recorded). For the
+          // three later phases, the identity is already frozen — re-scanning is
+          // redundant and slows the operator down. Auto-copy the DG-scan
+          // response's serials into the `scannedX` state so:
+          //   • The template's ngClass equality check evaluates true → green
+          //   • Any Save-button gate keyed on the same equality unlocks
+          // Engine + Alternator scanner buttons stay visible (Option B) — an
+          // operator can still re-scan manually if they want to double-check.
+          // No API contract changes; this is a UI-side auto-fill of state that
+          // the physical re-scan would have populated identically.
+          if (this.stage === 'DGStart' || this.stage === 'DGEnd' || this.stage === 'TREnd') {
+            this.scannedEngineQrResult[this.stage] =
+              this.scanDetails[this.stage].engine.qrSrNo ?? '';
+            this.scannedAlternatorQrResult[this.stage] =
+              this.scanDetails[this.stage].alternator.qrSrNo ?? '';
+          }
+
           this.scanDetails[this.stage].ewppdf = {};
           this.trCode = response.TRCode;
           this.dgSerialNo = response.SerialNo;
