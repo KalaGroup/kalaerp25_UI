@@ -25,9 +25,19 @@ export class CanopyAssemblyPlanComponent implements OnInit, OnDestroy {
   todayIso: string = '';
   cpCode: string = '';
 
-  // ── Line-rights dropdown (matches dg-test-report / dg-stage-i idiom) ──
-  prmCode: string = '';
-  lineRights: LineRight[] = [];
+  // ── Line list (hardcoded — same six canopy-assembly lines used by the
+  //    Flatpack Canopy Assembly Process form). No position-role fetch;
+  //    every operator sees the same six lines and picks one.
+  //    On selection: LineWisePC + ParentDgPC are read from the row and
+  //    sent to the backend as-is (see doSave()).
+  readonly lineRights: LineRight[] = [
+    { LineWisePC: '01.190', LineDesc: 'Unit 1 Line A Canopy Assembly',   ParentDgPC: '01.005' },
+    { LineWisePC: '03.069', LineDesc: 'Unit 4 Line B Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '03.181', LineDesc: 'Unit 4 Line C Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '28.025', LineDesc: 'Unit BLR Line A Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '28.039', LineDesc: 'Unit BLR Line B Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '28.116', LineDesc: 'Unit BLR Line C Canopy Assembly', ParentDgPC: '28.017' },
+  ];
   selectedLineWisePC: string = '';
 
   // ── Plan window ───────────────────────────────────────────────
@@ -86,8 +96,13 @@ export class CanopyAssemblyPlanComponent implements OnInit, OnDestroy {
     this.pcName      = localStorage.getItem('profitCenterName')?.trim() ?? '';
     this.companyCode = localStorage.getItem('companyId')?.trim() ?? '01';
     this.empCode     = localStorage.getItem('employeeCode')?.trim() ?? '';
-    this.prmCode     = localStorage.getItem('positionRoleId')?.trim() ?? '';
-    this.loadLineRights();
+    // Line list is hardcoded (see lineRights above). No API fetch.
+    // Auto-select the sole entry when the list is length 1 — keeps parity
+    // with prior UX where a single-line position auto-picked itself.
+    if (this.lineRights.length === 1) {
+      this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+      this.onLineChange();
+    }
 
     // Default plan window = today → today + 6 days.
     const today = new Date();
@@ -127,21 +142,6 @@ export class CanopyAssemblyPlanComponent implements OnInit, OnDestroy {
   // ── Line-rights ───────────────────────────────────────────────
   get selectedLineRight(): LineRight | undefined {
     return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
-  }
-
-  private loadLineRights(): void {
-    if (!this.prmCode) { this.lineRights = []; return; }
-    this.planService.getLineRights(this.prmCode).subscribe({
-      next: (rows) => {
-        this.lineRights = Array.isArray(rows) ? rows : [];
-        // Auto-select for single-line positions so the dropdown isn't blank.
-        if (this.lineRights.length === 1) {
-          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
-          this.onLineChange();
-        }
-      },
-      error: () => { this.lineRights = []; },
-    });
   }
 
   // Triggered every time the user changes the Select Line dropdown.
@@ -322,13 +322,23 @@ export class CanopyAssemblyPlanComponent implements OnInit, OnDestroy {
   }
 
   private doSave(): void {
-    this.isSaving = true;
-    const pcForSave = this.selectedLineRight?.LineWisePC || this.pcCode;
-    const parentForSave = this.selectedLineRight?.ParentDgPC || '';
+    // Resolve the selected line ONCE so LineWisePC + ParentDgPC always come
+    // from the same hardcoded row (no drift where PCCode is from one line
+    // and ParentDgPC accidentally blank / stale).
+    const selectedLine = this.selectedLineRight;
+    if (!selectedLine || !selectedLine.LineWisePC) {
+      this.errorMessage = 'Please select a Line before saving.';
+      return;
+    }
+    if (!selectedLine.ParentDgPC) {
+      this.errorMessage = `Line "${selectedLine.LineDesc}" is missing its ParentDgPC — cannot save.`;
+      return;
+    }
 
+    this.isSaving = true;
     this.planService.submit({
-      PCCode:      pcForSave,
-      ParentDgPC:  parentForSave,
+      PCCode:      selectedLine.LineWisePC,
+      ParentDgPC:  selectedLine.ParentDgPC,
       CompanyCode: this.companyCode || '01',
       EmpCode:     this.empCode,
       FromDt:      this.fromDate,

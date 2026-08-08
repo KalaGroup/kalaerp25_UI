@@ -580,11 +580,33 @@ export class Jobcard1Component implements OnInit {
   }
 
   // ── Extract friendly message from HttpErrorResponse ────────────
+  //   Surfaces the backend's business-rule validation messages
+  //   (e.g. "Engine SrNo Not available For DG …") to the user instead of
+  //   a generic banner. Handles both string bodies (responseType='text')
+  //   and object bodies ({ message: '…' }).
   private extractErrorMessage(err: any): string {
     const body = err?.error;
-    if (typeof body === 'string' && body.trim()) return body.trim();
+
+    // Case 1 — string body (most common: BadRequest("…") + responseType:'text').
+    //   ASP.NET Core wraps it in JSON quotes when Content-Type is application/json,
+    //   so strip a leading/trailing quote pair if present.
+    if (typeof body === 'string' && body.trim()) {
+      let msg = body.trim();
+      if (msg.length >= 2 && msg.startsWith('"') && msg.endsWith('"')) {
+        msg = msg.substring(1, msg.length - 1);
+      }
+      return msg;
+    }
+
+    // Case 2 — object body ({ message } / { title }).
     if (body?.message && typeof body.message === 'string') return body.message;
+    if (body?.title   && typeof body.title   === 'string') return body.title;
+
+    // Case 3 — Angular ErrorEvent (client-side / CORS / offline).
     if (err?.status === 0) return 'Cannot reach server. Check your connection and try again.';
+
+    // Fallback — surface the HTTP status text so at least SOMETHING is informative.
+    if (err?.statusText) return `Submit failed: ${err.statusText}. Please try again.`;
     return 'Failed to submit job card. Please try again.';
   }
 

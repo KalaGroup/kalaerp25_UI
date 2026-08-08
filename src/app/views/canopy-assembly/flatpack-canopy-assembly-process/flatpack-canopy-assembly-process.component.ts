@@ -23,16 +23,14 @@ export class FlatpackCanopyAssemblyProcessComponent implements OnInit {
   heading: string = 'Line1';   // legacy "ULHeading" — kept as-is so the SP path is unchanged
 
   // ── Line list (hardcoded) ─────────────────────────────────────
-  // Flat Pack Canopy Assembly runs against these six canopy-assembly lines.
-  // Hardcoded on purpose — no dynamic position-rights lookup for this form.
-  // (LineWisePC + ParentDgPC are read from the selected row on Save.)
+  // Flat Pack Canopy Assembly runs against the three Flat Packing lines
+  // in Unit 1, all sharing ParentDgPC 01.093. Hardcoded — no dynamic
+  // position-rights lookup for this form. (LineWisePC + ParentDgPC are
+  // read from the selected row on Save.)
   readonly lineRights: LineRight[] = [
-    { LineWisePC: '01.190', LineDesc: 'Unit 1 Line A Canopy Assembly',   ParentDgPC: '01.005' },
-    { LineWisePC: '03.069', LineDesc: 'Unit 4 Line B Canopy Assembly',   ParentDgPC: '03.038' },
-    { LineWisePC: '03.181', LineDesc: 'Unit 4 Line C Canopy Assembly',   ParentDgPC: '03.038' },
-    { LineWisePC: '28.025', LineDesc: 'Unit BLR Line A Canopy Assembly', ParentDgPC: '28.017' },
-    { LineWisePC: '28.039', LineDesc: 'Unit BLR Line B Canopy Assembly', ParentDgPC: '28.017' },
-    { LineWisePC: '28.116', LineDesc: 'Unit BLR Line C Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '01.124', LineDesc: 'Unit 1 Line A Flat Packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.125', LineDesc: 'Unit 1 Line B Flat packing', ParentDgPC: '01.093' },
+    { LineWisePC: '01.126', LineDesc: 'Unit 1 Line C Flat Packing', ParentDgPC: '01.093' },
   ];
   selectedLineWisePC: string = '';
 

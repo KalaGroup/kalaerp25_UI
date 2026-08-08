@@ -871,15 +871,16 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
     const canopyValid = this.isCanopyScannedSuccessfully();
 
     // Battery validation - optional but must be valid if scanned
-    const batteryValid = this.areBatteriesValid();
+    //const batteryValid = this.areBatteriesValid();
 
     // Stk mismatch checks (only if old stk values are present)
     const cpyStkMismatch = !!this.oldCpyStk && this.canopyScandetails.cpyStk != this.oldCpyStk;
-    const batStkMismatch = this.batteryScanDetails.some((bat, i) =>
-      this.oldBatteryStks[i] && bat.stk != this.oldBatteryStks[i]
-    );
+    // const batStkMismatch = this.batteryScanDetails.some((bat, i) =>
+    //   this.oldBatteryStks[i] && bat.stk != this.oldBatteryStks[i]
+    // );
 
-    return !engineValid || !alternatorValid || !canopyValid || !batteryValid || cpyStkMismatch || batStkMismatch;
+    //return !engineValid || !alternatorValid || !canopyValid || !batteryValid || cpyStkMismatch || batStkMismatch;
+    return !engineValid || !alternatorValid || !canopyValid || cpyStkMismatch;
   }
 
   // Engine turns green when qrSrNo exists
