@@ -84,6 +84,19 @@
   <div *ngIf="showDetail && selectedMof" class="mof-detail">
     <div class="detail-content">
 
+            <!-- Row 12: NFA Level Remark (Editable) -->
+      <div class="detail-row full-width">
+        <div class="detail-field">
+          <span class="detail-label">NFA Level Remark</span>
+          <textarea
+            class="remark-input"
+            [(ngModel)]="nfaRemark"
+            placeholder="Enter NFA Level Remark..."
+            rows="3">
+          </textarea>
+        </div>
+      </div>
+
       <!-- Row 1: MOF No, Branch, OrderTaken By -->
       <div class="detail-row three-col">
         <div class="detail-field">
@@ -237,7 +250,7 @@
       </div>
 
       <!-- Row 12: NFA Level Remark (Editable) -->
-      <div class="detail-row full-width">
+      <!-- <div class="detail-row full-width">
         <div class="detail-field">
           <span class="detail-label">NFA Level Remark</span>
           <textarea
@@ -247,7 +260,7 @@
             rows="3">
           </textarea>
         </div>
-      </div>
+      </div> -->
 
     </div>
 
