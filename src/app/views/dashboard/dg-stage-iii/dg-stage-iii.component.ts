@@ -1083,6 +1083,26 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
             this.dgKRMEnd = data.KRM || '';
             const krmSrNoEnd = this.scanDetails.End.krm.qrSrNo;
             this.krmFoundEnd = !!data.KRM && data.KRM !== 'NO' && !!krmSrNoEnd && krmSrNoEnd !== '0';
+
+            // ── QA End tab: auto-verify every component on Engine scan ─────────
+            // At QA End the DG's component identity (alt / canopy / batt / CP1 /
+            // CP2 / KRM) was already locked in during Stage 3 Start. Re-scanning
+            // each of them individually just to turn them green adds friction
+            // with no data value. Copy the API-supplied qrSrNo into the
+            // per-component "scanned" state so the template's equality check
+            // (green vs red) evaluates true immediately, and Save unlocks.
+            // Scanner buttons stay visible for optional double-checks. Start
+            // tab is untouched — that's where the linkage is first recorded.
+            this.scannedQrResultAlternatorEnd = this.scanDetails.End.alternator?.qrSrNo ?? '';
+            this.scannedQrResultCanopyEnd     = this.scanDetails.End.canopy?.qrSrNo ?? '';
+            this.scannedQrResultCP1End        = this.scanDetails.End.controlPanel1?.qrSrNo ?? '';
+            this.scannedQrResultCP2End        = this.scanDetails.End.controlPanel2?.qrSrNo ?? '';
+            this.scannedQrResultKRMEnd        = this.scanDetails.End.krm?.qrSrNo ?? '';
+            if (Array.isArray(this.scanDetails.End.battery)) {
+              this.scannedBatteryQrResultsEnd = this.scanDetails.End.battery.map(
+                (b: any) => b?.qrSrNo ?? ''
+              );
+            }
           }
 
           this.fetchDGkitDetails(this.dgPartcodeStart);
@@ -1311,6 +1331,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
           this.warningMessage = response.Message; // Show the whole message
         } else {
           this.successMessage = response.Message;
+          this.resetStartTab();
         }
       },
       (error: any) => {
@@ -1355,6 +1376,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
         this.isSaving = false;
         console.log('API Success Response:', response);
         this.successMessage = response.Message;
+        this.resetEndTab();
       },
       (error: any) => {
         this.isSaving = false;
@@ -1362,6 +1384,84 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
         this.showError(this.extractApiErrorMessage(error));
       }
     );
+  }
+
+  // Reset only the Start-tab scan + display state after a successful save.
+  // Line dropdown, tab position and cross-tab context are preserved.
+  private resetStartTab(): void {
+    this.scanDetails.Start = {
+      engine:        { qrSrNo: '', engDesc: '', engCode: '' },
+      alternator:    { qrSrNo: '', altPart: '', altDesc: '', trStatus: '' },
+      canopy:        { qrSrNo: '', cpyPart: '', cpyDesc: '', cpyStk: '' },
+      battery:       [],
+      controlPanel1: { qrSrNo: '', cp1Part: '', cp1Desc: '', cp1TRStatus: '', cp1Stk: '' },
+      controlPanel2: { qrSrNo: '', cp2Part: '', cp2Desc: '', cp2TRStatus: '', cp2Stk: '' },
+      krm:           { qrSrNo: '', krmPart: '', krmDesc: '' },
+    } as any;
+    this.batteryScanDetailsStart = [];
+    this.scannedQrResultAlternatorStart = '';
+    this.scannedQrResultCanopyStart = '';
+    this.scannedQrResultCP1Start = '';
+    this.scannedQrResultCP2Start = '';
+    this.scannedQrResultKRMStart = '';
+    this.scannedBatteryQrResultsStart = ['', '', '', ''];
+    this.engineScannedStart = false;
+    this.showQrScannerEngineStart = false;
+    this.showQrScannerAlternatorStart = false;
+    this.showQrScannerCanopyStart = false;
+    this.showQrScannerControlPanel1Start = false;
+    this.showQRScannerControlPanel2Start = false;
+    this.showQRScannerKRMStart = false;
+    this.planNoStart = '';
+    this.dateStart = '';
+    this.dgDescStart = '';
+    this.dgPartcodeStart = '';
+    this.dgKVAStart = '';
+    this.DgstkStart = '';
+    this.dgCPtypeStart = '';
+    this.dgKRMStart = '';
+    this.krmFoundStart = false;
+  }
+
+  // Reset only the End-tab scan + display state after a successful save.
+  // Also clears QA End fields (6M, decision, checkpoints, audio/video).
+  private resetEndTab(): void {
+    this.scanDetails.End = {
+      engine:        { qrSrNo: '', engDesc: '', engCode: '' },
+      alternator:    { qrSrNo: '', altPart: '', altDesc: '', trStatus: '' },
+      canopy:        { qrSrNo: '', cpyPart: '', cpyDesc: '', cpyStk: '' },
+      battery:       [],
+      controlPanel1: { qrSrNo: '', cp1Part: '', cp1Desc: '', cp1TRStatus: '', cp1Stk: '' },
+      controlPanel2: { qrSrNo: '', cp2Part: '', cp2Desc: '', cp2TRStatus: '', cp2Stk: '' },
+      krm:           { qrSrNo: '', krmPart: '', krmDesc: '' },
+    } as any;
+    this.batteryScanDetailsEnd = [];
+    this.scannedQrResultAlternatorEnd = '';
+    this.scannedQrResultCanopyEnd = '';
+    this.scannedQrResultCP1End = '';
+    this.scannedQrResultCP2End = '';
+    this.scannedQrResultKRMEnd = '';
+    this.scannedBatteryQrResultsEnd = ['', '', '', ''];
+    this.engineScannedEnd = false;
+    this.showQrScannerEngineEnd = false;
+    this.showQrScannerAlternatorEnd = false;
+    this.showQrScannerCanopyEnd = false;
+    this.showQrScannerControlPanel1End = false;
+    this.showQRScannerControlPanel2End = false;
+    this.showQRScannerKRMEnd = false;
+    this.planNoEnd = '';
+    this.dateEnd = '';
+    this.dgDescEnd = '';
+    this.dgPartcodeEnd = '';
+    this.dgKVAEnd = '';
+    this.DgstkEnd = '';
+    this.dgCPtypeEnd = '';
+    this.dgKRMEnd = '';
+    this.krmFoundEnd = false;
+    this.selectedSixMItem = null;
+    this.selectedOption = '';
+    this.recordedAudioFileEnd = null;
+    this.recordedVideoFileEnd = null;
   }
 
   /**

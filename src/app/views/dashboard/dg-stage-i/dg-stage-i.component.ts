@@ -628,6 +628,19 @@ export class DgStageIComponent implements OnInit, OnDestroy {
           this.Dgstk_stageEnd = data.DGS1Stk;
 
           this.showQrScannerEngineEnd = false;
+
+          // ── Stage 1 End tab: auto-verify Alternator on Engine scan ────────
+          // At Stage 1 End the DG's engine–alternator binding was already
+          // frozen at Stage 1 Start. Re-scanning the alternator just to turn
+          // the display green wastes time with no data value. Copy the
+          // API-supplied alternator qrSrNo into the shared `scannedQrResult`
+          // state so the template's End-tab equality check
+          // (scannedQrResult === scanDetails3.qrSrNo) evaluates true → green,
+          // and Save unlocks. The Alternator scanner button stays visible
+          // (Option B) so the operator can still re-scan manually to double-
+          // check. Start tab is untouched — physical scans of both engine
+          // and alternator are still required there.
+          this.scannedQrResult = this.scanDetails3?.qrSrNo ?? '';
         },
         (error) => {
           console.error('Error in API call', error);
@@ -864,12 +877,32 @@ export class DgStageIComponent implements OnInit, OnDestroy {
         console.log('API Success Response:', response);
         this.successMessage =
           response.Message || 'Stage I Started Successfully..!';
+        this.resetStartTab();
       },
       (error: any) => {
         console.error('API Error Response:', error);
         this.showError(this.extractApiErrorMessage(error));
       }
     );
+  }
+
+  // Reset only the Start-tab scan + display state after a successful save.
+  // Line dropdown, tab position and cross-tab context are preserved.
+  private resetStartTab(): void {
+    this.scanDetails  = { qrSrNo: '', engDesc: '', engCode: '', stk: '' };
+    this.scanDetails1 = { qrSrNo: '', altDesc: '', altPart: '', stk: '', trStatus: '' };
+    this.showQrScannerEngineStart = false;
+    this.showQrScannerAlternatorStart = false;
+    this.planNo = '';
+    this.date = '';
+    this.dgPartCodeDesc = '';
+    this.jobCardPriority = '';
+    this.Dgstk = '';
+    this.scannedQrResult = '';
+    this.oldEngStk = '';
+    this.oldAltStk = '';
+    // NB: `stkAsNumber` is a computed getter — no setter, so no direct assign.
+    // Re-derives automatically from `scanDetails.stk` which was reset above.
   }
 
   submitEndStage() {
@@ -923,12 +956,35 @@ export class DgStageIComponent implements OnInit, OnDestroy {
       (response: any) => {
         console.log('API Success Response:', response);
         this.successMessage = 'Stage I Completed Successfully..!';
+        this.resetEndTab();
       },
       (error: any) => {
         console.error('API Error Response:', error);
         this.showError(this.extractApiErrorMessage(error));
       }
     );
+  }
+
+  // Reset only the End-tab scan + display state after a successful save.
+  // Also clears the QA fields (6M, decision, audio/video, checkpoints)
+  // that only exist on the End tab.
+  private resetEndTab(): void {
+    this.scanDetails2 = { qrSrNo: '', engDesc: '', engCode: '' };
+    this.scanDetails3 = { qrSrNo: '', altDesc: '', altPart: '', trStatus: '' };
+    this.showQrScannerEngineEnd = false;
+    this.showQrScannerAlternatorEnd = false;
+    this.planNo_stageEnd = '';
+    this.date_stageEnd = '';
+    this.dgPartCodeDesc_stageEnd = '';
+    this.jobCardPriority_stageEnd = '';
+    this.Dgstk_stageEnd = '';
+    this.scannedQrResult = '';
+    this.selectedOption = '';
+    this.selectedItem = 'Select an option';
+    this.selectedSixMItem = null;
+    this.recordedAudioFile = null;
+    this.recordedVideoFile = null;
+    this.processCheckpoints = [];
   }
 
   /**

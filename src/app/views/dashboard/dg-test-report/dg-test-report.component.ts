@@ -1638,6 +1638,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     this.dgAssemblyService.submitTestReportData(formData).subscribe(
       (response: any) => {
         this.successMessage = response.Message;
+        this.resetPhase('TRStart');
       },
       (error: any) => {
         console.error('API Error Response:', error);
@@ -1646,6 +1647,42 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
         this.showError(this.errorMessage);
       }
     );
+  }
+
+  // Reset all scan + display state for a single phase after a successful save.
+  // Line/tab position preserved; only the just-submitted phase clears.
+  private resetPhase(phase: 'TRStart' | 'DGStart' | 'DGEnd' | 'TREnd'): void {
+    this.scanDetails[phase] = {
+      engine:     { qrSrNo: '', engDesc: '', engCode: '' },
+      alternator: { qrSrNo: '', altDesc: '', altPart: '', trStatus: '' },
+      diesel:     { qtyltr: '', dslQty: '', dslRate: '', dslPartCode: '' },
+    } as any;
+    this.scannedEngineQrResult[phase] = '';
+    this.scannedAlternatorQrResult[phase] = '';
+    this.scannedDieselQrResult = '';
+    // Reset the 10 display fields per phase via dynamic key access.
+    (this as any)[`planNo${phase}`] = '';
+    (this as any)[`date${phase}`] = '';
+    (this as any)[`dgDesc${phase}`] = '';
+    (this as any)[`dgPartcode${phase}`] = '';
+    (this as any)[`dgKVA${phase}`] = '';
+    (this as any)[`dgCPtype${phase}`] = '';
+    (this as any)[`trstarttime${phase}`] = '';
+    (this as any)[`dgstarttime${phase}`] = '';
+    (this as any)[`dgendtime${phase}`] = '';
+    (this as any)[`trendtime${phase}`] = '';
+    // TR/DG-context fields shared across phases — only reset on TR-level saves.
+    if (phase === 'TREnd' || phase === 'TRStart') {
+      this.trCode = '';
+      this.dgSerialNo = '';
+      this.pFbCode = '';
+    }
+    // Reset any recorded audio/video and per-phase QA choices.
+    this.recordedAudioFile = null;
+    this.recordedVideoFile = null;
+    this.selectedSixMItem = null;
+    this.selectedOption = '';
+    this.dieselQtyByUser = '';
   }
 
   submitDGEndData() {
@@ -1668,6 +1705,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     this.dgAssemblyService.submitTestReportData(formData).subscribe(
       (response: any) => {
         this.successMessage = response.Message;
+        this.resetPhase('DGEnd');
       },
       (error: any) => {
         console.error('API Error Response:', error);
@@ -1689,6 +1727,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     this.dgAssemblyService.submitTestReportData(formData).subscribe(
       (response: any) => {
         this.successMessage = response.Message;
+        this.resetPhase('DGStart');
       },
       (error: any) => {
         console.error('API Error Response:', error);
@@ -1710,6 +1749,7 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
     this.dgAssemblyService.submitTestReportData(formData).subscribe(
       (response: any) => {
         this.successMessage = response.Message;
+        this.resetPhase('TREnd');
       },
       (error: any) => {
         console.error('API Error Response:', error);

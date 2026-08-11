@@ -29,8 +29,8 @@ export class CanopyAssemblyPlanCheckerComponent implements OnInit {
   //    position-role fetch; every checker sees the same six lines.
   readonly lineRights: LineRight[] = [
     { LineWisePC: '01.190', LineDesc: 'Unit 1 Line A Canopy Assembly',   ParentDgPC: '01.005' },
-    { LineWisePC: '03.069', LineDesc: 'Unit 4 Line B Canopy Assembly',   ParentDgPC: '03.038' },
-    { LineWisePC: '03.181', LineDesc: 'Unit 4 Line C Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '03.181', LineDesc: 'Unit 4 Line B Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '03.069', LineDesc: 'Unit 4 Line C Canopy Assembly',   ParentDgPC: '03.038' },
     { LineWisePC: '28.025', LineDesc: 'Unit BLR Line A Canopy Assembly', ParentDgPC: '28.017' },
     { LineWisePC: '28.039', LineDesc: 'Unit BLR Line B Canopy Assembly', ParentDgPC: '28.017' },
     { LineWisePC: '28.116', LineDesc: 'Unit BLR Line C Canopy Assembly', ParentDgPC: '28.017' },
