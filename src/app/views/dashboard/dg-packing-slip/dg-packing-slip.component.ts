@@ -937,6 +937,31 @@ export class DgPackingSlip implements OnInit, OnDestroy {
               krmDesc: 'No Record.',
             };
           }
+
+          // ── PSEnd tab: auto-verify every component on DG scan ─────────────
+          // At PSEnd the DG's component identity (engine / alt / canopy /
+          // batteries / CP1 / CP2 / KRM) was already locked in at PSStart.
+          // Re-scanning each one just to turn its display green wastes time
+          // with no data value. Copy the API-supplied qrSrNos into the
+          // per-component "scanned" state so the template's equality check
+          // (green vs red) evaluates true immediately, and Save unlocks.
+          // Scanner buttons stay visible for optional double-checks.
+          // PSStart is untouched — that's where the linkage is first
+          // recorded and physical scans are still required.
+          if (selectedStage === 'PSEnd') {
+            this.scannedEngineQrResultPSEnd     = this.scanDetails.PSEnd.engine?.qrSrNo ?? '';
+            this.scannedAlternatorQrResultPSEnd = this.scanDetails.PSEnd.alternator?.qrSrNo ?? '';
+            this.scannedQrResultCanopyPSEnd     = this.scanDetails.PSEnd.canopy?.qrSrNo ?? '';
+            this.scannedQrResultCP1PSEnd        = this.scanDetails.PSEnd.controlPanel1?.qrSrNo ?? '';
+            this.scannedQrResultCP2PSEnd        = this.scanDetails.PSEnd.controlPanel2?.qrSrNo ?? '';
+            this.scannedQrResultKRMPSEnd        = this.scanDetails.PSEnd.krm?.qrSrNo ?? '';
+            if (Array.isArray(this.scanDetails.PSEnd.battery)) {
+              this.scannedBatteryQrResultsPSEnd = this.scanDetails.PSEnd.battery.map(
+                (b: any) => b?.qrSrNo ?? ''
+              );
+            }
+          }
+
           this.psCode = response?.PSCode ?? null;
           this.trCode = response.TRCode;
           this.diNo = response.DiNo;
@@ -1159,6 +1184,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
     this.dgAssemblyService.submitPackingSlipData(formData).subscribe(
       (response: any) => {
         this.successMessage = response.Message;
+        this.resetPhase('PSStart');
       },
       (error: any) => {
         console.error('API Error Response:', error);
@@ -1167,6 +1193,74 @@ export class DgPackingSlip implements OnInit, OnDestroy {
         this.showError(this.errorMessage);
       }
     );
+  }
+
+  // Reset all scan + display state for a single phase after a successful save.
+  // Line/tab position preserved; only the just-submitted phase clears.
+  private resetPhase(phase: 'PSStart' | 'PSEnd'): void {
+    this.scanDetails[phase] = {
+      dgscan:        { qrSrNo: '', dgDesc: '', dgPart: '' },
+      engine:        { qrSrNo: '', engDesc: '', engCode: '' },
+      alternator:    { qrSrNo: '', altPart: '', altDesc: '' },
+      canopy:        { qrSrNo: '', cpyPart: '', cpyDesc: '' },
+      battery:       [],
+      controlPanel1: { qrSrNo: '', cp1Part: '', cp1Desc: '' },
+      controlPanel2: { qrSrNo: '', cp2Part: '', cp2Desc: '' },
+      krm:           { qrSrNo: '', krmPart: '', krmDesc: '' },
+    } as any;
+
+    this.scannedQrResultDGScan = '';
+
+    if (phase === 'PSStart') {
+      (this as any).scannedEngineQrResultPSStart = '';
+      (this as any).scannedAlternatorQrResultPSStart = '';
+      this.scannedQrResultCanopyPSStart = '';
+      this.scannedQrResultCP1PSStart = '';
+      this.scannedQrResultCP2PSStart = '';
+      this.scannedQrResultKRMPSStart = '';
+      this.scannedBatteryQrResultsPSStart = ['', '', '', ''];
+      (this as any).batteryScanDetailsPSStart = [];
+      this._DINOPSStart = '';
+      this._Date1PSStart = '';
+      this._CustomerPSStart = '';
+      this._Date2PSStart = '';
+      this._IndentorPSStart = '';
+      this._MOFCodePSStart = '';
+      this._CPPSStart = '';
+      this._KVAPSStart = '';
+      this._TRCodePSStart = '';
+      this.psstarttimePSStart = '';
+      this.psendtimePSStart = '';
+    } else {
+      (this as any).scannedEngineQrResultPSEnd = '';
+      (this as any).scannedAlternatorQrResultPSEnd = '';
+      this.scannedQrResultCanopyPSEnd = '';
+      this.scannedQrResultCP1PSEnd = '';
+      this.scannedQrResultCP2PSEnd = '';
+      this.scannedQrResultKRMPSEnd = '';
+      this.scannedBatteryQrResultsPSEnd = ['', '', '', ''];
+      (this as any).batteryScanDetailsPSEnd = [];
+      this._DINOPSEnd = '';
+      this._Date1PSEnd = '';
+      this._CustomerPSEnd = '';
+      this._Date2PSEnd = '';
+      this._IndentorPSEnd = '';
+      this._MOFCodePSEnd = '';
+      this._CPPSEnd = '';
+      this._KVAPSEnd = '';
+      this._TRCodePSEnd = '';
+      this.psstarttimePSEnd = '';
+      this.psendtimePSEnd = '';
+    }
+
+    // Shared PS-level identifiers cleared on either phase submit.
+    this.psCode = null;
+    this.trCode = '';
+    this.diNo = '';
+    this.pdiCode = '';
+    this.dgSerialNo = '';
+    this._strSrNo = '';
+    this.paneltype = '';
   }
 
   submitPSEndData() {
@@ -1187,6 +1281,7 @@ export class DgPackingSlip implements OnInit, OnDestroy {
     this.dgAssemblyService.submitPackingSlipData(formData).subscribe(
       (response: any) => {
         this.successMessage = response.Message;
+        this.resetPhase('PSEnd');
       },
       (error: any) => {
         console.error('API Error Response:', error);
