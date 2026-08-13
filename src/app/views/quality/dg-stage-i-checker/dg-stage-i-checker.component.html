@@ -38,6 +38,25 @@
         </mat-select>
       </mat-form-field>
     </div>
+
+    <!-- Date range filter — narrows QA-pending list by Stage2date (Stage 1),
+         Stage3date (Stage 2), or ProcessFeedBack.Dt (Stage 3). Changing either
+         date re-triggers loadJobCards() so the grid refreshes immediately. -->
+    <div class="field-group">
+      <label class="field-label">From Date</label>
+      <input type="date"
+             class="date-input"
+             [(ngModel)]="filterFromDate"
+             (change)="onDateFilterChange()" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">To Date</label>
+      <input type="date"
+             class="date-input"
+             [(ngModel)]="filterToDate"
+             (change)="onDateFilterChange()" />
+    </div>
   </div>
 
   <!-- Error Modal -->
@@ -535,7 +554,16 @@
           </ng-container>
 
           <ng-container matColumnDef="ok">
-            <th mat-header-cell *matHeaderCellDef>OK</th>
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-ok-cell">
+                <mat-checkbox [checked]="areAllOk"
+                              (change)="onToggleAllOk($event.checked)"
+                              color="primary"
+                              title="Select all">
+                </mat-checkbox>
+                <span>OK</span>
+              </div>
+            </th>
             <td mat-cell *matCellDef="let element">
               <div class="cell-content checkbox-cell">
                 <mat-checkbox [checked]="element.ok" (change)="onToggleOk(element)" color="primary">
@@ -564,23 +592,16 @@
             <td mat-cell *matCellDef="let element">
               <div class="cell-content esp-cell">
                 <div class="esp-input-wrapper" [class.disabled]="!is6MSelected(element)">
-                  <input type="text" [matAutocomplete]="auto" [(ngModel)]="element.raiseEsp"
-                    [value]="getEmployeeLabel(element.raiseEsp)" (input)="filterEmployees($event)"
-                    (focus)="onEspFocus()"
-                    [placeholder]="is6MSelected(element) ? 'Search employee...' : 'Select 6M first'"
+                  <!-- Employee autocomplete disabled per business ask —
+                       plain text input only. The prior <mat-autocomplete>
+                       (one panel per row × N employees) was OOMing the tab.
+                       Re-enable by restoring [matAutocomplete] + a shared
+                       #sharedEspAuto panel outside the row template. -->
+                  <input type="text" [(ngModel)]="element.raiseEsp"
+                    [placeholder]="is6MSelected(element) ? 'Enter Emp Code' : 'Select 6M first'"
                     class="esp-search-input" [disabled]="!is6MSelected(element)" />
                   <button *ngIf="element.raiseEsp && is6MSelected(element)" type="button" class="esp-clear-btn"
                     (click)="clearEspSelection(element, $event)" title="Clear">×</button>
-                  <mat-autocomplete #auto="matAutocomplete"
-                    (optionSelected)="onEmployeeSelected(element, $event.option.value)"
-                    [displayWith]="displayEmployeeFn">
-                    <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.value">
-                      {{ emp.label }}
-                    </mat-option>
-                    <mat-option *ngIf="filteredEmployees.length === 0" disabled>
-                      No employees found
-                    </mat-option>
-                  </mat-autocomplete>
                 </div>
               </div>
             </td>

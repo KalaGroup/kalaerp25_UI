@@ -1326,7 +1326,7 @@ export class DgStageIIIComponent implements OnInit, OnDestroy {
 
         if (
           warningMessages.includes(response.Message) ||
-          response.Message.startsWith('Insufficient Stock For Part')
+          response.Message.startsWith('Insufficient Stock Qty For Part')
         ) {
           this.warningMessage = response.Message; // Show the whole message
         } else {
