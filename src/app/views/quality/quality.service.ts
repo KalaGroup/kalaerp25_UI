@@ -260,8 +260,20 @@ export class QualityService {
     return this.http.get<LineRight[]>(url);
   }
 
-  getDgStageICheckerData(stageName: string, pccode: string): Observable<any> {
-    const url = `${this.baseUrl}DgStageChecker/GetStageQAPendingList/${stageName}/${pccode}`;
+  getDgStageICheckerData(
+    stageName: string,
+    pccode: string,
+    fromDate?: string,     // 'YYYY-MM-DD' or ''
+    toDate?: string,
+  ): Observable<any> {
+    // Route still carries pccode for backward-compat with existing controller.
+    // Optional date filters ride as query-string params — controller & SP both
+    // treat missing/blank as "no filter" (NULL) for that dimension.
+    let url = `${this.baseUrl}DgStageChecker/GetStageQAPendingList/${stageName}/${pccode}`;
+    const qs: string[] = [];
+    if (fromDate) qs.push(`fromDate=${encodeURIComponent(fromDate)}`);
+    if (toDate)   qs.push(`toDate=${encodeURIComponent(toDate)}`);
+    if (qs.length) url += `?${qs.join('&')}`;
     return this.http.get<any>(url);
   }
 
@@ -300,8 +312,14 @@ export class QualityService {
   getDgStage3CheckerData(
     stageName: string,
     pccode: string,
+    fromDate?: string,
+    toDate?: string,
   ): Observable<DgStage3CheckerResponse[]> {
-    const url = `${this.baseUrl}DgStageChecker/GetStageQAPendingList/${stageName}/${pccode}`;
+    let url = `${this.baseUrl}DgStageChecker/GetStageQAPendingList/${stageName}/${pccode}`;
+    const qs: string[] = [];
+    if (fromDate) qs.push(`fromDate=${encodeURIComponent(fromDate)}`);
+    if (toDate)   qs.push(`toDate=${encodeURIComponent(toDate)}`);
+    if (qs.length) url += `?${qs.join('&')}`;
     return this.http.get<DgStage3CheckerResponse[]>(url);
   }
 

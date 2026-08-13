@@ -37,12 +37,15 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   qrPdfRowIndex: number = -1;
 
   // Fixed columns rendered in a known order before the dynamic CP/Bat columns.
+  // QPCStatus replaces ProcessStart/ProcessEnd — comes from ProcessFeedback.QPCStatus.
+  //   'P' → "Pending"  (Quality of process pending)
+  //   'D' → "Complete" (Quality of process complete)
+  // See qpcStatusLabel() / qpcStatusIsDone() helpers below for display mapping.
   readonly reportFixedColumns: { key: string; label: string }[] = [
     { key: 'PFBCode',        label: 'PFB Code' },
     { key: 'MachineCode',    label: 'Machine Code' },
     { key: 'DGPartCode',     label: 'DG Part Code' },
-    { key: 'ProcessStart',   label: 'Process Start' },
-    { key: 'ProcessEnd',     label: 'Process End' },
+    { key: 'QPCStatus',      label: 'Process Quality Status' },
     { key: 'PrcBOMCode',     label: 'BOM Code' },
     { key: 'Test Report',    label: 'Test Report' },
     { key: 'EngineSrNo',     label: 'Engine SrNo' },
@@ -517,8 +520,31 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
+   * Map raw QPCStatus (single char from ProcessFeedback) to a user label.
+   *   'P' → 'Pending'   (Quality of process pending)
+   *   'D' → 'Complete'  (Quality of process complete)
+   * Anything else (null/blank/legacy) → '-' so the cell is never empty.
+   */
+  qpcStatusLabel(raw: string | null | undefined): string {
+    const v = (raw ?? '').toString().trim().toUpperCase();
+    if (v === 'D') return 'Complete';
+    if (v === 'P') return 'Pending';
+    return '-';
+  }
+
+  /** True when QPCStatus reads as "complete". Drives the green badge. */
+  qpcStatusIsDone(raw: string | null | undefined): boolean {
+    return (raw ?? '').toString().trim().toUpperCase() === 'D';
+  }
+
+  /** True when QPCStatus reads as "pending". Drives the yellow badge. */
+  qpcStatusIsPending(raw: string | null | undefined): boolean {
+    return (raw ?? '').toString().trim().toUpperCase() === 'P';
+  }
+
+  /**
    * Download a 1-page A4 PDF for a single Test-Report row.
-   * - Header: PFB Code, BOM Code, Process Start/End, Test Report status.
+   * - Header: PFB Code, BOM Code, Process Quality Status, Test Report status.
    * - "DG Sr No" (= MachineCode) renders at the **top**, with its own QR code,
    *   matching the jobcard1 PDF idiom the user asked us to mirror.
    * - Each component (Engine, Alternator, Canopy, every CP1..N, every Bat1..N
@@ -537,16 +563,11 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
   async downloadReportQrPdf(row: TestReportStatusRow, index: number): Promise<void> {
     if (this.qrPdfRowIndex !== -1) return;
 
-    // ─── Gate: "Done" rows can no longer be downloaded ────────
-    // To re-enable in the future, delete this `if` block. The CSS class
-    // and tooltip referenced from the template are also gated by
-    // `isTestReportDone(row)`, so they revert automatically.
-    if (this.isTestReportDone(row)) {
-      // Use the in-app warning modal already wired in this component
-      // (template binds `*ngIf="warningMessage"` with an OK button).
-      this.warningMessage = 'Test report already done. Download is disabled for completed records.';
-      return;
-    }
+    // ─── Done-row gate REMOVED per user request ──────────────────
+    // PDF must always be downloadable regardless of test-report status.
+    // The old block that short-circuited on `isTestReportDone(row)` is
+    // gone. The `[class.trs-btn-locked]` and tooltip-branching in the
+    // template are also updated so no visual "locked" state appears.
 
     this.qrPdfRowIndex = index;
 
@@ -620,11 +641,10 @@ export class DgTestReport implements OnInit, OnDestroy, AfterViewInit {
       kv('BOM Code:',    row.PrcBOMCode || '-', margin + colW,     y);
       kv('Test Report:', row['Test Report'] || '-', margin + colW * 2, y);
 
-      // Line 2 — Process Start | Process End
+      // Line 2 — Process Quality Status (spans full width; replaced the
+      // former Process Start / Process End pair per business ask).
       y += 7;
-      const colHalf = usableW / 2;
-      kv('Process Start:', this.formatReportDate(row.ProcessStart), margin,            y, 28);
-      kv('Process End:',   this.formatReportDate(row.ProcessEnd),   margin + colHalf,  y, 28);
+      kv('Process Quality Status:', this.qpcStatusLabel(row.QPCStatus), margin, y, 40);
 
       // ─── DG Sr No banner (Machine Code) with its own QR ──────
       y += 8;

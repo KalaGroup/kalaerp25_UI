@@ -1307,22 +1307,25 @@
                 <td class="trs-qr-cell">
                   <button type="button"
                           class="trs-btn trs-btn-qr"
-                          [class.trs-btn-locked]="isTestReportDone(row)"
                           (click)="downloadReportQrPdf(row, i)"
                           [disabled]="qrPdfRowIndex !== -1 && qrPdfRowIndex !== i"
-                          [title]="isTestReportDone(row)
-                                   ? 'Test report already done — download disabled'
-                                   : 'Download QR-code PDF for ' + row.PFBCode">
+                          [title]="'Download QR-code PDF for ' + row.PFBCode">
                     <span *ngIf="qrPdfRowIndex !== i">⬇ PDF</span>
                     <span *ngIf="qrPdfRowIndex === i">…</span>
                   </button>
                 </td>
                 <td *ngFor="let col of reportFixedColumns" [ngClass]="{
-                       'trs-badge-cell': col.key === 'Test Report'
+                       'trs-badge-cell': col.key === 'Test Report' || col.key === 'QPCStatus'
                      }">
                   <ng-container [ngSwitch]="col.key">
-                    <span *ngSwitchCase="'ProcessStart'">{{ formatReportDate(row[col.key]) }}</span>
-                    <span *ngSwitchCase="'ProcessEnd'">{{ formatReportDate(row[col.key]) }}</span>
+                    <!-- Process Quality Status — ProcessFeedback.QPCStatus.
+                         'D' → green "Complete", 'P' → yellow "Pending". -->
+                    <span *ngSwitchCase="'QPCStatus'"
+                          class="trs-badge"
+                          [ngClass]="{
+                            'is-done': qpcStatusIsDone(row[col.key]),
+                            'is-pending': qpcStatusIsPending(row[col.key])
+                          }">{{ qpcStatusLabel(row[col.key]) }}</span>
                     <span *ngSwitchCase="'Test Report'"
                           class="trs-badge"
                           [ngClass]="{

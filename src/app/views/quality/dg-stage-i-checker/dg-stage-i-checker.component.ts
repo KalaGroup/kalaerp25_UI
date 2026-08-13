@@ -113,6 +113,13 @@ export class DgStageICheckerComponent implements OnInit {
   // ── Load-in-flight flag for the QA-pending jobcard list ────
   isLoadingPendingList: boolean = false;
 
+  // ── Date-range filter for QA-pending list ──────────────────
+  // Populated in ngOnInit to today's date (see initFilterDates()).
+  // Bind these to <input type="date"> in HTML with [(ngModel)].
+  // Blank → sent as empty query param → SP treats as NULL → no filter.
+  filterFromDate: string = '';
+  filterToDate:   string = '';
+
 
   readonly stages: StageOption[] = [
     { value: 'Stage1', label: 'Stage 1' },
@@ -176,6 +183,13 @@ export class DgStageICheckerComponent implements OnInit {
   // Replace readonly employeeList with dynamic data
   employeeList: { value: string; label: string }[] = [];
   filteredEmployees: { value: string; label: string }[] = [];
+
+  // Which checkpoint row's Raise-ESP input is currently focused. Used so a
+  // SINGLE shared <mat-autocomplete> panel (hoisted out of the row template)
+  // can know which row to write the selected employee back to. Previously
+  // each row created its own <mat-autocomplete> instance → N × M mat-option
+  // views in memory → OOM on modals with many employees. Ref #ooM-fix.
+  activeEspRow: QualityCheckpoint | null = null;
 
   // Data sources
   dataSource: JobCard[] = [];
@@ -268,6 +282,24 @@ export class DgStageICheckerComponent implements OnInit {
     this.loadLineRights();
     this.loadEmployeeList();
     this.load6MOptions();
+    // Default the date range to today so the operator sees "today's pending"
+    // out of the box. They can widen the range with the date pickers.
+    this.initFilterDates();
+  }
+
+  /** Set filterFromDate + filterToDate to today (YYYY-MM-DD). */
+  private initFilterDates(): void {
+    const today = this.toIsoDate(new Date());
+    this.filterFromDate = today;
+    this.filterToDate   = today;
+  }
+
+  /** Convert a JS Date to YYYY-MM-DD (matches <input type="date"> value format). */
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   /** Full LineRight object behind the dropdown selection. */
@@ -361,21 +393,27 @@ export class DgStageICheckerComponent implements OnInit {
 
   // Add this method
   loadEmployeeList(): void {
-    this.dgStageICheckerService.getEmployeeList().subscribe({
-      next: (response: any[]) => {
-        this.employeeList = [
-          { value: '', label: 'Select Employee' },
-          ...response.map((emp) => ({
-            value: emp.ECode,
-            label: emp.EmployeeName,
-          })),
-        ];
-        this.filteredEmployees = [...this.employeeList];
-      },
-      error: (error) => {
-        console.error('Error fetching employee list:', error);
-      },
-    });
+    // Employee autocomplete disabled per business ask — leaving the loader
+    // as a no-op so ngOnInit stays untouched. Re-enable by restoring the
+    // .subscribe() body (and the <mat-autocomplete> in the template).
+    this.employeeList = [];
+    this.filteredEmployees = [];
+  }
+
+  /** Called on Raise-ESP input focus. Remembers which checkpoint row the
+   *  operator is typing into so the SHARED mat-autocomplete panel can write
+   *  the picked employee back to the right row. Also resets the filter. */
+  onEspInputFocus(element: QualityCheckpoint): void {
+    this.activeEspRow = element;
+    this.filteredEmployees = [...this.employeeList];
+  }
+
+  /** Wire-up for the SHARED mat-autocomplete's optionSelected event. Uses
+   *  activeEspRow to know which row to update. */
+  onSharedEspOptionSelected(selectedValue: string): void {
+    if (this.activeEspRow) {
+      this.activeEspRow.raiseEsp = selectedValue;
+    }
   }
 
   isValidValue(value: string | number | undefined | null): boolean {
@@ -418,7 +456,12 @@ load6MOptions(): void {
     // Use the line picked from the dropdown (LineWisePC), not the login PC.
     const linePc = this.selectedLineRight?.LineWisePC ?? '';
     this.dgStageICheckerService
-      .getDgStageICheckerData(this.selectedStage, linePc)
+      .getDgStageICheckerData(
+        this.selectedStage,
+        linePc,
+        this.filterFromDate,
+        this.filterToDate,
+      )
       .subscribe({
         next: (response: DgStageICheckerResponse[]) => {
           console.log('Stage 1/2 API Response:', response);
@@ -458,7 +501,12 @@ load6MOptions(): void {
     // Use the line picked from the dropdown (LineWisePC), not the login PC.
     const linePc = this.selectedLineRight?.LineWisePC ?? '';
     this.dgStageICheckerService
-      .getDgStage3CheckerData(this.selectedStage, linePc)
+      .getDgStage3CheckerData(
+        this.selectedStage,
+        linePc,
+        this.filterFromDate,
+        this.filterToDate,
+      )
       .subscribe({
         next: (response: DgStage3CheckerResponse[]) => {
           console.log('Stage 3 API Response:', response);
@@ -528,6 +576,14 @@ load6MOptions(): void {
     }
   }
 
+  // From/To date picker (change) → re-fetch the pending list with the new range.
+  // Guards on stage being picked (no point loading without a stage). Empty
+  // date strings are handled inside the service (skipped from query string).
+  onDateFilterChange(): void {
+    if (!this.selectedStage) return;
+    this.loadJobCards();
+  }
+
   // ============================================
   // QUALITY CHECKPOINT MODAL
   // ============================================
@@ -591,8 +647,30 @@ load6MOptions(): void {
       )
       .subscribe({
         next: (response: QualityCheckpointResponse[]) => {
-          console.log('Quality Checkpoint API Response:', response);
-          this.qualityCheckpointDataSource = response.map((item) => ({
+          // Diagnostic — log ONLY the count, never the whole response object
+          // (Chrome DevTools live-references huge arrays and can OOM the tab).
+          const count = Array.isArray(response) ? response.length : 0;
+          console.log('[QualityChecker] Checkpoint API rows:', count);
+
+          // Hard safety cap. This modal renders one mat-select + one
+          // mat-autocomplete per row; more than a few hundred rows blows up
+          // Angular Material's overlay engine and OOMs the tab. A quality
+          // checklist should never realistically have > ~200 items, so if the
+          // SP returns more, that's an upstream data bug and we surface it
+          // rather than crashing the browser.
+          const MAX_ROWS = 200;
+          const safeRows = Array.isArray(response)
+            ? response.slice(0, MAX_ROWS)
+            : [];
+          if (count > MAX_ROWS) {
+            console.warn(
+              `[QualityChecker] Checkpoint response ${count} rows — capped at ${MAX_ROWS}. Check GetStageAndKvaWiseCheckpointList SP filters.`,
+            );
+            this.warningMessage =
+              `Checkpoint list returned ${count} rows — showing first ${MAX_ROWS}. Please contact IT.`;
+          }
+
+          this.qualityCheckpointDataSource = safeRows.map((item) => ({
             srNo: item.SrNo,
             subAssemblyPart: item.SubAssemblyPart || '',
             qualityProcessCheckpoint: item.QualityProcessCheckpoint || '',
@@ -665,6 +743,21 @@ load6MOptions(): void {
 
   onToggleOk(element: QualityCheckpoint): void {
     element.ok = !element.ok;
+  }
+
+  /** True when every checkpoint row is ticked. Drives the master checkbox
+   *  state in the OK column header. Empty list → false so the header isn't
+   *  shown as "all selected" over an empty table. */
+  get areAllOk(): boolean {
+    return this.qualityCheckpointDataSource.length > 0 &&
+           this.qualityCheckpointDataSource.every(item => item.ok);
+  }
+
+  /** Header master-checkbox handler — flips every row's `ok` to the new
+   *  checked state in one shot so the operator doesn't have to click each
+   *  row individually. */
+  onToggleAllOk(checked: boolean): void {
+    this.qualityCheckpointDataSource.forEach(item => (item.ok = checked));
   }
 
   // ============================================
@@ -791,9 +884,17 @@ onSaveReworkReject(): void {
       ecode: this.ecode,
     };
 
-    // Stage 1 & 2: Add JobCode and related fields
+    // Stage 1 & 2: Add JobCode and ALL component serial numbers.
     // Field-name casing must match the backend DTO `QProcessCheckerData` exactly
     // (PascalCase for these properties; mixed-case elsewhere — see comparison below).
+    //
+    // Why we send every component (Eng, Alt, Cpy, Bat1-6) on BOTH stages:
+    // the backend Accept flow updates JobCardDetailsSub.<stage>QAStatus for
+    // every serial number in the payload. If Stage 1 omits canopy/battery
+    // serials, those component rows never get their Stage1QAStatus flipped
+    // to 'D' and remain "pending" forever. The mat-table row still carries
+    // the values from the API (see loadJobCards mapping), so sending them
+    // costs nothing.
     if (
       this.modalSelectedStage === 'Stage1' ||
       this.modalSelectedStage === 'Stage2'
@@ -808,10 +909,6 @@ onSaveReworkReject(): void {
       QPCheckerData.model = this.selectedJobCardForQuality?.model || '';
       QPCheckerData.EngSrNo = this.selectedJobCardForQuality?.engSrNo || '';
       QPCheckerData.AltSrNo = this.selectedJobCardForQuality?.altSrNo || '';
-    }
-
-    // Stage 2: Add battery and canopy fields
-    if (this.modalSelectedStage === 'Stage2') {
       QPCheckerData.CpySrNo = this.selectedJobCardForQuality?.cpySrNo || '';
       QPCheckerData.BatSrNo = this.selectedJobCardForQuality?.batSrNo || '';
       QPCheckerData.Bat2SrNo = this.selectedJobCardForQuality?.bat2SrNo || '';
