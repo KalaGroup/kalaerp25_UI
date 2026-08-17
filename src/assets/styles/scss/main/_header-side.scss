@@ -80,8 +80,9 @@
 }
 
 
-/* Kaizen Sheet quick link in the top bar (beside the menu icon) */
-.kaizen-topbar-link {
+/* Quick links in the top bar (beside the menu icon) */
+.kaizen-topbar-link,
+.gantt-topbar-link {
   &.mat-mdc-button {
     margin-left: 6px;
     height: 40px;
@@ -118,7 +119,8 @@
 }
 
 @media (max-width: 768px) {
-  .kaizen-topbar-link {
+  .kaizen-topbar-link,
+  .gantt-topbar-link {
     &.mat-mdc-button {
       padding: 0 10px;
 
@@ -126,7 +128,8 @@
         margin-right: 0;
       }
 
-      .kaizen-topbar-label {
+      .kaizen-topbar-label,
+      .gantt-topbar-label {
         display: none;
         /* icon-only on small screens */
       }
