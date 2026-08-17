@@ -43,6 +43,7 @@ import { DgMachineWiseDownTimeComponent } from './dg-machine-wise-down-time/dg-m
 import { DgManpowerStatusComponent } from './dg-manpower-status/dg-manpower-status.component';
 import { DgMaterialStatusComponent } from './dg-material-status/dg-material-status.component';
 import { JobcardMttrReportComponent } from './jobcard-mttr_report/jobcard-mttr_report.component';
+import { GanttTaskFeedbackComponent } from './gantt-task-feedback/gantt-task-feedback.component';
 
 @NgModule({
   imports: [
@@ -89,6 +90,7 @@ import { JobcardMttrReportComponent } from './jobcard-mttr_report/jobcard-mttr_r
     DgManpowerStatusComponent,
     DgMaterialStatusComponent,
     JobcardMttrReportComponent,
+    GanttTaskFeedbackComponent,
   ],
 
 })

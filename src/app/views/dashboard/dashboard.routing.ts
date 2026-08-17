@@ -17,6 +17,7 @@ import { DgMachineWiseDownTimeComponent } from './dg-machine-wise-down-time/dg-m
 import { DgManpowerStatusComponent } from './dg-manpower-status/dg-manpower-status.component'; //nik
 import { DgMaterialStatusComponent } from './dg-material-status/dg-material-status.component'; //nik
 import { JobcardMttrReportComponent } from './jobcard-mttr_report/jobcard-mttr_report.component';
+import { GanttTaskFeedbackComponent } from './gantt-task-feedback/gantt-task-feedback.component';
 
 export const DashboardRoutes: Routes = [
   {
@@ -94,5 +95,10 @@ export const DashboardRoutes: Routes = [
     path: 'jobcard-mttr-report',
     component: JobcardMttrReportComponent,
     data: { title: 'Jobcard MTTR Report', breadcrumb: 'Jobcard MTTR Report' }
+  },
+  {
+    path: 'gantt-task-feedback',
+    component: GanttTaskFeedbackComponent,
+    data: { title: 'Gantt Task Feedback', breadcrumb: 'Gantt Task Feedback' }
   },
 ];
