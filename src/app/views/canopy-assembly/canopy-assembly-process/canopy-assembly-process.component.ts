@@ -381,12 +381,13 @@ export class CanopyAssemblyProcessComponent implements OnInit {
         this.errorMessage = 'Click Search first to load Part Details.';
         return;
       }
-      // Enforce per-row invariants that legacy checked at submit time.
+      // Per-row invariants that legacy checked at submit time. Backend
+      // now enforces the insufficient-stock guard authoritatively, so
+      // we only keep the stale-search guard here (Prc Qty must still
+      // match KitQty × PrcQty — otherwise the operator changed the
+      // top-of-form Process Qty after Search and the row snapshot is
+      // out of date).
       for (const r of this.partRows) {
-        if (r.PrcQty > r.StkQty) {
-          this.errorMessage = `Insufficient Stock for Part: ${r.Part}`;
-          return;
-        }
         if (Math.round(r.PrcQty) !== Math.round(r.KitQty * this.prcQty)) {
           this.errorMessage = 'Please click Search again — Process Qty has changed since last search.';
           return;
@@ -513,6 +514,89 @@ export class CanopyAssemblyProcessComponent implements OnInit {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // EXCEL EXPORT (both tables)
+  // ══════════════════════════════════════════════════════════════
+  //
+  // Pure CSV — Excel opens .csv files natively and no npm library
+  // is required, keeping the bundle lean. UTF-8 BOM added so Excel
+  // renders unicode part descriptions correctly on Windows.
+  // A "SHORT?" column at the end flags each row where StkQty is
+  // insufficient — that's the whole point of exporting, so the
+  // operator / stores team can filter on it in Excel.
+
+  /** Export Part Details table to CSV (opens in Excel). */
+  exportPartDetailsExcel(): void {
+    if (this.partRows.length === 0) return;
+    const headers = ['SrNo', 'Part Description', 'Kit Qty', 'Prc Qty',
+                     'Stock Qty', 'Wt', 'Total Wt', 'Sqft', 'Total Sqft',
+                     'Rate', 'Part Code', 'SHORT?'];
+    const rows = this.partRows.map((r, i) => [
+      i + 1,
+      r.Part,
+      r.KitQty,
+      r.PrcQty,
+      r.StkQty,
+      r.Wt,
+      r.TotWt,
+      r.Sqft,
+      r.TotSqft,
+      r.Rate,
+      r.PartCode,
+      (r.StkQty <= 0 || r.PrcQty > r.StkQty) ? 'YES' : '',
+    ]);
+    const fileBase = `CanopyProcess_PartDetails_${this.pfbCode || 'new'}`;
+    this.downloadCsv(fileBase, headers, rows);
+  }
+
+  /** Export Assembly Kit Details table to CSV (opens in Excel). */
+  exportAssemblyKitExcel(): void {
+    if (this.assemblyKitRows.length === 0) return;
+    const headers = ['SrNo', 'Part', 'Qty', 'Prc Qty', 'Stock Qty',
+                     'Part Code', 'SHORT?'];
+    const rows = this.assemblyKitRows.map((r, i) => [
+      i + 1,
+      r.Part,
+      r.Qty,
+      r.PrcQty,
+      r.StkQty,
+      r.PartCode,
+      (r.StkQty <= 0 || r.PrcQty > r.StkQty) ? 'YES' : '',
+    ]);
+    const fileBase = `CanopyProcess_AssemblyKit_${this.pfbCode || 'new'}`;
+    this.downloadCsv(fileBase, headers, rows);
+  }
+
+  /** Shared CSV-download helper. UTF-8 BOM so Excel picks encoding
+   *  correctly. Values that contain commas / quotes / newlines are
+   *  quoted per RFC 4180. Timestamp suffix keeps repeated exports
+   *  from clobbering each other in the Downloads folder. */
+  private downloadCsv(fileBase: string, headers: string[], rows: any[][]): void {
+    const escape = (v: any): string => {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines: string[] = [
+      headers.map(escape).join(','),
+      ...rows.map(row => row.map(escape).join(',')),
+    ];
+    const csv = '﻿' + lines.join('\r\n');    // BOM + CRLF for Excel
+
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `${fileBase}_${stamp}.csv`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   private resetForm(): void {

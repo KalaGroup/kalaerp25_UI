@@ -198,8 +198,21 @@
   <!-- ── Part Details (top table) ────────────────────────────── -->
   <div class="cap-section" *ngIf="pfbCode">
     <div class="cap-section-title">
-      Part Details
-      <span class="cap-row-count" *ngIf="partRows.length > 0">{{ partRows.length }} rows</span>
+      <span>
+        Part Details
+        <span class="cap-row-count" *ngIf="partRows.length > 0">{{ partRows.length }} rows</span>
+      </span>
+      <!-- Export to Excel — disabled until table has rows. Downloads
+           a CSV named CanopyProcess_PartDetails_{PFB}_{timestamp}.csv
+           with a trailing "SHORT?" column marking any row where
+           StkQty is insufficient. Excel opens .csv natively. -->
+      <button type="button"
+              class="cap-btn-excel"
+              [disabled]="partRows.length === 0"
+              (click)="exportPartDetailsExcel()"
+              title="Download Part Details as Excel-compatible CSV">
+        ⬇ Excel
+      </button>
     </div>
     <div class="cap-table-wrapper">
       <table class="cap-table">
@@ -248,8 +261,17 @@
   <!-- ── Assembly Kit Details (bottom table) ─────────────────── -->
   <div class="cap-section" *ngIf="pfbCode">
     <div class="cap-section-title">
-      Assembly Kit Details
-      <span class="cap-row-count" *ngIf="assemblyKitRows.length > 0">{{ assemblyKitRows.length }} rows</span>
+      <span>
+        Assembly Kit Details
+        <span class="cap-row-count" *ngIf="assemblyKitRows.length > 0">{{ assemblyKitRows.length }} rows</span>
+      </span>
+      <button type="button"
+              class="cap-btn-excel"
+              [disabled]="assemblyKitRows.length === 0"
+              (click)="exportAssemblyKitExcel()"
+              title="Download Assembly Kit Details as Excel-compatible CSV">
+        ⬇ Excel
+      </button>
     </div>
     <div class="cap-table-wrapper">
       <table class="cap-table">

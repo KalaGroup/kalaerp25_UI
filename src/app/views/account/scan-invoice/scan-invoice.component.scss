@@ -4,6 +4,7 @@
 }
 
 .header-container {
+  position: relative;   /* anchor for .header-progress bar */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -18,13 +19,121 @@
   font-weight: 600;
 }
 
+/* SAVE button — three states:
+     enabled  = solid white pill on purple header, easy to spot
+     disabled = ghost outline, low opacity, cursor blocked
+     saving   = pill turns green + spinner replaces label
+   The button sits in the purple header, so a transparent bg
+   made the enabled/disabled distinction almost invisible —
+   the solid pill fixes that. */
 .save-button {
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 100px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: #ffffff;
+  color: #5c2d91;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease,
+              transform 80ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+  &:not(:disabled):hover {
+    background: #f1e6ff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+  &:not(:disabled):active {
+    transform: translateY(1px);
+  }
+
+  /* No scan yet, or scan in flight — ghost pill. Very obvious it's
+     not clickable, but still visible on the purple header. */
+  &:disabled {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Save is in flight — button becomes green + shows spinner. */
+  &.is-saving {
+    background: #4caf50;
+    color: #ffffff;
+    border-color: #3f8c43;
+    cursor: progress;
+  }
+}
+
+/* Small CSS-only spinner shown inside the button while a save
+   POST is running. No external dep, no @keyframes name collision. */
+.save-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: save-spin 0.8s linear infinite;
+}
+
+@keyframes save-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Thin progress bar under the header while saving — gives the
+   operator a second, more prominent progress cue than the small
+   in-button spinner. Sits inside .header-container. */
+.header-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -40%;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    background: #ffe680;
+    animation: save-bar 1s linear infinite;
+  }
+}
+
+@keyframes save-bar {
+  from { left: -40%; }
+  to   { left: 100%; }
+}
+
+/* Hidden input that catches Rugtek HID (USB) scans.
+   Uses the standard accessible visually-hidden pattern (clip +
+   margin -1px + overflow hidden) that Chrome treats as a normal
+   focusable element for keyboard event routing. NOT positioned
+   off-screen with -9999px — that breaks HID event delivery in
+   some Chrome versions. Same rule set as dg-stage-i. */
+.hid-scanner-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .scan-section {
@@ -51,8 +160,10 @@
 }
 
 .qr-scanner-wrapper {
-  width: 300px;
-  height: 300px;
+  /* Widened + taller so 1D barcodes have room to be held straight.
+     Landscape-ish ratio (4:3) works for both QR (square) and 1D
+     (wide). Was 300×300 which was too small for 1D on mobile. */
+  width: min(90vw, 480px);
   padding: 15px;
   border-radius: 10px;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
@@ -71,6 +182,65 @@
   padding: 5px 10px;
   border-radius: 5px;
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Flashlight toggle button — only shown when the camera track
+   reports torch capability (Android Chrome mostly). */
+.torch-button {
+  border: 1px solid #bbb;
+  background: #f7f7f7;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  &.is-on {
+    background: #fff3b0;
+    border-color: #d4a017;
+    color: #6b4d00;
+  }
+}
+
+/* Wraps the <zxing-scanner> so we can overlay the aiming line
+   on top of the video without disturbing the video element. */
+.scan-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  margin-top: 8px;
+
+  ::ng-deep zxing-scanner,
+  ::ng-deep zxing-scanner video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+}
+
+/* Thin red horizontal aiming line — the single biggest UX win
+   for 1D barcode scanning. User aligns the middle of the printed
+   barcode with this line and the decoder locks in fast. */
+.scan-aim-line {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 50%;
+  height: 2px;
+  background: red;
+  box-shadow: 0 0 4px rgba(255, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.scan-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #555;
+  text-align: center;
 }
 
 zxing-scanner {

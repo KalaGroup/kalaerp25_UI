@@ -3,7 +3,26 @@
   <!-- Header -->
   <div class="header-container">
     <h6 class="header-title">Invoice Scan</h6>
-    <button class="save-button" disabled>SAVE</button>
+    <!-- SAVE is disabled until a scan produces invoiceData; also
+         disabled while a save is in flight so a double-click can't
+         double-post. Click POSTs to /api/InvoiceScan/Submit/{invId}
+         which marks GateOut='D' and sends the dispatch email.
+         While isSaving is true: pill turns green, in-button
+         spinner shows, and the thin progress bar under the header
+         animates — two independent progress cues. -->
+    <button class="save-button"
+            type="button"
+            [class.is-saving]="isSaving"
+            [disabled]="!canSave()"
+            (click)="onSaveClick()">
+      <span *ngIf="isSaving" class="save-spinner" aria-hidden="true"></span>
+      <span>{{ isSaving ? 'SAVING…' : 'SAVE' }}</span>
+    </button>
+
+    <!-- Indeterminate progress bar shown while a save is in flight.
+         Absolutely positioned along the bottom edge of the header. -->
+    <div *ngIf="isSaving" class="header-progress" role="progressbar"
+         aria-label="Saving invoice"></div>
   </div>
 
   <!-- Error Modal -->
@@ -32,21 +51,71 @@
     </div>
   </div>
 
-  <!-- Scan Button -->
+  <!-- Scan Button + Hidden HID (Rugtek) input.
+       The Rugtek USB scanner types its scanned string into the
+       currently focused input and ends with Enter. We keep this
+       hidden input auto-focused so a Rugtek scan works with NO
+       user click — the operator can just point-and-scan.
+       For phones/tablets or as a backup, tapping the button
+       opens the camera scanner below. -->
   <div class="scan-section">
     <button class="scan-button" (click)="onScanClick()">
-      SCAN INVOICE
+      SCAN INVOICE (Camera)
     </button>
+
+    <!-- Byte-for-byte the same pattern used in dg-stage-i (works
+         reliably with Rugtek there). NO aria-hidden, NO blur-refocus
+         loop, NO tabindex="-1" — just a plain input that our SCSS
+         visually hides via the accessible clip pattern. -->
+    <input #hidScannerInput
+           type="text"
+           class="hid-scanner-input"
+           autocomplete="off"
+           (keydown.enter)="onHidScan(hidScannerInput)" />
   </div>
 
-  <!-- QR Scanner -->
+  <!-- QR / Barcode Scanner (camera).
+       Key inputs added to help mobile camera read 1D barcodes:
+         [videoConstraints]  — back camera, 1920×1080, continuous focus
+         [tryHarder]="true"  — ZXing does more decode attempts per frame
+         [torch]="torchOn"   — flashlight toggle (Android Chrome)
+       Overlay `.scan-aim-line` is a thin horizontal red guide the
+       user aligns the middle of the barcode with — this alone
+       drastically improves 1D read success on phones. -->
   <div *ngIf="showQrScanner" class="qr-scanner-container">
     <div class="qr-scanner-wrapper">
-      <div class="qr-scan-header">Scan QR Code</div>
-      <zxing-scanner
-        [formats]="allowedFormats"
-        (scanSuccess)="handleQrCodeResult($event)">
-      </zxing-scanner>
+      <div class="qr-scan-header">
+        <span>Scan QR / Barcode</span>
+        <button *ngIf="torchAvailable"
+                type="button"
+                class="torch-button"
+                [class.is-on]="torchOn"
+                (click)="toggleTorch()"
+                [title]="torchOn ? 'Turn flash off' : 'Turn flash on'">
+          {{ torchOn ? '💡 Flash ON' : '🔦 Flash' }}
+        </button>
+      </div>
+
+      <div class="scan-video-frame">
+        <zxing-scanner
+          [formats]="allowedFormats"
+          [videoConstraints]="videoConstraints"
+          [tryHarder]="tryHarder"
+          [torch]="torchOn"
+          (torchCompatible)="onTorchCompatible($event)"
+          (scanSuccess)="handleQrCodeResult($event)">
+        </zxing-scanner>
+
+        <!-- Aiming guide — helps the user line up 1D barcodes
+             straight. Positioned centred; the barcode reads best
+             when the middle bar of the barcode crosses this line. -->
+        <div class="scan-aim-line"></div>
+      </div>
+
+      <p class="scan-hint">
+        Line up the barcode horizontally on the red line.
+        Hold steady, good light helps.
+      </p>
     </div>
   </div>
 
