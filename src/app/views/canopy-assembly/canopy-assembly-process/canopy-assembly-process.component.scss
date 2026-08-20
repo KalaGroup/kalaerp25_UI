@@ -80,7 +80,38 @@
   margin-bottom: 8px;
   display: flex;
   align-items: center;
+  justify-content: space-between;  /* pushes .cap-btn-excel to the right */
   gap: 10px;
+}
+
+/* Export-to-Excel pill button next to each table title.
+   Green fill = enabled (matches Microsoft Excel branding),
+   ghost outline = disabled (no rows loaded yet). */
+.cap-btn-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid #1d6f42;
+  background: #1d6f42;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+  &:not(:disabled):hover {
+    background: #14532c;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  &:not(:disabled):active { transform: translateY(1px); }
+  &:disabled {
+    background: transparent;
+    color: #6b7280;
+    border-color: #cfd6dd;
+    cursor: not-allowed;
+  }
 }
 .cap-row-count {
   display: inline-flex;
