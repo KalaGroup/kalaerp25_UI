@@ -481,6 +481,9 @@
 .stage-modal-box .data-table td.col-srno,
 .stage-modal-box .data-table td.indextd       { text-align: center; width: 56px; font-weight: 600; color: #6b7280; }
 
+.stage-modal-box .data-table th.col-unit,
+.stage-modal-box .data-table td.col-unit      { text-align: center; width: 86px; white-space: nowrap; }
+
 .stage-modal-box .data-table th.col-sheet,
 .stage-modal-box .data-table td.col-sheet     { text-align: left;   min-width: 150px; }
 
@@ -781,6 +784,68 @@
 .summary-item b {
   font-size: 14px;
   font-weight: 600;
+}
+
+/* ============================================
+   UNIT SPLIT (Unit-I = Canopy, Unit-IV = Base Frame / Fuel Tank)
+   ============================================ */
+.unit-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -8px 0 14px;
+}
+
+.unit-legend-label {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Teal chip = Unit-I; amber chip = Unit-IV. Same colours are used for the
+   badge and table header of the matching PDF. */
+.unit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: #ccfbf1;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+
+  b { font-weight: 800; }
+
+  &.unit-chip--u4 {
+    background: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
+  }
+
+  &.unit-chip--sm {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+}
+
+/* Footer download buttons, colour-matched to their unit. */
+.btn-unit {
+  background: #0f766e;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+
+  i { font-size: 12px; margin-right: 4px; }
+
+  &:hover:not(:disabled) { background: #0d6660; color: #fff; }
+
+  &.btn-unit--u4 {
+    background: #b45309;
+    &:hover:not(:disabled) { background: #92400e; }
+  }
 }
 
 /* Long part description sits in its own card so the text can wrap. */

@@ -16,6 +16,9 @@ export interface IBendingPrcPartDts{
     LossWgt:number
     sqft:number
     categoryID:number
+    strokes:number
+    Totalstrokes:number
+    GrandTotalstrokes:number
 
     
 }

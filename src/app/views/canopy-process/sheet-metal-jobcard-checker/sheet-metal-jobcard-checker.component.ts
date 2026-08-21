@@ -138,6 +138,49 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
     return this.STAGE_COLUMNS[this.stageName] ?? this.STAGE_COLUMNS['CNC'];
   }
 
+  /**
+   * Unit split for the stage sheet. The sheets are manufactured in different
+   * units depending on their category, so each unit is printed as its own PDF:
+   *   Unit-I  → Canopy
+   *   Unit-IV → Base Frame + Fuel Tank
+   * Any category that isn't a Unit-IV one falls back to Unit-I.
+   */
+  readonly UNIT_GROUPS: Array<{
+    id: string; label: string; short: string; file: string;
+    categories: string[]; color: [number, number, number];
+  }> = [
+    { id: 'U1', label: 'UNIT - I',  short: 'Unit-I',  file: 'Unit-I',
+      categories: ['canopy'],                 color: [15, 118, 110] },
+    { id: 'U4', label: 'UNIT - IV', short: 'Unit-IV', file: 'Unit-IV',
+      categories: ['baseframe', 'fueltank'],  color: [180, 83, 9] }
+  ];
+
+  /** Lower-cases a category and strips spaces/punctuation so "Base Frame" == "baseframe". */
+  private normalizeCategory(value: any): string {
+    return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  /** Unit a stage row belongs to, decided by its category name. */
+  unitIdForRow(row: any): string {
+    const cat = this.normalizeCategory(row?.['CatagoryName']);
+    const unit4 = this.UNIT_GROUPS.find(g => g.id === 'U4')!;
+    return unit4.categories.some(c => cat.includes(c)) ? 'U4' : 'U1';
+  }
+
+  /** Short unit label ("Unit-I" / "Unit-IV") shown against a row in the popup. */
+  unitLabelForRow(row: any): string {
+    const id = this.unitIdForRow(row);
+    return this.UNIT_GROUPS.find(g => g.id === id)?.short ?? '';
+  }
+
+  /** The unit groups actually present in the loaded stage rows, with their rows. */
+  get stageUnitGroups(): Array<{ id: string; label: string; short: string; rows: any[] }> {
+    const rows = this.stageRows ?? [];
+    return this.UNIT_GROUPS
+      .map(g => ({ id: g.id, label: g.label, short: g.short, rows: rows.filter(r => this.unitIdForRow(r) === g.id) }))
+      .filter(g => g.rows.length > 0);
+  }
+
   /** Loads an image (from assets) and returns it as a PNG data URL for jsPDF. */
   private loadImageDataUrl(url: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -700,139 +743,179 @@ export class SheetMetalJobcardCheckerComponent implements OnInit {
   }
 
   /**
-   * Generates a paginated PDF of the current stage sheet list
-   * (one row per sheet, QR embedded in the last column) and
-   * triggers a direct download. Uses jsPDF + jspdf-autotable so
-   * the PDF flows across multiple pages automatically.
+   * Downloads the stage sheet as one PDF per unit.
+   *
+   * The sheets of a plan are made in different units, so they must not go out
+   * on one paper: Canopy sheets belong to Unit-I and Base Frame / Fuel Tank
+   * sheets to Unit-IV. Passing a `unitId` downloads only that unit; calling it
+   * without one downloads every unit present, as separate files.
    */
-  async downloadStagePdf(): Promise<void> {
+  async downloadStagePdf(unitId?: string): Promise<void> {
     if (!this.stageRows?.length) return;
 
-    const cpCode = this.stagePlan?.CPCode ?? '';
-    const partCode = this.stagePlan?.Partcode ?? '';
-    const stage = this.stageName ?? '';
-    const safeName = `${cpCode}_${stage}`.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'stage';
+    const groups = this.stageUnitGroups.filter(g => !unitId || g.id === unitId);
+    if (!groups.length) return;
 
     this.isStageLoading = true;
     try {
-      const stageCols = this.currentStageColumns;
-
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-
-      // Company logo — top-right corner.
-      try {
-        const logo = await this.loadImageDataUrl('assets/images/kala-logo.png');
-        doc.addImage(logo, 'PNG', pageWidth - 84, 12, 64, 64);
-      } catch (e) {
-        console.warn('Logo not added to PDF:', e);
+      for (let i = 0; i < groups.length; i++) {
+        await this.buildUnitStagePdf(groups[i].id, groups[i].rows);
+        // Browsers throttle back-to-back downloads — give each save a moment.
+        if (i < groups.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
       }
-
-      // Header — title + meta line. Aligned with the table's left edge (25pt).
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${stage} List`, 25, 40);
-
-      const planQty = this.formatCellValue(this.stagePlan?.BatchQty);
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Plan Code: ${cpCode}`, 25, 58);
-      doc.text(`Part Code: ${partCode}`, 200, 58);
-      doc.text(`Stage: ${stage}`, 380, 58);
-      doc.text(`Plan Qty: ${planQty}`, 520, 58);
-      doc.text(`Rows: ${this.stageRows.length}`, 640, 58);
-
-      // Part description on its own wrapped line beneath the meta row.
-      let tableStartY = 72;
-      const partDesc = this.stagePlan?.PartDesc;
-      if (partDesc) {
-        const descText = `Part Description: ${partDesc}`;
-        const lines = doc.splitTextToSize(descText, pageWidth - 50);
-        doc.text(lines, 25, 72);
-        tableStartY = 72 + lines.length * 11; // ~11pt per line at fontSize 9
-      }
-
-      const head = [[
-        'SrNo',
-        ...stageCols.map(c => c.label)
-      ]];
-
-      const body = this.stageRows.map((r, i) => [
-        String(i + 1),
-        ...stageCols.map(c => this.stageCellValue(r, c))
-      ]);
-
-      const columnStyles: Record<number, any> = {
-        0: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
-      };
-
-      // Columns whose values are codes/IDs read better in a monospaced font
-      // — same visual treatment as the on-screen popup.
-      const monoKeys = new Set(['SheetCode', 'MachinePartCode']);
-      const centerKeys = new Set(['CatID', 'CatagoryName', 'StartDate', 'EndDate']);
-      const leftKeys = new Set(['Sheet', 'KitDesc', 'MachineName']);
-
-      stageCols.forEach((col, idx) => {
-        const colIdx = idx + 1;
-        const style: any = {};
-        if (col.width)               style.cellWidth = col.width;
-        if (col.type === 'num')      style.halign = 'right';
-        else if (centerKeys.has(col.key)) style.halign = 'center';
-        else if (leftKeys.has(col.key))   style.halign = 'left';
-        if (monoKeys.has(col.key))   style.font = 'courier';
-        // Manual-fill columns (no key) — give them a very light tint so the
-        // operator sees clearly which cells need to be written in by hand.
-        if (!col.key)                style.fillColor = [255, 251, 235];
-        columnStyles[colIdx] = style;
-      });
-
-      autoTable(doc, {
-        startY: tableStartY,
-        head,
-        body,
-        // Tighten margins so a wider table still fits the A4 portrait page.
-        margin: { top: tableStartY, left: 25, right: 25, bottom: 30 },
-        tableWidth: 'wrap',
-        // Never split a row across pages — push it intact to the next page.
-        rowPageBreak: 'avoid',
-        // 'grid' draws full borders around every cell — the cleanest, most
-        // readable look for a data table.
-        theme: 'grid',
-        styles: {
-          fontSize: 9,
-          cellPadding: 6,
-          valign: 'middle',
-          overflow: 'linebreak',
-          lineColor: [180, 188, 200],
-          lineWidth: 0.5,
-          textColor: [30, 41, 59]
-        },
-        // Tall rows so operators have room to handwrite in the manual-fill
-        // columns (Supplier / Machine / Start Date / End Date).
-        bodyStyles: { minCellHeight: 32 },
-        headStyles: {
-          fillColor: [15, 118, 110],          // teal header to match the in-app theme
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          halign: 'left',
-          minCellHeight: 22,
-          lineColor: [15, 118, 110],
-          lineWidth: 0.5
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]          // soft zebra striping for legibility
-        },
-        columnStyles
-      });
-
-      doc.save(`${safeName}.pdf`);
     } catch (e) {
       console.error('PDF generation failed', e);
       alert('PDF generation failed.');
     } finally {
       this.isStageLoading = false;
     }
+  }
+
+  /**
+   * Builds and saves one paginated stage-sheet PDF for a single unit. The unit
+   * is called out by a coloured badge next to the title and repeated in the
+   * file name, so a printed sheet can never be mistaken for the other unit's.
+   */
+  private async buildUnitStagePdf(unitId: string, rows: any[]): Promise<void> {
+    const unit = this.UNIT_GROUPS.find(g => g.id === unitId) ?? this.UNIT_GROUPS[0];
+
+    const cpCode = this.stagePlan?.CPCode ?? '';
+    const partCode = this.stagePlan?.Partcode ?? '';
+    const stage = this.stageName ?? '';
+    const safeName = `${cpCode}_${stage}_${unit.file}`
+      .replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'stage';
+
+    const stageCols = this.currentStageColumns;
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Company logo — top-right corner.
+    try {
+      const logo = await this.loadImageDataUrl('assets/images/kala-logo.png');
+      doc.addImage(logo, 'PNG', pageWidth - 84, 12, 64, 64);
+    } catch (e) {
+      console.warn('Logo not added to PDF:', e);
+    }
+
+    // Header — title + meta line. Aligned with the table's left edge (25pt).
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    const title = `${stage} List`;
+    doc.text(title, 25, 40);
+
+    // Unit badge right beside the title — the loudest marker on the page,
+    // so the operator sees at a glance which unit this sheet is for.
+    const badgeX = 25 + doc.getTextWidth(title) + 14;
+    doc.setFontSize(12);
+    const badgeW = doc.getTextWidth(unit.label) + 22;
+    doc.setFillColor(unit.color[0], unit.color[1], unit.color[2]);
+    doc.roundedRect(badgeX, 26, badgeW, 20, 5, 5, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text(unit.label, badgeX + 11, 40);
+    doc.setTextColor(30, 41, 59);
+
+    const planQty = this.formatCellValue(this.stagePlan?.BatchQty);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Plan Code: ${cpCode}`, 25, 58);
+    doc.text(`Part Code: ${partCode}`, 200, 58);
+    doc.text(`Stage: ${stage}`, 380, 58);
+    doc.text(`Plan Qty: ${planQty}`, 470, 58);
+    doc.text(`Rows: ${rows.length}`, 570, 58);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Unit: ${unit.label.replace('UNIT - ', '')}`, 650, 58);
+    doc.setFont('helvetica', 'normal');
+
+    // Part description on its own wrapped line beneath the meta row.
+    let tableStartY = 72;
+    const partDesc = this.stagePlan?.PartDesc;
+    if (partDesc) {
+      const descText = `Part Description: ${partDesc}`;
+      const lines = doc.splitTextToSize(descText, pageWidth - 50);
+      doc.text(lines, 25, 72);
+      tableStartY = 72 + lines.length * 11; // ~11pt per line at fontSize 9
+    }
+
+    const head = [[
+      'SrNo',
+      ...stageCols.map(c => c.label)
+    ]];
+
+    const body = rows.map((r, i) => [
+      String(i + 1),
+      ...stageCols.map(c => this.stageCellValue(r, c))
+    ]);
+
+    const columnStyles: Record<number, any> = {
+      0: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
+    };
+
+    // Columns whose values are codes/IDs read better in a monospaced font
+    // — same visual treatment as the on-screen popup.
+    const monoKeys = new Set(['SheetCode', 'MachinePartCode']);
+    const centerKeys = new Set(['CatID', 'CatagoryName', 'StartDate', 'EndDate']);
+    const leftKeys = new Set(['Sheet', 'KitDesc', 'MachineName']);
+
+    stageCols.forEach((col, idx) => {
+      const colIdx = idx + 1;
+      const style: any = {};
+      if (col.width)               style.cellWidth = col.width;
+      if (col.type === 'num')      style.halign = 'right';
+      else if (centerKeys.has(col.key)) style.halign = 'center';
+      else if (leftKeys.has(col.key))   style.halign = 'left';
+      if (monoKeys.has(col.key))   style.font = 'courier';
+      // Manual-fill columns (no key) — give them a very light tint so the
+      // operator sees clearly which cells need to be written in by hand.
+      if (!col.key)                style.fillColor = [255, 251, 235];
+      columnStyles[colIdx] = style;
+    });
+
+    autoTable(doc, {
+      startY: tableStartY,
+      head,
+      body,
+      // Tighten margins so a wider table still fits the A4 portrait page.
+      margin: { top: tableStartY, left: 25, right: 25, bottom: 30 },
+      tableWidth: 'wrap',
+      // Never split a row across pages — push it intact to the next page.
+      rowPageBreak: 'avoid',
+      // 'grid' draws full borders around every cell — the cleanest, most
+      // readable look for a data table.
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 6,
+        valign: 'middle',
+        overflow: 'linebreak',
+        lineColor: [180, 188, 200],
+        lineWidth: 0.5,
+        textColor: [30, 41, 59]
+      },
+      // Tall rows so operators have room to handwrite in the manual-fill
+      // columns (Supplier / Machine / Start Date / End Date).
+      bodyStyles: { minCellHeight: 32 },
+      headStyles: {
+        // Header takes the unit's colour, so the two PDFs are told apart
+        // instantly even after they are printed and stacked together.
+        fillColor: unit.color,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'left',
+        minCellHeight: 22,
+        lineColor: unit.color,
+        lineWidth: 0.5
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]          // soft zebra striping for legibility
+      },
+      columnStyles
+    });
+
+    doc.save(`${safeName}.pdf`);
   }
 
 

@@ -384,6 +384,20 @@
           }
         </div>
 
+        <!-- Unit split: Canopy → Unit-I, Base Frame / Fuel Tank → Unit-IV.
+             Each unit is downloaded as its own PDF. -->
+        @if (stageUnitGroups.length) {
+          <div class="unit-legend">
+            <span class="unit-legend-label">Unit wise split:</span>
+            @for (g of stageUnitGroups; track g.id) {
+              <span class="unit-chip" [class.unit-chip--u4]="g.id === 'U4'">
+                {{ g.label }}
+                <b>{{ g.rows.length }}</b>
+              </span>
+            }
+          </div>
+        }
+
         @if (stagePlan?.PartDesc) {
           <div class="summary-card desc-card">
             <div class="summary-item part-desc">
@@ -398,6 +412,7 @@
             <thead>
               <tr>
                 <th class="col-srno">SrNo</th>
+                <th class="col-unit">Unit</th>
                 @for (col of currentStageColumns; track $index) {
                   <th [class]="col.key ? ('col-' + col.key.toLowerCase()) : 'col-manual'"
                       [class.col-num]="col.type === 'num'">{{ col.label }}</th>
@@ -407,7 +422,7 @@
             <tbody>
               @if (isStageLoading) {
                 <tr class="empty-row">
-                  <td [attr.colspan]="currentStageColumns.length + 1">
+                  <td [attr.colspan]="currentStageColumns.length + 2">
                     <div class="empty-state">
                       <i class="fa fa-spinner"></i>
                       <p class="empty-title">Loading…</p>
@@ -416,7 +431,7 @@
                 </tr>
               } @else if (!stageRows || stageRows.length === 0) {
                 <tr class="empty-row">
-                  <td [attr.colspan]="currentStageColumns.length + 1">
+                  <td [attr.colspan]="currentStageColumns.length + 2">
                     <div class="empty-state">
                       <div class="empty-icon">📄</div>
                       <p class="empty-title">No Records Found</p>
@@ -427,6 +442,12 @@
                 @for (row of stageRows; track $index; let i = $index) {
                   <tr>
                     <td class="indextd">{{ i + 1 }}</td>
+                    <td class="col-unit">
+                      <span class="unit-chip unit-chip--sm"
+                            [class.unit-chip--u4]="unitIdForRow(row) === 'U4'">
+                        {{ unitLabelForRow(row) }}
+                      </span>
+                    </td>
                     @for (col of currentStageColumns; track $index) {
                       <td [class]="col.key ? ('col-' + col.key.toLowerCase()) : 'col-manual'"
                           [class.num-cell]="col.type === 'num'"
@@ -444,11 +465,24 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeStagePopup()">Close</button>
-        <button class="btn btn-primary" [disabled]="isStageLoading || !stageRows?.length"
-                (click)="downloadStagePdf()">
-          <i class="fa fa-download" aria-hidden="true"></i>
-          Download
-        </button>
+
+        <!-- One button per unit — each downloads that unit's sheet on its own PDF. -->
+        @for (g of stageUnitGroups; track g.id) {
+          <button class="btn btn-unit" [class.btn-unit--u4]="g.id === 'U4'"
+                  [disabled]="isStageLoading"
+                  (click)="downloadStagePdf(g.id)">
+            <i class="fa fa-download" aria-hidden="true"></i>
+            {{ g.label }} ({{ g.rows.length }})
+          </button>
+        }
+
+        @if (stageUnitGroups.length > 1) {
+          <button class="btn btn-primary" [disabled]="isStageLoading || !stageRows?.length"
+                  (click)="downloadStagePdf()">
+            <i class="fa fa-download" aria-hidden="true"></i>
+            Download All
+          </button>
+        }
       </div>
 
     </div>

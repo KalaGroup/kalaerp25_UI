@@ -6,6 +6,7 @@ export interface Ifabricationcheckerprcdts {
   PFBCode: string;
   Dt: string;
   CanopyPlanCode: string;
+  KVA: string;
   ProcessPart: string;
   Sheetpartcode: string;
   CatID: string | number;

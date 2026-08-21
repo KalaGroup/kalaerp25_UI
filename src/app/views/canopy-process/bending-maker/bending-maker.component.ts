@@ -82,6 +82,8 @@ export class BendingMakerComponent implements OnInit {
   kitWt = 0;
   kitSqft = 0;
   benCatID = '';
+  /** GrandTotalstrokes is the same on every part row, so it's read off row 0. */
+  grandTotalStrokes = 0;
  
   lblSaveCaption = 'Submit';
 
@@ -277,6 +279,7 @@ export class BendingMakerComponent implements OnInit {
           next: (data) => {
             const parts = data ?? [];
             this.partDtsList.set(parts);
+            this.grandTotalStrokes = parts[0]?.GrandTotalstrokes ?? 0;
             // End flow: BendGetCpyKitQty doesn't run (no balance left
             // for an already-processed PSH plan) so benCatID never
             // gets populated. Pull it off the first part row so the
@@ -308,7 +311,13 @@ export class BendingMakerComponent implements OnInit {
     this.api.BendGetCpyKitDts(this.PC, cpyKitCode[0], this.bomCode, this.prcQty)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => { this.partDtsList.set(data ?? []); this.loading.set(false); },
+        next: (data) => {
+          const parts = data ?? [];
+          this.partDtsList.set(parts);
+          this.grandTotalStrokes = parts[0]?.GrandTotalstrokes ?? 0;
+          this.loading.set(false);
+        },
+
         error: (err) => { console.error(err); this.loading.set(false); },
       });
   }
@@ -466,6 +475,7 @@ export class BendingMakerComponent implements OnInit {
       Remark:         (this.lblSaveCaption === 'End' ? 'End' : 'Nil'),
       AttachFileDts:  attachFileDts.trim(),
       CatID:          this.benCatID         ?? '0',
+      Strokes:          String(this.grandTotalStrokes ?? 0)
     };
  
     // Guard against a double-click firing a second save before the first responds.

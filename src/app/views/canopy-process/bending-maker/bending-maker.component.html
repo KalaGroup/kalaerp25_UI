@@ -106,6 +106,8 @@
               <th class="th-green" style="width: 110px">Batch Qty</th>
               <th style="width: 110px">Stk Qty</th>
               <th>Partcode</th>
+              <th>Stroke</th>
+            
             </tr>
           </thead>
           <tbody>
@@ -118,6 +120,8 @@
                 <td class="td-center td-green">{{ part.BatchQty }}</td>
                 <td class="td-center">{{ part.StkQty }}</td>
                 <td>{{ part.PartCode }}</td>
+                <td class="td-center">{{ part.strokes }}</td>
+               
               </tr>
             } @empty {
               <tr>
@@ -135,6 +139,14 @@
               </tr>
             }
           </tbody>
+          @if ((partDtsList() ?? []).length > 0) {
+            <tfoot>
+              <tr>
+                <td colspan="8" class="td-right"><b>Grand Total Strokes</b></td>
+                <td><b>{{ grandTotalStrokes }}</b></td>
+              </tr>
+            </tfoot>
+          }
         </table>
       </div>
 

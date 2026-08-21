@@ -22,4 +22,5 @@ export interface IbendingprcSave {
     Remark: string;
     AttachFileDts: string;
     CatID: string;
+    Strokes: string;
 }
