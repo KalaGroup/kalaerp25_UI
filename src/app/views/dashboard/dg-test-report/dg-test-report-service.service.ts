@@ -19,8 +19,7 @@ export interface TestReportStatusRow {
   PFBCode:        string;
   MachineCode:    string;
   DGPartCode:     string;
-  ProcessStart:   string;
-  ProcessEnd:     string;
+  QPCStatus:      string;   // From ProcessFeedback.QPCStatus — 'P' pending, 'D' done
   PrcBOMCode:     string;
   'Test Report':  string;
   EngineSrNo:     string;

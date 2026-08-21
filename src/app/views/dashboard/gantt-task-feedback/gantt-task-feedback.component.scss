@@ -1,0 +1,303 @@
+/* ===== Matches the app's standard page design (teal #0f6c8d) ===== */
+.k-container {
+  width: 100%;
+  padding: 15px;
+  font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+  background: #f4f6f9;
+  position: relative;
+}
+
+/* HEADER BAR */
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #0f6c8d, #0b556f);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(15, 108, 141, 0.25);
+}
+.header-bar .title-wrap { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.header-bar h2 { font-size: 18px; font-weight: 700; letter-spacing: 0.4px; margin: 0; }
+.header-bar .header-sub { font-size: 12px; opacity: 0.85; }
+.header-bar button {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.header-bar button:hover { background: rgba(255, 255, 255, 0.28); }
+
+/* MESSAGES */
+/* Sticky so the confirmation stays visible even when the page is scrolled down
+   to the Save button — otherwise saving from the bottom shows nothing. */
+.msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  margin-bottom: 12px;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  animation: msg-in 0.25s ease-out;
+}
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg .msg-text { flex: 1; }
+.msg .msg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex: none;
+}
+.msg .msg-close {
+  background: none;
+  border: none;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0 2px;
+}
+.msg .msg-close:hover { opacity: 1; }
+
+.msg.success { background: #e6f4ea; color: #1e7a3b; border: 1px solid #b7dfc4; }
+.msg.success .msg-icon { background: #1e7a3b; }
+.msg.error   { background: #fdecea; color: #b3261e; border: 1px solid #f5c6c2; }
+.msg.error .msg-icon { background: #b3261e; }
+
+/* CARD */
+.card {
+  background: #ffffff;
+  padding: 18px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0b556f;
+}
+.section-title .count { font-weight: 600; color: #6b7280; font-size: 13px; }
+.section-title .count-note { font-weight: 500; color: #6b7280; font-size: 12.5px; }
+
+/* FORM GRID */
+.row { display: flex; gap: 15px; margin-bottom: 14px; flex-wrap: wrap; }
+.row > div { flex: 1; min-width: 220px; }
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b4754;
+  margin-bottom: 5px;
+}
+.req { color: #d93025; margin-right: 3px; }
+
+input[type='text'], select, textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+input[type='text']:focus, select:focus, textarea:focus {
+  border-color: #0f6c8d;
+  box-shadow: 0 0 4px rgba(15, 108, 141, 0.4);
+  outline: none;
+}
+textarea { resize: vertical; }
+
+/* radio row */
+.radio-line { display: flex; gap: 18px; align-items: center; padding-top: 4px; }
+.radio {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 500; font-size: 13px; color: #3b4754; margin: 0; cursor: pointer;
+}
+.radio input { cursor: pointer; }
+
+/* stars */
+.stars-wrap { display: flex; align-items: center; gap: 4px; padding-top: 2px; }
+.star {
+  font-size: 26px;
+  line-height: 1;
+  color: #d8dde2;
+  cursor: pointer;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+.star:hover { transform: scale(1.12); }
+.star.on { color: #f5a623; }
+.rating-head { margin-left: 10px; font-size: 13px; color: #0b556f; }
+
+// GRID TABLE
+// NOTE: these are named .k-* on purpose. Tailwind is enabled app-wide
+// (@tailwind utilities in assets/styles/app.scss, which scans every component
+// template), and its core utilities include .grid{display:grid} and
+// .container{...}. A plain class="grid" on a <table> makes it a CSS-grid
+// container, which detaches <thead> from <tbody> and wrecks column alignment.
+// The display:table below is a second line of defence.
+.k-grid {
+  display: table;
+  width: 100%;
+  border-collapse: separate;   /* keeps borders painted under a sticky header */
+  border-spacing: 0;
+  font-size: 13px;
+}
+/* Declared column widths are honoured exactly, so the header can never drift
+   out of line with the body (they are laid out from the header row alone). */
+.k-grid.tasks-grid { table-layout: fixed; }
+
+/* Only right+bottom edges are drawn (plus a left edge on the first cell), so
+   nothing doubles up now that borders no longer collapse. */
+.k-grid thead th {
+  background: #eef4f7;
+  color: #0b556f;
+  font-weight: 700;
+  text-align: left;
+  padding: 9px 10px;
+  border-top: 1px solid #dde9ef;
+  border-right: 1px solid #dde9ef;
+  border-bottom: 1px solid #dde9ef;
+  white-space: nowrap;
+}
+.k-grid thead th:first-child { border-left: 1px solid #dde9ef; }
+
+.k-grid tbody td {
+  padding: 8px 10px;
+  border-right: 1px solid #e8edf1;
+  border-bottom: 1px solid #e8edf1;
+  color: #3b4754;
+  vertical-align: top;
+  overflow-wrap: break-word;   /* long task names wrap inside their fixed column */
+  word-break: break-word;
+}
+.k-grid tbody td:first-child { border-left: 1px solid #e8edf1; }
+
+/* Task list scrolls inside its own box instead of pushing the Feedback panel
+   off the page — with 218 rows you would otherwise have to scroll the whole
+   list to reach Save. */
+.grid-scroll {
+  max-height: 40vh;
+  min-height: 160px;
+  overflow-y: auto;
+  overflow-x: hidden;   /* the table draws its own frame — no border here */
+}
+/* Header stays put while the rows scroll under it. */
+.grid-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: inset 0 -1px 0 #dde9ef;   /* keeps the bottom rule visible when stuck */
+}
+.k-grid tbody tr:nth-child(even) { background: #fafcfd; }
+.k-grid tbody tr:hover { background: #f0f7fa; }
+.k-grid tbody tr.row-selected { background: #e4f2f7; }
+.k-grid tbody tr.row-selected:hover { background: #d9ecf4; }
+.k-grid .center { text-align: center; }
+.k-grid .sub { font-size: 11.5px; color: #7b8794; margin-top: 3px; }
+.clickable { cursor: pointer; }
+.link { color: #0f6c8d; font-weight: 600; text-decoration: none; }
+.clickable:hover .link { text-decoration: underline; }
+
+.badge {
+  display: inline-block;
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 11px;
+  background: #0f6c8d;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* task toolbar */
+.task-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.task-head .section-title { margin: 0; }
+.task-tools { display: flex; align-items: center; gap: 10px; }
+.task-tools .search { width: 280px; padding: 7px 10px; }
+.selinfo { font-size: 12.5px; font-weight: 700; color: #0b556f; white-space: nowrap; }
+.ghost {
+  background: transparent;
+  border: 1px solid #cfd8dd;
+  color: #4b5763;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ghost:hover { background: #f1f5f7; }
+
+/* actions */
+.actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+button.save {
+  background: #0f6c8d;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 108, 141, 0.3);
+}
+button.save:hover:not(:disabled) { background: #0b556f; }
+button.save:disabled { background: #a9c3ce; cursor: not-allowed; box-shadow: none; }
+
+.empty {
+  padding: 22px;
+  text-align: center;
+  color: #7b8794;
+  font-size: 13px;
+  background: #fafcfd;
+  border: 1px dashed #dde9ef;
+  border-radius: 8px;
+}
+
+/* LOADER */
+.loader-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+.spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid #d7e5ec;
+  border-top-color: #0f6c8d;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

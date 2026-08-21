@@ -527,11 +527,6 @@ export class Jobcard2Component implements OnInit {
         Jobcard2Qty: String(row.jobcard2Qty),
       }));
 
-    if (selectedRows.length === 0) {
-      this.warningMessage = 'Please enter quantity for at least one model.';
-      return;
-    }
-
     // Stamp the line-wise PC (granular) and its parent (rolled-up) on the transaction.
     // PCCode_Act ← LineWisePC, PCCode ← ParentDgPC. Both come from the user's
     // selected dropdown line right; replaces the old employee-master PCs.
@@ -601,19 +596,17 @@ export class Jobcard2Component implements OnInit {
   }
 
   validateQty(row: any): void {
-    const max = Number(row.Stage3Qty) || 0;
+    // Only guard against negatives — Stage3Qty is NOT a hard cap anymore.
+    // Operator can plan more JobCard2s than Stage 3 currently shows.
     let val = Number(row.jobcard2Qty) || 0;
     if (val < 0) val = 0;
-    if (val > max) val = max;
     row.jobcard2Qty = val;
   }
 
   incrementQty(row: any): void {
-    const max = Number(row.Stage3Qty) || 0;
+    // No Stage3Qty ceiling — allow the operator to bump Qty freely.
     const current = Number(row.jobcard2Qty) || 0;
-    if (current < max) {
-      row.jobcard2Qty = current + 1;
-    }
+    row.jobcard2Qty = current + 1;
   }
 
   decrementQty(row: any): void {

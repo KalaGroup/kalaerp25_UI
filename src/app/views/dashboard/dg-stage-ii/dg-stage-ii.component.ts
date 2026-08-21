@@ -646,13 +646,24 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
               trStatus: altDetails[3],
             };
 
-            const cpyDetails = data.Cpydts.split('-->');
-            this.canopyScandetails = {
-              qrSrNo: cpyDetails[0],
-              cpyPart: cpyDetails[1],
-              cpyDesc: cpyDetails[2],
-              cpyStk: cpyDetails[3],
-            };
+            // Canopy availability guard — Cpydts null / blank means no canopy is
+            // stocked / linked for this DG at Stage 2. Surface a visible alert so
+            // the operator immediately knows an MTF is needed, and reset the
+            // canopy panel to blank (prevents a stale value from the previous scan
+            // + prevents a .split() crash that would silently fall to the catch
+            // block and hide the real problem).
+            if (!data.Cpydts) {
+              this.canopyScandetails = { qrSrNo: '', cpyPart: '', cpyDesc: '', cpyStk: '' };
+              this.showError('Canopy not available. Please raise an MTF.');
+            } else {
+              const cpyDetails = data.Cpydts.split('-->');
+              this.canopyScandetails = {
+                qrSrNo: cpyDetails[0],
+                cpyPart: cpyDetails[1],
+                cpyDesc: cpyDetails[2],
+                cpyStk: cpyDetails[3],
+              };
+            }
 
             // Old canopy stk from OldResult
             const oldCpyDetails = oldData.Cpydts ? oldData.Cpydts.split('-->') : [];
@@ -708,13 +719,19 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
               altDesc: altDetails[2] || '',
               trStatus: altDetails[3] || '',
             };
-            const cpyDetails = (response.Cpydts || '').split('-->');
-            this.canopyScandetails = {
-              qrSrNo: cpyDetails[0] || '',
-              cpyPart: cpyDetails[1] || '',
-              cpyDesc: cpyDetails[2] || '',
-              cpyStk: cpyDetails[3] || '',
-            };
+            // Same canopy guard for the legacy flat-response shape.
+            if (!response.Cpydts) {
+              this.canopyScandetails = { qrSrNo: '', cpyPart: '', cpyDesc: '', cpyStk: '' };
+              this.showError('Canopy not available. Please raise an MTF.');
+            } else {
+              const cpyDetails = response.Cpydts.split('-->');
+              this.canopyScandetails = {
+                qrSrNo: cpyDetails[0] || '',
+                cpyPart: cpyDetails[1] || '',
+                cpyDesc: cpyDetails[2] || '',
+                cpyStk: cpyDetails[3] || '',
+              };
+            }
             this.oldCpyStk = '';
             this.oldBatteryStks = [];
             this.planNo = response.JobCode || '';
@@ -871,15 +888,16 @@ export class DgStageIIComponent implements OnInit, OnDestroy {
     const canopyValid = this.isCanopyScannedSuccessfully();
 
     // Battery validation - optional but must be valid if scanned
-    const batteryValid = this.areBatteriesValid();
+    //const batteryValid = this.areBatteriesValid();
 
     // Stk mismatch checks (only if old stk values are present)
     const cpyStkMismatch = !!this.oldCpyStk && this.canopyScandetails.cpyStk != this.oldCpyStk;
-    const batStkMismatch = this.batteryScanDetails.some((bat, i) =>
-      this.oldBatteryStks[i] && bat.stk != this.oldBatteryStks[i]
-    );
+    // const batStkMismatch = this.batteryScanDetails.some((bat, i) =>
+    //   this.oldBatteryStks[i] && bat.stk != this.oldBatteryStks[i]
+    // );
 
-    return !engineValid || !alternatorValid || !canopyValid || !batteryValid || cpyStkMismatch || batStkMismatch;
+    //return !engineValid || !alternatorValid || !canopyValid || !batteryValid || cpyStkMismatch || batStkMismatch;
+    return !engineValid || !alternatorValid || !canopyValid || cpyStkMismatch;
   }
 
   // Engine turns green when qrSrNo exists

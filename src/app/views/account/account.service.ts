@@ -31,4 +31,15 @@ export class AccountService {
       `${this.baseUrl}InvoiceScan/GetInvoiceScanDts/${encodeURIComponent(invId)}`
     );
   }
+
+  /** POST — mark this invoice as gate-out (GateOut='D') and trigger
+   *  the dispatch email. Backend returns the InvId on success or an
+   *  error string on failure. Empty body — invoiceId is in the path. */
+  submitInvoiceScan(invId: string): Observable<string> {
+    return this.http.post(
+      `${this.baseUrl}InvoiceScan/Submit/${encodeURIComponent(invId)}`,
+      null,
+      { responseType: 'text' }
+    );
+  }
 }

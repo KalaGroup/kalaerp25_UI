@@ -35,9 +35,17 @@ export class CanopyAssemblyProcessCheckerComponent implements OnInit {
   empCode: string = '';
   todayIso: string = '';
 
-  // ── Line-rights dropdown ─────────────────────────────────────
-  prmCode: string = '';
-  lineRights: LineRight[] = [];
+  // ── Line list (hardcoded — same six canopy-assembly lines used across
+  //    Canopy Plan / Plan Checker / Process / Flatpack forms). No
+  //    position-role fetch; every checker sees the same six lines.
+  readonly lineRights: LineRight[] = [
+    { LineWisePC: '01.190', LineDesc: 'Unit 1 Line A Canopy Assembly',   ParentDgPC: '01.005' },
+    { LineWisePC: '03.181', LineDesc: 'Unit 4 Line B Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '03.069', LineDesc: 'Unit 4 Line C Canopy Assembly',   ParentDgPC: '03.038' },
+    { LineWisePC: '28.025', LineDesc: 'Unit BLR Line A Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '28.039', LineDesc: 'Unit BLR Line B Canopy Assembly', ParentDgPC: '28.017' },
+    { LineWisePC: '28.116', LineDesc: 'Unit BLR Line C Canopy Assembly', ParentDgPC: '28.017' },
+  ];
   selectedLineWisePC: string = '';
 
   // ── Pending list state ───────────────────────────────────────
@@ -107,10 +115,15 @@ export class CanopyAssemblyProcessCheckerComponent implements OnInit {
     this.pcName      = localStorage.getItem('profitCenterName')?.trim() ?? '';
     this.companyCode = localStorage.getItem('companyId')?.trim() ?? '01';
     this.empCode     = localStorage.getItem('employeeCode')?.trim() ?? '';
-    this.prmCode     = localStorage.getItem('positionRoleId')?.trim() ?? '';
     this.todayIso    = this.toIsoDate(new Date());
     this.initReportRange();
-    this.loadLineRights();
+    // Line list is hardcoded (see lineRights above). No API fetch.
+    // Auto-select the sole entry when the list is length 1 — parity with
+    // prior UX where a single-line position auto-picked itself.
+    if (this.lineRights.length === 1) {
+      this.selectedLineWisePC = this.lineRights[0].LineWisePC;
+      this.loadPending();
+    }
   }
 
   // ── Default report range: 1st of current month → today ────────
@@ -239,20 +252,6 @@ export class CanopyAssemblyProcessCheckerComponent implements OnInit {
   // ── Line rights ──────────────────────────────────────────────
   get selectedLineRight(): LineRight | undefined {
     return this.lineRights.find(l => l.LineWisePC === this.selectedLineWisePC);
-  }
-
-  private loadLineRights(): void {
-    if (!this.prmCode) { this.lineRights = []; return; }
-    this.checkerService.getLineRights(this.prmCode).subscribe({
-      next: (rows) => {
-        this.lineRights = Array.isArray(rows) ? rows : [];
-        if (this.lineRights.length === 1) {
-          this.selectedLineWisePC = this.lineRights[0].LineWisePC;
-          this.loadPending();
-        }
-      },
-      error: () => { this.lineRights = []; },
-    });
   }
 
   onLineChange(): void {
@@ -468,6 +467,18 @@ export class CanopyAssemblyProcessCheckerComponent implements OnInit {
 
   private doSave(): void {
     if (!this.ctxHeader) return;
+    // Resolve the selected line ONCE so LineWisePC + ParentDgPC always come
+    // from the same hardcoded row (no drift where PCCode is set but
+    // ParentDgPC is accidentally blank).
+    const selectedLine = this.selectedLineRight;
+    if (!selectedLine || !selectedLine.LineWisePC) {
+      this.errorMessage = 'Please select a Line before saving.';
+      return;
+    }
+    if (!selectedLine.ParentDgPC) {
+      this.errorMessage = `Line "${selectedLine.LineDesc}" is missing its ParentDgPC — cannot save.`;
+      return;
+    }
     this.isSaving = true;
 
     const decisions = this.unitRows
@@ -482,8 +493,8 @@ export class CanopyAssemblyProcessCheckerComponent implements OnInit {
 
     this.checkerService.save({
       EmpCode:     this.empCode,
-      PCCode:      this.selectedLineWisePC,
-      ParentDgPC:  this.selectedLineRight?.ParentDgPC ?? '',
+      PCCode:      selectedLine.LineWisePC,
+      ParentDgPC:  selectedLine.ParentDgPC,
       CompanyCode: this.companyCode || '01',
       PFBCode:     this.ctxHeader.PFBCode,
       ProductCode: this.ctxHeader.ProductCode,

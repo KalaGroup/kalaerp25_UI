@@ -297,7 +297,11 @@ export class Jobcard1Service {
   }
 
   private handleError(error: any): Observable<never> {
+    // Preserve the original HttpErrorResponse (or thrown value) so callers can
+    // read err.error / err.status. Wrapping in a generic Error was hiding the
+    // server's real message body (e.g. "Engine SrNo Not available For DG …")
+    // and forcing every component to show a useless generic banner.
     console.error('JobCard API Error:', error);
-    return throwError(() => new Error('Something went wrong. Please try again.'));
+    return throwError(() => error);
   }
 }

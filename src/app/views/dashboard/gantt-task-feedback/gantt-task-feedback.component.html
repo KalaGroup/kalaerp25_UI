@@ -1,0 +1,183 @@
+<div class="k-container">
+
+  <!-- LOADER -->
+  <div *ngIf="isLoading || isSaving" class="loader-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- HEADER BAR -->
+  <div class="header-bar">
+    <div class="title-wrap">
+      <h2>GANTT TASK FEEDBACK</h2>
+      <span class="header-sub">
+        {{ selectedProject ? selectedProject.projectName : 'Your projects · tasks awaiting feedback' }}
+      </span>
+    </div>
+    <button *ngIf="selectedProject" (click)="backToProjects()">‹ Back to Projects</button>
+  </div>
+
+  <!-- MESSAGES -->
+  <div *ngIf="successMessage" class="msg success">
+    <span class="msg-icon">✔</span>
+    <span class="msg-text">{{ successMessage }}</span>
+    <button type="button" class="msg-close" (click)="dismissSuccess()" title="Dismiss">×</button>
+  </div>
+  <div *ngIf="errorMessage" class="msg error">
+    <span class="msg-icon">!</span>
+    <span class="msg-text">{{ errorMessage }}</span>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- STEP 1 — PROJECT LIST                                          -->
+  <!-- ============================================================= -->
+  <div *ngIf="!selectedProject" class="card">
+    <h3 class="section-title">
+      My Projects
+      <span class="count" *ngIf="projects.length">({{ projects.length }})</span>
+    </h3>
+
+    <table class="k-grid" *ngIf="projects.length > 0">
+      <thead>
+        <tr>
+          <th style="width:6%">Sr</th>
+          <th style="width:10%">Project ID</th>
+          <th>Project Name</th>
+          <th style="width:14%">Start</th>
+          <th style="width:14%">End</th>
+          <th style="width:14%">Pending Feedback</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of projects; let i = index; trackBy: trackByProjectId"
+            class="clickable" (click)="openProject(p)">
+          <td class="center">{{ i + 1 }}</td>
+          <td class="center">{{ p.projectId }}</td>
+          <td><a class="link">{{ p.projectName }}</a></td>
+          <td class="center">{{ p.projectStartDate }}</td>
+          <td class="center">{{ p.projectEndDate }}</td>
+          <td class="center"><span class="badge">{{ p.pendingCount }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="projectsLoaded && projects.length === 0" class="empty">
+      No projects of yours have tasks awaiting feedback.
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- STEP 2 — TASK LIST + FEEDBACK                                  -->
+  <!-- ============================================================= -->
+  <div *ngIf="selectedProject">
+
+    <!-- ---------- tasks ---------- -->
+    <div class="card">
+      <div class="task-head">
+        <h3 class="section-title">
+          Tasks Pending Feedback
+          <span class="count" *ngIf="tasks.length">({{ tasks.length }})</span>
+        </h3>
+        <div class="task-tools">
+          <!-- Split binding (not [(ngModel)]) so the filter is recomputed once per
+               keystroke instead of on every change-detection pass. -->
+          <input type="text" class="search" placeholder="Search task / req code / assigned to"
+                 [ngModel]="taskFilter" (ngModelChange)="onFilterChange($event)"
+                 name="taskFilter" />
+          <span class="selinfo" *ngIf="selectedCount > 0">{{ selectedCount }} selected</span>
+          <button type="button" class="ghost" *ngIf="selectedCount > 0" (click)="clearSelection()">Clear</button>
+        </div>
+      </div>
+
+      <div class="grid-scroll" *ngIf="filteredTasks.length > 0">
+      <table class="k-grid tasks-grid">
+        <thead>
+          <tr>
+            <th style="width:4%" class="center">
+              <input type="checkbox" [checked]="allVisibleSelected" (change)="toggleSelectAll()"
+                     title="Select all" />
+            </th>
+            <th style="width:5%">Sr</th>
+            <th style="width:36%">Task Name</th>
+            <th style="width:14%">Req Code</th>
+            <th style="width:13%">Assigned To</th>
+            <th style="width:13%">Action By</th>
+            <th style="width:15%">Action Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of filteredTasks; let i = index; trackBy: trackByTaskId"
+              class="clickable" [class.row-selected]="t.selected" (click)="toggleTask(t)">
+            <td class="center">
+              <input type="checkbox" [checked]="t.selected" (click)="$event.stopPropagation()"
+                     (change)="toggleTask(t)" />
+            </td>
+            <td class="center">{{ i + 1 }}</td>
+            <td>
+              {{ t.taskName }}
+              <div class="sub" *ngIf="t.actionTaken">Action: {{ t.actionTaken }}</div>
+            </td>
+            <td>{{ t.reqCode }}</td>
+            <td>{{ t.assignedToName }}</td>
+            <td>{{ t.actionByName }}</td>
+            <td class="center">{{ t.actionDtTime }}</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div *ngIf="!isLoading && tasks.length === 0" class="empty">
+        No tasks are awaiting feedback in this project.
+      </div>
+      <div *ngIf="tasks.length > 0 && filteredTasks.length === 0" class="empty">
+        No task matches "{{ taskFilter }}".
+      </div>
+    </div>
+
+    <!-- ---------- feedback for the ticked tasks ---------- -->
+    <div class="card" *ngIf="tasks.length > 0">
+      <h3 class="section-title">
+        Feedback
+        <span class="count-note" *ngIf="selectedCount > 0">
+          — applied to {{ selectedCount }} selected task(s)
+        </span>
+      </h3>
+
+      <div class="row">
+        <div>
+          <label><span class="req">*</span> Feedback Complete Status</label>
+          <div class="radio-line">
+            <label class="radio" *ngFor="let opt of statusOptions">
+              <input type="radio" name="feedbackStatus" [value]="opt" [(ngModel)]="feedbackStatus" />
+              {{ opt }}
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label><span class="req">*</span> Select Rating</label>
+          <div class="stars-wrap">
+            <span *ngFor="let s of stars" class="star" [class.on]="s <= rating"
+                  (click)="setRating(s)" [title]="s + ' star'">★</span>
+            <b class="rating-head">{{ ratingHead }}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label><span class="req">*</span> Feedback</label>
+          <textarea rows="4" [(ngModel)]="feedbackText" name="feedbackText"
+                    placeholder="Your feedback for the selected task(s)"></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="save" [disabled]="isSaving || selectedCount === 0"
+                (click)="submitFeedback()">
+          {{ isSaving ? 'Saving…' : 'Save Feedback' + (selectedCount > 0 ? ' (' + selectedCount + ')' : '') }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
