@@ -20,11 +20,15 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { ControlPanelRoutes } from './control-panel.routing';
 import { ControlPanelJobcardComponent } from './control-panel-jobcard/control-panel-jobcard.component';
+import { ControlPanelJobcardCheckerComponent } from './control-panel-jobcard-checker/control-panel-jobcard-checker.component';
+import { CncCpMakerComponent } from './cnc-cp-maker/cnc-cp-maker.component';
 import { ControlPanelPlanComponent } from './control-panel-plan/control-panel-plan.component';
 
 @NgModule({
   declarations: [
     ControlPanelJobcardComponent,
+    ControlPanelJobcardCheckerComponent,
+    CncCpMakerComponent,
     ControlPanelPlanComponent,
   ],
   imports: [

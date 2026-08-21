@@ -2,6 +2,7 @@ export interface IcncCheckerprcDts {
   PFBCode: string;
   Dt: string;
   CanopyPlanCode: string;
+  KVA : string;
   CanopyPart: string;
   NestingPart: string;
   ProcessPart: string;

@@ -9,6 +9,16 @@ export const ControlPanelRoutes: Routes = [
     data: { title: 'Control Panel JobCard', breadcrumb: 'Control Panel JobCard' }
   },
   {
+    path: 'control-panel-jobcard-checker',
+    component: ControlPanelJobcardCheckerComponent,
+    data: { title: 'Control Panel JobCard Checker', breadcrumb: 'Control Panel JobCard Checker' }
+  },
+  {
+    path: 'cnc-cp-maker',
+    component: CncCpMakerComponent,
+    data: { title: 'CNC CP Maker', breadcrumb: 'CNC CP Maker' }
+  },
+  {
     path: 'control-panel-plan',
     component: ControlPanelPlanComponent,
     data: { title: 'Control Panel Plan', breadcrumb: 'Control Panel Plan' }
